@@ -4,3 +4,4 @@ export { default as buildingRoute } from "./building.route";
 export { default as roomRoute } from "./room.route";
 export { default as subjectRoute } from "./subject.route";
 export { default as instructorRoute } from "./instructor.route";
+export { default as groupRoute } from "./group.route";
