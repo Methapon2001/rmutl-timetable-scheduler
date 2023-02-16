@@ -8,12 +8,12 @@ const prisma = new PrismaClient({
 });
 
 let access: string;
-let refresh: string;
+let user: any;
 
 beforeAll(async () => {
   await prisma.user.create({
     data: {
-      username: "test_auth",
+      username: "test_user",
       password: await hash("1234"),
       role: "user",
     },
@@ -24,43 +24,10 @@ afterAll(async () => {
   await prisma.user.deleteMany({
     where: {
       username: {
-        contains: "test_auth",
+        contains: "test_user",
       },
     },
   });
-});
-
-test("auth check should return false", async () => {
-  const response = await server.inject({
-    method: "GET",
-    path: "/auth/check",
-  });
-
-  const code = response.statusCode;
-  const body = response.json();
-
-  console.log(code, body);
-
-  expect(code).toBe(200);
-  expect(body.isAuthenticated).toBeFalsy();
-});
-
-test("access protected route should return unauthorized", async () => {
-  const response = await server.inject({
-    method: "POST",
-    path: "/auth/logout",
-    payload: {
-      token: refresh,
-    },
-  });
-
-  const code = response.statusCode;
-  const body = response.json();
-
-  console.log(code, body);
-
-  expect(code).toBe(401);
-  expect(body).toHaveProperty("message", "Unauthorized.");
 });
 
 test("login should return token with user data", async () => {
@@ -68,7 +35,7 @@ test("login should return token with user data", async () => {
     method: "POST",
     path: "/auth/login",
     payload: {
-      username: "test_auth",
+      username: "test_user",
       password: "1234",
     },
   });
@@ -88,67 +55,21 @@ test("login should return token with user data", async () => {
   expect(body.token).toHaveProperty("refresh");
 
   access = body.token.access;
-  refresh = body.token.refresh;
+  user = body.user;
 });
 
-test("auth check should return true with user data", async () => {
-  const response = await server.inject({
-    method: "GET",
-    path: "/auth/check",
-    headers: {
-      authorization: `Bearer ${access}`,
-    },
-  });
-
-  const code = response.statusCode;
-  const body = response.json();
-
-  console.log(code, body);
-
-  expect(code).toBe(200);
-  expect(body.isAuthenticated).toBeTruthy();
-  expect(body).toHaveProperty("user");
-});
-
-test("refresh token should return token and user data", async () => {
-  const response = await server.inject({
-    method: "POST",
-    path: "/auth/refresh",
-    headers: {
-      authorization: `Bearer ${access}`,
-    },
-    payload: {
-      token: refresh,
-    },
-  });
-
-  const code = response.statusCode;
-  const body = response.json();
-
-  console.log(code, body);
-
-  expect(code).toBe(200);
-  expect(body).toHaveProperty("user");
-  expect(body).toHaveProperty("token");
-  expect(body.user).toHaveProperty("username");
-  expect(body.user).toHaveProperty("role");
-  expect(body.user).not.toHaveProperty("password");
-  expect(body.token).toHaveProperty("access");
-  expect(body.token).toHaveProperty("refresh");
-  expect(body.token.access).not.toBe(access);
-  expect(body.token.refresh).not.toBe(refresh);
-
-  access = body.token.access;
-  refresh = body.token.refresh;
-});
-
-test("access admin route should return forbidden", async () => {
+test("create user should return forbidden", async () => {
   const response = await server.inject({
     method: "POST",
     path: "/api/user",
     headers: {
       authorization: `Bearer ${access}`,
     },
+    payload: {
+      username: "fake_user_test_user",
+      password: "1234",
+      role: "user",
+    },
   });
 
   const code = response.statusCode;
@@ -160,35 +81,81 @@ test("access admin route should return forbidden", async () => {
   expect(body).toHaveProperty("message", "Forbidden.");
 });
 
-test("logout should return ok", async () => {
+test("edit other user data should return forbidden", async () => {
   const response = await server.inject({
-    method: "POST",
-    path: "/auth/logout",
+    method: "PUT",
+    path: "/api/user/f0a937b1-3f80-4a2d-aeb3-d7e3373a5c26",
     headers: {
       authorization: `Bearer ${access}`,
     },
     payload: {
-      token: refresh,
+      role: "admin",
     },
   });
 
   const code = response.statusCode;
-  const body = response.body;
+  const body = response.json();
+
+  console.log(code, body);
+
+  expect(code).toBe(403);
+  expect(body).toHaveProperty("message", "Forbidden.");
+});
+
+test("edit self role should return forbidden", async () => {
+  const response = await server.inject({
+    method: "PUT",
+    path: `/api/user/${user.id}`,
+    headers: {
+      authorization: `Bearer ${access}`,
+    },
+    payload: {
+      role: "admin",
+    },
+  });
+
+  const code = response.statusCode;
+  const body = response.json();
+
+  console.log(code, body);
+
+  expect(code).toBe(403);
+  expect(body).toHaveProperty("message", "Forbidden.");
+});
+
+test("edit self data should return updated self data", async () => {
+  const response = await server.inject({
+    method: "PUT",
+    path: `/api/user/${user.id}`,
+    headers: {
+      authorization: `Bearer ${access}`,
+    },
+    payload: {
+      username: "test_user_edit",
+    },
+  });
+
+  const code = response.statusCode;
+  const body = response.json();
 
   console.log(code, body);
 
   expect(code).toBe(200);
+  expect(body).toHaveProperty("data");
+  expect(body.data).toHaveProperty("id", user.id);
+  expect(body.data).toHaveProperty("username", "test_user_edit");
+  expect(body.data).toHaveProperty("role", user.role);
+  expect(body.data).not.toHaveProperty("password");
+
+  user = body.data;
 });
 
-test("reuse refresh token should return forbidden", async () => {
+test("delete other user should return forbidden", async () => {
   const response = await server.inject({
-    method: "POST",
-    path: "/auth/refresh",
+    method: "DELETE",
+    path: "/api/user/f0a937b1-3f80-4a2d-aeb3-d7e3373a5c26",
     headers: {
       authorization: `Bearer ${access}`,
-    },
-    payload: {
-      token: refresh,
     },
   });
 
@@ -199,4 +166,26 @@ test("reuse refresh token should return forbidden", async () => {
 
   expect(code).toBe(403);
   expect(body).toHaveProperty("message", "Forbidden.");
+});
+
+test("delete self should return self data", async () => {
+  const response = await server.inject({
+    method: "DELETE",
+    path: `/api/user/${user.id}`,
+    headers: {
+      authorization: `Bearer ${access}`,
+    },
+  });
+
+  const code = response.statusCode;
+  const body = response.json();
+
+  console.log(code, body);
+
+  expect(code).toBe(200);
+  expect(body).toHaveProperty("data");
+  expect(body.data).toHaveProperty("id", user.id);
+  expect(body.data).toHaveProperty("username", user.username);
+  expect(body.data).toHaveProperty("role", user.role);
+  expect(body.data).not.toHaveProperty("password");
 });
