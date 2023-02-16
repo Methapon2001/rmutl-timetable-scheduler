@@ -67,3 +67,16 @@ model Room {
   buildingId String
   building   Building @relation(fields: [buildingId], references: [id])
 }
+
+model Subject {
+  id      String @id @default(uuid())
+  code    String
+  name    String
+  credit  Int
+  lecture Int
+  lab     Int
+  exam    Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
