@@ -6,3 +6,35 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
+
+model User {
+  id       String @id @default(uuid())
+  username String @unique
+  password String
+  role     Role   @default(user)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  token Token[]
+}
+
+enum Role {
+  admin
+  user
+}
+
+model Token {
+  id    String   @id @default(uuid())
+  token String   @db.TinyText
+  iat   DateTime
+  exp   DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
