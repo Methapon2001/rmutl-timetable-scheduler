@@ -8,10 +8,11 @@ const prisma = new PrismaClient({
 });
 
 let access: string;
+let admin: any;
 let user: any;
 
 beforeAll(async () => {
-  await prisma.user.create({
+  admin = await prisma.user.create({
     data: {
       username: "test_admin",
       password: await hash("1234"),
@@ -211,7 +212,7 @@ test("delete user should return deleted user data without password", async () =>
 test("delete the only admin should return forbidden", async () => {
   const response = await server.inject({
     method: "DELETE",
-    path: `/api/user/${user.id}`,
+    path: `/api/user/${admin.id}`,
     headers: {
       authorization: `Bearer ${access}`,
     },
