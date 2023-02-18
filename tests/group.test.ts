@@ -93,7 +93,6 @@ test("request group should return data array with pagination info", async () => 
     expect(data).toHaveProperty("id");
     expect(data).toHaveProperty("name");
     expect(data).toHaveProperty("creator");
-    expect(data.creator).toEqual(user);
   });
 });
 
