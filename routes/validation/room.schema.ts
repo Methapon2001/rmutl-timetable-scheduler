@@ -10,7 +10,7 @@ export default {
     type: "object",
     properties: {
       name: { type: "string" },
-      type: { type: "string", enum: ["lecture", "lab"] },
+      type: { type: "string", enum: ["lecture", "lab", "both"] },
       limit: { type: "number", default: 20 },
       offset: { type: "number", default: 0 },
     },
@@ -19,7 +19,7 @@ export default {
     type: "object",
     properties: {
       name: { type: "string" },
-      type: { type: "string", enum: ["lecture", "lab"] },
+      type: { type: "string", enum: ["lecture", "lab", "both"] },
       buildingId: { type: "string" },
     },
   },
