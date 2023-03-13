@@ -16,8 +16,9 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  token Token[]
-  group Group[]
+  token   Token[]
+  group   Group[]
+  section Section[]
 }
 
 enum Role {
@@ -67,6 +68,8 @@ model Room {
 
   buildingId String
   building   Building @relation(fields: [buildingId], references: [id])
+
+  section Section[]
 }
 
 model Subject {
@@ -80,6 +83,8 @@ model Subject {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  section Section[]
 }
 
 model Instructor {
@@ -88,6 +93,8 @@ model Instructor {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  section Section[]
 }
 
 model Group {
@@ -99,4 +106,42 @@ model Group {
 
   createdBy String
   creator   User   @relation(fields: [createdBy], references: [id])
+
+  section Section[]
+}
+
+enum SectionType {
+  lecture
+  lab
+}
+
+model Section {
+  id     String      @id @default(uuid())
+  type   SectionType
+  no     Int
+  lab    Int?
+  manual Boolean     @default(false)
+
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id])
+
+  roomId String?
+  room   Room?   @relation(fields: [roomId], references: [id])
+
+  groupId String?
+  group   Group?  @relation(fields: [groupId], references: [id])
+
+  parentId String?
+  parent   Section?  @relation("AssociatedSection", fields: [parentId], references: [id], onDelete: Cascade)
+  child    Section[] @relation("AssociatedSection")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdBy String
+  creator   User   @relation(fields: [createdBy], references: [id])
+
+  instructor Instructor[]
+
+  @@index([id, createdBy])
 }
