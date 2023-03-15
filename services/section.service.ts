@@ -138,7 +138,7 @@ export async function requestSection(
     request.query;
 
   const section = id
-    ? await prisma.section.findFirst({
+    ? await prisma.section.findUnique({
         where: {
           id: id,
         },

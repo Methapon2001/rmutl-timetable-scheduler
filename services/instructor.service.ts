@@ -35,7 +35,7 @@ export async function requestInstructor(
   const { name, limit, offset } = request.query;
 
   const instructor = id
-    ? await prisma.instructor.findFirst({
+    ? await prisma.instructor.findUnique({
         where: {
           id: id,
         },

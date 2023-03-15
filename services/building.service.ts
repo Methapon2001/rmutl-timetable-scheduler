@@ -35,7 +35,7 @@ export async function requestBuilding(
   const { name, code, limit, offset } = request.query;
 
   const building = id
-    ? await prisma.building.findFirst({
+    ? await prisma.building.findUnique({
         where: {
           id: id,
         },

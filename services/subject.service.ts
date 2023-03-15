@@ -35,7 +35,7 @@ export async function requestSubject(
   const { name, code, credit, lecture, exam, limit, offset } = request.query;
 
   const subject = id
-    ? await prisma.subject.findFirst({
+    ? await prisma.subject.findUnique({
         where: {
           id: id,
         },

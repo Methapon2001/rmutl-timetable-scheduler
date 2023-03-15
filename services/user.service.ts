@@ -41,7 +41,7 @@ export async function requestUser(
   const { username, role, limit, offset } = request.query;
 
   const user = id
-    ? await prisma.user.findFirst({
+    ? await prisma.user.findUnique({
         where: {
           id: id,
         },

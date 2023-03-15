@@ -38,7 +38,7 @@ export async function requestRoom(
   const { name, type, limit, offset } = request.query;
 
   const room = id
-    ? await prisma.room.findFirst({
+    ? await prisma.room.findUnique({
         where: {
           id: id,
         },

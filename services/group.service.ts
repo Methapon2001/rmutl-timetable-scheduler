@@ -44,7 +44,7 @@ export async function requestGroup(
   const { name, limit, offset } = request.query;
 
   const group = id
-    ? await prisma.group.findFirst({
+    ? await prisma.group.findUnique({
         where: {
           id: id,
         },
