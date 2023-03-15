@@ -8,6 +8,7 @@ const prisma = new PrismaClient({
 type Query = {
   limit: number;
   offset: number;
+  user: string;
 } & Group;
 
 type Param = {
@@ -41,7 +42,7 @@ export async function requestGroup(
   reply: FastifyReply,
 ) {
   const { id } = request.params;
-  const { name, limit, offset } = request.query;
+  const { name, user, limit, offset } = request.query;
 
   const group = id
     ? await prisma.group.findUnique({
@@ -63,6 +64,7 @@ export async function requestGroup(
           name: {
             contains: name,
           },
+          createdBy: user,
         },
         include: {
           creator: {
@@ -87,6 +89,7 @@ export async function requestGroup(
           name: {
             contains: name,
           },
+          createdBy: user,
         },
       });
 
@@ -103,6 +106,18 @@ export async function updateGroup(
   reply: FastifyReply,
 ) {
   const { id } = request.params;
+
+  const rec = await prisma.group.findFirst({
+    where: {
+      id: id,
+    },
+  });
+
+  if (rec?.createdBy != request.user.id) {
+    return reply.code(403).send({
+      message: "Forbidden.",
+    });
+  }
 
   const group = await prisma.group.update({
     where: {
@@ -130,6 +145,18 @@ export async function deleteGroup(
   reply: FastifyReply,
 ) {
   const { id } = request.params;
+
+  const rec = await prisma.group.findFirst({
+    where: {
+      id: id,
+    },
+  });
+
+  if (rec?.createdBy != request.user.id) {
+    return reply.code(403).send({
+      message: "Forbidden.",
+    });
+  }
 
   const group = await prisma.group.delete({
     where: {

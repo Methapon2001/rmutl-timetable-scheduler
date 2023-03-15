@@ -20,6 +20,7 @@ type Body = {
 type Query = {
   limit: number;
   offset: number;
+  user: string;
   instructorId: string;
 } & Section;
 
@@ -134,8 +135,17 @@ export async function requestSection(
   reply: FastifyReply,
 ) {
   const { id } = request.params;
-  const { no, type, subjectId, roomId, instructorId, parentId, limit, offset } =
-    request.query;
+  const {
+    no,
+    type,
+    subjectId,
+    roomId,
+    instructorId,
+    parentId,
+    user,
+    limit,
+    offset,
+  } = request.query;
 
   const section = id
     ? await prisma.section.findUnique({
@@ -192,6 +202,7 @@ export async function requestSection(
               id: instructorId,
             },
           },
+          createdBy: user,
         },
         include: {
           creator: {
@@ -256,6 +267,7 @@ export async function requestSection(
               id: instructorId,
             },
           },
+          createdBy: user,
         },
       });
 
@@ -278,6 +290,18 @@ export async function updateSection(
 ) {
   const { id } = request.params;
   const { no, roomId, groupId, instructorId } = request.body;
+
+  const rec = await prisma.section.findFirst({
+    where: {
+      id: id,
+    },
+  });
+
+  if (rec?.createdBy != request.user.id) {
+    return reply.code(403).send({
+      message: "Forbidden.",
+    });
+  }
 
   if (no) {
     const query = await prisma.section.findFirst({
@@ -357,6 +381,18 @@ export async function deleteSection(
   reply: FastifyReply,
 ) {
   const { id } = request.params;
+
+  const rec = await prisma.section.findFirst({
+    where: {
+      id: id,
+    },
+  });
+
+  if (rec?.createdBy != request.user.id) {
+    return reply.code(403).send({
+      message: "Forbidden.",
+    });
+  }
 
   const section = await prisma.section.delete({
     where: {
