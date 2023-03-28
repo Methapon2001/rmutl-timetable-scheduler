@@ -2,7 +2,7 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import { PrismaClient, User } from "@prisma/client";
 import { compare } from "../utils/scrypt";
 import { exclude } from "../utils/object";
-import { sign, verify } from "../utils/jwt";
+import { decode, sign, verify } from "../utils/jwt";
 
 const prisma = new PrismaClient({
   errorFormat: "minimal",
@@ -70,13 +70,12 @@ export async function login(
     const [accessToken, refreshToken] = await issueTokenPair(
       userWithExcludedFields,
     );
-
     return reply.status(200).send({
       token: {
         access: accessToken,
         refresh: refreshToken,
       },
-      user: userWithExcludedFields,
+      user: await decode(accessToken),
     });
   }
 
@@ -165,6 +164,6 @@ export async function refresh(
       access: accessToken,
       refresh: refreshToken,
     },
-    user: userWithExcludedFields,
+    user: await decode(accessToken),
   });
 }
