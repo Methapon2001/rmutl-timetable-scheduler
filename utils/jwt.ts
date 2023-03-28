@@ -37,6 +37,6 @@ export async function verify(
   return await verifier(token).catch((_) => null);
 }
 
-export function decode(token: string, opts: Partial<DecoderOptions>) {
+export function decode(token: string, opts?: Partial<DecoderOptions>) {
   return createDecoder(opts)(token);
 }
