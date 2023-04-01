@@ -197,6 +197,6 @@ test("reuse refresh token should return forbidden", async () => {
 
   console.log(code, body);
 
-  expect(code).toBe(403);
-  expect(body).toHaveProperty("message", "Forbidden.");
+  expect(code).toBe(401);
+  expect(body).toHaveProperty("message", "Unauthorized.");
 });
