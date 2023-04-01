@@ -142,8 +142,8 @@ export async function refresh(
       },
     });
 
-    return reply.status(403).send({
-      message: "Forbidden.",
+    return reply.status(401).send({
+      message: "Unauthorized.",
     });
   }
 
