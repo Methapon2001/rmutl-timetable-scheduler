@@ -15,4 +15,11 @@ declare namespace API {
       exp: number;
     };
   };
+
+  type Instructor = {
+    id: string;
+    name: string;
+    createdAt: string;
+    updatedAt: string;
+  };
 }

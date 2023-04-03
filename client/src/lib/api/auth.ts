@@ -1,5 +1,15 @@
 import { PUBLIC_API_HOST } from '$env/static/public';
 
+// TODO: Login
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+export const login = async () => {};
+
+/**
+ * Require fetch parameter as it will be used in load function of sveltekit to avoid warning
+ * Default to window.fetch
+ *
+ * Reference: https://kit.svelte.dev/docs/load#making-fetch-requests
+ */
 export const check = async (fetch: typeof global.fetch = window.fetch) => {
   let userSession: API.Session | string | null = localStorage.getItem('session');
 
@@ -27,6 +37,12 @@ export const check = async (fetch: typeof global.fetch = window.fetch) => {
   return null;
 };
 
+/**
+ * Require fetch parameter as it will be used in load function of sveltekit to avoid warning
+ * Default to window.fetch
+ *
+ * Reference: https://kit.svelte.dev/docs/load#making-fetch-requests
+ */
 export const refresh = async (fetch: typeof global.fetch = window.fetch) => {
   let userSession: API.Session | string | null = localStorage.getItem('session');
 
@@ -65,3 +81,7 @@ export const refresh = async (fetch: typeof global.fetch = window.fetch) => {
 
   return null;
 };
+
+// TODO: Logout
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+export const logout = async () => {};
