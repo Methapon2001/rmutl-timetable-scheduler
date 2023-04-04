@@ -111,6 +111,10 @@
   }
 </script>
 
+<svelte:head>
+  <title>Instructor</title>
+</svelte:head>
+
 <div>
   <div class="flex flex-wrap items-center justify-between gap-4 p-4 md:flex-nowrap">
     <div
