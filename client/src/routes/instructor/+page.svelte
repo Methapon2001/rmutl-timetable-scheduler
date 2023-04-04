@@ -22,12 +22,13 @@
     await invalidate('data:instructor');
   }, 300);
 
-  const newSchema = z.object({
+  const schema = z.object({
+    id: z.string().nonempty().uuid(),
     name: z.string().min(3),
   });
 
-  const editSchema = newSchema.extend({
-    id: z.string().nonempty().uuid(),
+  const newSchema = schema.omit({
+    id: true,
   });
 
   export let data: PageData;
@@ -42,7 +43,7 @@
     error: null,
   };
 
-  let editForm: Form<typeof editSchema> = {
+  let editForm: Form<typeof schema> = {
     data: {
       id: '',
       name: '',
@@ -74,7 +75,7 @@
   async function handleEdit() {
     editForm.error = null;
 
-    const result = editSchema.safeParse(editForm.data);
+    const result = schema.safeParse(editForm.data);
 
     if (!result.success) {
       editForm.error = result.error.format();
@@ -95,21 +96,19 @@
     }
   }
 
-  // eslint-disable no-undef
-  function showEdit(instructor: Pick<API.Instructor, 'id' | 'name'>) {
+  function showEdit(instructor: z.infer<typeof schema>) {
     editInstructorState = true;
 
     editForm.data = instructor;
     editForm.error = null;
   }
 
-  async function handleDelete(instructor: Pick<API.Instructor, 'id'>) {
+  async function handleDelete(instructor: Pick<z.infer<typeof schema>, 'id'>) {
     if (confirm('Are you sure?')) {
       await deleteInstructor(instructor).catch((e) => console.error(e));
-      invalidate('data:instructor');
+      await invalidate('data:instructor');
     }
   }
-  // eslint-enable no-undef
 </script>
 
 <div>
