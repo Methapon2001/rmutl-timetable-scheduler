@@ -1,4 +1,4 @@
-import { User, Role, PrismaClient } from "@prisma/client";
+import { User, Role, PrismaClient, Prisma } from "@prisma/client";
 import { FastifyReply, FastifyRequest } from "fastify";
 import { exclude } from "../utils/object";
 import { hash } from "../utils/scrypt";
@@ -7,10 +7,18 @@ const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
 
+const userSelect: Prisma.UserSelect = {
+  id: true,
+  username: true,
+  role: true,
+  createdAt: true,
+  updatedAt: true,
+};
+
 type Query = {
   limit: number;
   offset: number;
-} & User;
+} & Pick<User, "username" | "role">;
 
 type Param = {
   id: string;
@@ -24,12 +32,11 @@ export async function createUser(
 
   const user = await prisma.user.create({
     data: request.body,
+    select: userSelect,
   });
 
-  const userWithExcludedFields = exclude(user, ["password"]);
-
   return reply.status(200).send({
-    data: userWithExcludedFields,
+    data: user,
   });
 }
 
@@ -40,19 +47,23 @@ export async function requestUser(
   const { id } = request.params;
   const { username, role, limit, offset } = request.query;
 
+  const userWhere: Prisma.UserWhereInput = {
+    username: username,
+    role: role,
+  };
+
   const user = id
     ? await prisma.user.findUnique({
+        select: userSelect,
         where: {
           id: id,
         },
       })
     : await prisma.user.findMany({
-        where: {
-          username: username,
-          role: role,
-        },
+        select: userSelect,
+        where: userWhere,
         orderBy: {
-          createdAt: "desc",
+          createdAt: "asc",
         },
         skip: offset,
         take: limit,
@@ -61,26 +72,14 @@ export async function requestUser(
   const count = id
     ? undefined
     : await prisma.user.count({
-        where: {
-          username: {
-            contains: username,
-          },
-          role: role,
-        },
+        where: userWhere,
         orderBy: {
-          createdAt: "desc",
+          createdAt: "asc",
         },
       });
 
-  const userWithExcludedFields =
-    user && Array.isArray(user)
-      ? user.map((u) => exclude(u, ["password"]))
-      : user
-      ? exclude(user, ["password"])
-      : null;
-
   return reply.status(200).send({
-    data: userWithExcludedFields,
+    data: user,
     limit: limit,
     offset: offset,
     total: count,
@@ -93,13 +92,10 @@ export async function updateUser(
 ) {
   const { id } = request.params;
 
-  if (request.user.role != Role.admin && request.user.id != id) {
-    return reply.code(403).send({
-      message: "Forbidden.",
-    });
-  }
-
-  if (request.user.role != Role.admin && request.body.role) {
+  if (
+    (request.user.role != Role.admin && request.user.id != id) ||
+    (request.user.role != Role.admin && request.body.role)
+  ) {
     return reply.code(403).send({
       message: "Forbidden.",
     });
@@ -110,16 +106,15 @@ export async function updateUser(
   }
 
   const user = await prisma.user.update({
+    select: userSelect,
     where: {
       id: id,
     },
     data: request.body,
   });
 
-  const userWithExcludedFields = exclude(user, ["password"]);
-
   return reply.status(200).send({
-    data: userWithExcludedFields,
+    data: user,
   });
 }
 
@@ -136,13 +131,13 @@ export async function deleteUser(
   }
 
   if (request.user.role == Role.admin) {
-    const admin = await prisma.user.findMany({
+    const count = await prisma.user.count({
       where: {
         role: Role.admin,
       },
     });
 
-    if (admin.length <= 1) {
+    if (count <= 1) {
       return reply.code(403).send({
         message: "Forbidden.",
       });
@@ -150,14 +145,13 @@ export async function deleteUser(
   }
 
   const user = await prisma.user.delete({
+    select: userSelect,
     where: {
       id: id,
     },
   });
 
-  const userWithExcludedFields = exclude(user, ["password"]);
-
   reply.status(200).send({
-    data: userWithExcludedFields,
+    data: user,
   });
 }

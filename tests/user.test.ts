@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { expect, test, beforeAll, afterAll } from "vitest";
 import { hash } from "../utils/scrypt";
+import { decode } from "../utils/jwt";
 import server from "../app";
 
 const prisma = new PrismaClient({
@@ -30,6 +31,26 @@ afterAll(async () => {
   });
 });
 
+test("create user without credential should return unauthorized", async () => {
+  const response = await server.inject({
+    method: "POST",
+    path: "/api/user",
+    payload: {
+      username: "fake_user_test_user",
+      password: "1234",
+      role: "user",
+    },
+  });
+
+  const code = response.statusCode;
+  const body = response.json();
+
+  console.log(code, body);
+
+  expect(code).toBe(401);
+  expect(body).toEqual({ message: "Unauthorized." });
+});
+
 test("login should return token with user data", async () => {
   const response = await server.inject({
     method: "POST",
@@ -46,16 +67,17 @@ test("login should return token with user data", async () => {
   console.log(code, body);
 
   expect(code).toBe(200);
-  expect(body).toHaveProperty("user");
-  expect(body).toHaveProperty("token");
-  expect(body.user).toHaveProperty("username");
-  expect(body.user).toHaveProperty("role");
-  expect(body.user).not.toHaveProperty("password");
-  expect(body.token).toHaveProperty("access");
-  expect(body.token).toHaveProperty("refresh");
+  expect(body).toEqual({
+    token: {
+      access: expect.any(String),
+      refresh: expect.any(String),
+    },
+  });
+
+  const payload = await decode(body.token.access);
 
   access = body.token.access;
-  user = body.user;
+  user = { ...payload, jti: undefined, iat: undefined, exp: undefined };
 });
 
 test("create user should return forbidden", async () => {
@@ -78,7 +100,7 @@ test("create user should return forbidden", async () => {
   console.log(code, body);
 
   expect(code).toBe(403);
-  expect(body).toHaveProperty("message", "Forbidden.");
+  expect(body).toEqual({ message: "Forbidden." });
 });
 
 test("edit other user data should return forbidden", async () => {
@@ -99,7 +121,7 @@ test("edit other user data should return forbidden", async () => {
   console.log(code, body);
 
   expect(code).toBe(403);
-  expect(body).toHaveProperty("message", "Forbidden.");
+  expect(body).toEqual({ message: "Forbidden." });
 });
 
 test("edit self role should return forbidden", async () => {
@@ -120,7 +142,7 @@ test("edit self role should return forbidden", async () => {
   console.log(code, body);
 
   expect(code).toBe(403);
-  expect(body).toHaveProperty("message", "Forbidden.");
+  expect(body).toEqual({ message: "Forbidden." });
 });
 
 test("edit self data should return updated self data", async () => {
@@ -141,11 +163,15 @@ test("edit self data should return updated self data", async () => {
   console.log(code, body);
 
   expect(code).toBe(200);
-  expect(body).toHaveProperty("data");
-  expect(body.data).toHaveProperty("id", user.id);
-  expect(body.data).toHaveProperty("username", "test_user_edit");
-  expect(body.data).toHaveProperty("role", user.role);
-  expect(body.data).not.toHaveProperty("password");
+  expect(body).toEqual({
+    data: {
+      id: user.id,
+      username: "test_user_edit",
+      role: user.role,
+      createdAt: expect.any(String),
+      updatedAt: expect.any(String),
+    },
+  });
 
   user = body.data;
 });
@@ -153,7 +179,7 @@ test("edit self data should return updated self data", async () => {
 test("delete other user should return forbidden", async () => {
   const response = await server.inject({
     method: "DELETE",
-    path: "/api/user/f0a937b1-3f80-4a2d-aeb3-d7e3373a5c26",
+    path: "/api/user/00000000-0000-0000-0000-000000000000",
     headers: {
       authorization: `Bearer ${access}`,
     },
@@ -165,7 +191,7 @@ test("delete other user should return forbidden", async () => {
   console.log(code, body);
 
   expect(code).toBe(403);
-  expect(body).toHaveProperty("message", "Forbidden.");
+  expect(body).toEqual({ message: "Forbidden." });
 });
 
 test("delete self should return self data", async () => {
@@ -183,9 +209,13 @@ test("delete self should return self data", async () => {
   console.log(code, body);
 
   expect(code).toBe(200);
-  expect(body).toHaveProperty("data");
-  expect(body.data).toHaveProperty("id", user.id);
-  expect(body.data).toHaveProperty("username", user.username);
-  expect(body.data).toHaveProperty("role", user.role);
-  expect(body.data).not.toHaveProperty("password");
+  expect(body).toEqual({
+    data: {
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      createdAt: user.createdAt,
+      updatedAt: expect.any(String),
+    },
+  });
 });

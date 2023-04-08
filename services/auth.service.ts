@@ -2,14 +2,16 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import { PrismaClient, User } from "@prisma/client";
 import { compare } from "../utils/scrypt";
 import { exclude } from "../utils/object";
-import { decode, sign, verify } from "../utils/jwt";
+import { sign, verify } from "../utils/jwt";
 
 const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
 
-async function issueTokenPair(user: Omit<User, "password">) {
-  const accessToken = await sign(user, {
+async function issueTokenPair(user: User) {
+  const payload = exclude(user, ["password", "createdAt", "updatedAt"]);
+
+  const accessToken = await sign(payload, {
     expiresIn: 900000,
   });
   const refreshToken = await sign({ id: user.id }, { expiresIn: 2592000000 });
@@ -30,6 +32,16 @@ async function issueTokenPair(user: Omit<User, "password">) {
   return [accessToken, refreshToken];
 }
 
+async function clearExpiredToken() {
+  return await prisma.token.deleteMany({
+    where: {
+      exp: {
+        lt: new Date(),
+      },
+    },
+  });
+}
+
 export async function check(request: FastifyRequest, reply: FastifyReply) {
   let token: string | undefined;
   let payload: object | undefined;
@@ -45,7 +57,7 @@ export async function check(request: FastifyRequest, reply: FastifyReply) {
   if (payload) {
     return reply.code(200).send({
       isAuthenticated: true,
-      user: payload,
+      user: { ...payload, jti: undefined, iat: undefined, exp: undefined },
     });
   }
 
@@ -58,6 +70,8 @@ export async function login(
   request: FastifyRequest<{ Body: { username: string; password: string } }>,
   reply: FastifyReply,
 ) {
+  clearExpiredToken();
+
   const user = await prisma.user.findFirst({
     where: {
       username: request.body.username,
@@ -65,17 +79,13 @@ export async function login(
   });
 
   if (user && (await compare(request.body.password, user.password))) {
-    const userWithExcludedFields = exclude(user, ["password"]);
+    const [accessToken, refreshToken] = await issueTokenPair(user);
 
-    const [accessToken, refreshToken] = await issueTokenPair(
-      userWithExcludedFields,
-    );
     return reply.status(200).send({
       token: {
         access: accessToken,
         refresh: refreshToken,
       },
-      user: await decode(accessToken),
     });
   }
 
@@ -147,11 +157,7 @@ export async function refresh(
     });
   }
 
-  const userWithExcludedFields = exclude(token.user, ["password"]);
-
-  const [accessToken, refreshToken] = await issueTokenPair(
-    userWithExcludedFields,
-  );
+  const [accessToken, refreshToken] = await issueTokenPair(token.user);
 
   await prisma.token.delete({
     where: {
@@ -164,6 +170,5 @@ export async function refresh(
       access: accessToken,
       refresh: refreshToken,
     },
-    user: await decode(accessToken),
   });
 }

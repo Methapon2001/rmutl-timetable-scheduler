@@ -2,6 +2,10 @@ import { FastifyRequest } from "fastify";
 
 declare module "fastify" {
   interface FastifyRequest {
-    user: { [key: string]: any };
+    user: {
+      id: string;
+      username: string;
+      role: "admin" | "user";
+    };
   }
 }

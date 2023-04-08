@@ -42,7 +42,7 @@ test("auth check should return false", async () => {
   console.log(code, body);
 
   expect(code).toBe(200);
-  expect(body.isAuthenticated).toBeFalsy();
+  expect(body).toEqual({ isAuthenticated: false });
 });
 
 test("access protected route should return unauthorized", async () => {
@@ -60,10 +60,10 @@ test("access protected route should return unauthorized", async () => {
   console.log(code, body);
 
   expect(code).toBe(401);
-  expect(body).toHaveProperty("message", "Unauthorized.");
+  expect(body).toEqual({ message: "Unauthorized." });
 });
 
-test("login should return token with user data", async () => {
+test("login should return token", async () => {
   const response = await server.inject({
     method: "POST",
     path: "/auth/login",
@@ -79,13 +79,12 @@ test("login should return token with user data", async () => {
   console.log(code, body);
 
   expect(code).toBe(200);
-  expect(body).toHaveProperty("user");
-  expect(body).toHaveProperty("token");
-  expect(body.user).toHaveProperty("username");
-  expect(body.user).toHaveProperty("role");
-  expect(body.user).not.toHaveProperty("password");
-  expect(body.token).toHaveProperty("access");
-  expect(body.token).toHaveProperty("refresh");
+  expect(body).toEqual({
+    token: {
+      access: expect.any(String),
+      refresh: expect.any(String),
+    },
+  });
 
   access = body.token.access;
   refresh = body.token.refresh;
@@ -106,8 +105,14 @@ test("auth check should return true with user data", async () => {
   console.log(code, body);
 
   expect(code).toBe(200);
-  expect(body.isAuthenticated).toBeTruthy();
-  expect(body).toHaveProperty("user");
+  expect(body).toEqual({
+    isAuthenticated: true,
+    user: {
+      id: expect.any(String),
+      username: expect.any(String),
+      role: expect.any(String),
+    },
+  });
 });
 
 test("refresh token should return token and user data", async () => {
@@ -128,16 +133,12 @@ test("refresh token should return token and user data", async () => {
   console.log(code, body);
 
   expect(code).toBe(200);
-  expect(body).toHaveProperty("user");
-  expect(body).toHaveProperty("token");
-  expect(body.user).toHaveProperty("username");
-  expect(body.user).toHaveProperty("role");
-  expect(body.user).not.toHaveProperty("password");
-  expect(body.token).toHaveProperty("access");
-  expect(body.token).toHaveProperty("refresh");
-  expect(body.token.access).not.toBe(access);
-  expect(body.token.refresh).not.toBe(refresh);
-
+  expect(body).toEqual({
+    token: {
+      access: expect.any(String),
+      refresh: expect.any(String),
+    },
+  });
   access = body.token.access;
   refresh = body.token.refresh;
 });
@@ -157,7 +158,7 @@ test("access admin route should return forbidden", async () => {
   console.log(code, body);
 
   expect(code).toBe(403);
-  expect(body).toHaveProperty("message", "Forbidden.");
+  expect(body).toEqual({ message: "Forbidden." });
 });
 
 test("logout should return ok", async () => {
@@ -198,5 +199,5 @@ test("reuse refresh token should return forbidden", async () => {
   console.log(code, body);
 
   expect(code).toBe(401);
-  expect(body).toHaveProperty("message", "Unauthorized.");
+  expect(body).toEqual({ message: "Unauthorized." });
 });

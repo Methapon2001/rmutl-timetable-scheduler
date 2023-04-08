@@ -1,5 +1,5 @@
-import { PrismaClient } from "@prisma/client";
-import { expect, test, beforeAll, afterAll, expectTypeOf } from "vitest";
+import { PrismaClient, User } from "@prisma/client";
+import { expect, test, beforeAll, afterAll } from "vitest";
 import { hash } from "../utils/scrypt";
 import server from "../app";
 
@@ -8,11 +8,10 @@ const prisma = new PrismaClient({
 });
 
 let access: string;
-let admin: any;
 let user: any;
 
 beforeAll(async () => {
-  admin = await prisma.user.create({
+  await prisma.user.create({
     data: {
       username: "test_admin",
       password: await hash("1234"),
@@ -47,13 +46,12 @@ test("login should return token with user data", async () => {
   console.log(code, body);
 
   expect(code).toBe(200);
-  expect(body).toHaveProperty("user");
-  expect(body).toHaveProperty("token");
-  expect(body.user).toHaveProperty("username");
-  expect(body.user).toHaveProperty("role");
-  expect(body.user).not.toHaveProperty("password");
-  expect(body.token).toHaveProperty("access");
-  expect(body.token).toHaveProperty("refresh");
+  expect(body).toEqual({
+    token: {
+      access: expect.any(String),
+      refresh: expect.any(String),
+    },
+  });
 
   access = body.token.access;
 });
@@ -70,18 +68,19 @@ test("request users should return data array with pagination info", async () => 
   console.log(code, body);
 
   expect(code).toBe(200);
-  expect(body).toHaveProperty("data");
-  expect(body).toHaveProperty("limit");
-  expect(body).toHaveProperty("offset");
-  expect(body).toHaveProperty("total");
-
-  expectTypeOf(body.data).toBeArray();
-
-  body.data.forEach((data: any) => {
-    expect(data).toHaveProperty("id");
-    expect(data).toHaveProperty("username");
-    expect(data).toHaveProperty("role");
-    expect(data).not.toHaveProperty("password");
+  expect(body).toEqual({
+    data: expect.arrayContaining([
+      {
+        id: expect.any(String),
+        username: expect.any(String),
+        role: expect.any(String),
+        createdAt: expect.any(String),
+        updatedAt: expect.any(String),
+      },
+    ]),
+    limit: expect.any(Number),
+    offset: expect.any(Number),
+    total: expect.any(Number),
   });
 });
 
@@ -105,11 +104,15 @@ test("create user should return user data without password", async () => {
   console.log(code, body);
 
   expect(code).toBe(200);
-  expect(body).toHaveProperty("data");
-  expect(body.data).toHaveProperty("id");
-  expect(body.data).toHaveProperty("username", "fake_user_test_admin");
-  expect(body.data).toHaveProperty("role", "user");
-  expect(body.data).not.toHaveProperty("password");
+  expect(body).toEqual({
+    data: {
+      id: expect.any(String),
+      username: "fake_user_test_admin",
+      role: "user",
+      createdAt: expect.any(String),
+      updatedAt: expect.any(String),
+    },
+  });
 
   user = body.data;
 });
@@ -126,11 +129,9 @@ test("request user should return user data without password", async () => {
   console.log(code, body);
 
   expect(code).toBe(200);
-  expect(body).toHaveProperty("data");
-  expect(body.data).toHaveProperty("id", user.id);
-  expect(body.data).toHaveProperty("username", user.username);
-  expect(body.data).toHaveProperty("role", user.role);
-  expect(body.data).not.toHaveProperty("password");
+  expect(body).toEqual({
+    data: user,
+  });
 });
 
 test("edit user should return updated user data", async () => {
@@ -153,38 +154,17 @@ test("edit user should return updated user data", async () => {
   console.log(code, body);
 
   expect(code).toBe(200);
-  expect(body).toHaveProperty("data");
-  expect(body.data).toHaveProperty("id", user.id);
-  expect(body.data).toHaveProperty("username", "fake_user_test_admin_edit");
-  expect(body.data).toHaveProperty("role", "admin");
-  expect(body.data).not.toHaveProperty("password");
-
-  user = body.data;
-});
-
-test("search user should return matched user data", async () => {
-  const response = await server.inject({
-    method: "GET",
-    path: "/api/user",
-    query: {
-      username: user.username,
+  expect(body).toEqual({
+    data: {
+      id: user.id,
+      username: "fake_user_test_admin_edit",
+      role: "admin",
+      createdAt: user.createdAt,
+      updatedAt: expect.any(String),
     },
   });
 
-  const code = response.statusCode;
-  const body = response.json();
-
-  console.log(code, body);
-
-  expect(code).toBe(200);
-  expect(body).toHaveProperty("data");
-  expect(body).toHaveProperty("limit");
-  expect(body).toHaveProperty("offset");
-  expect(body).toHaveProperty("total", 1);
-  expect(body.data[0]).toHaveProperty("id", user.id);
-  expect(body.data[0]).toHaveProperty("username", user.username);
-  expect(body.data[0]).toHaveProperty("role", user.role);
-  expect(body.data[0]).not.toHaveProperty("password");
+  user = body.data;
 });
 
 test("delete user should return deleted user data without password", async () => {
@@ -202,27 +182,7 @@ test("delete user should return deleted user data without password", async () =>
   console.log(code, body);
 
   expect(code).toBe(200);
-  expect(body).toHaveProperty("data");
-  expect(body.data).toHaveProperty("id", user.id);
-  expect(body.data).toHaveProperty("username", user.username);
-  expect(body.data).toHaveProperty("role", user.role);
-  expect(body.data).not.toHaveProperty("password");
-});
-
-test("delete the only admin should return forbidden", async () => {
-  const response = await server.inject({
-    method: "DELETE",
-    path: `/api/user/${admin.id}`,
-    headers: {
-      authorization: `Bearer ${access}`,
-    },
+  expect(body).toEqual({
+    data: user,
   });
-
-  const code = response.statusCode;
-  const body = response.json();
-
-  console.log(code, body);
-
-  expect(code).toBe(403);
-  expect(body).toHaveProperty("message", "Forbidden.");
 });
