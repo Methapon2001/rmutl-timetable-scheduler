@@ -1,3 +1,4 @@
+require("dotenv").config();
 import Ajv from "ajv";
 import fastify from "fastify";
 import fastifyCors from "@fastify/cors";

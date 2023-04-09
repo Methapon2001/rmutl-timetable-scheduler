@@ -8,7 +8,7 @@ import {
   VerifierOptions,
 } from "fast-jwt";
 
-const key = async () => "timetable-scheduler";
+const key = async () => process.env.SECRET;
 
 export async function sign(
   payload: object,
