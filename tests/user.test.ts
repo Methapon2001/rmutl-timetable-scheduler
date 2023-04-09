@@ -54,7 +54,7 @@ test("create user without credential should return unauthorized", async () => {
 test("login should return token with user data", async () => {
   const response = await server.inject({
     method: "POST",
-    path: "/auth/login",
+    path: "/api/auth/login",
     payload: {
       username: "test_user",
       password: "1234",

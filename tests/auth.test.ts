@@ -33,7 +33,7 @@ afterAll(async () => {
 test("auth check should return false", async () => {
   const response = await server.inject({
     method: "GET",
-    path: "/auth/check",
+    path: "/api/auth/check",
   });
 
   const code = response.statusCode;
@@ -48,7 +48,7 @@ test("auth check should return false", async () => {
 test("access protected route should return unauthorized", async () => {
   const response = await server.inject({
     method: "POST",
-    path: "/auth/logout",
+    path: "/api/auth/logout",
     payload: {
       token: refresh,
     },
@@ -66,7 +66,7 @@ test("access protected route should return unauthorized", async () => {
 test("login should return token", async () => {
   const response = await server.inject({
     method: "POST",
-    path: "/auth/login",
+    path: "/api/auth/login",
     payload: {
       username: "test_auth",
       password: "1234",
@@ -93,7 +93,7 @@ test("login should return token", async () => {
 test("auth check should return true with user data", async () => {
   const response = await server.inject({
     method: "GET",
-    path: "/auth/check",
+    path: "/api/auth/check",
     headers: {
       authorization: `Bearer ${access}`,
     },
@@ -118,7 +118,7 @@ test("auth check should return true with user data", async () => {
 test("refresh token should return token and user data", async () => {
   const response = await server.inject({
     method: "POST",
-    path: "/auth/refresh",
+    path: "/api/auth/refresh",
     headers: {
       authorization: `Bearer ${access}`,
     },
@@ -164,7 +164,7 @@ test("access admin route should return forbidden", async () => {
 test("logout should return ok", async () => {
   const response = await server.inject({
     method: "POST",
-    path: "/auth/logout",
+    path: "/api/auth/logout",
     headers: {
       authorization: `Bearer ${access}`,
     },
@@ -184,7 +184,7 @@ test("logout should return ok", async () => {
 test("reuse refresh token should return forbidden", async () => {
   const response = await server.inject({
     method: "POST",
-    path: "/auth/refresh",
+    path: "/api/auth/refresh",
     headers: {
       authorization: `Bearer ${access}`,
     },

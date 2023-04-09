@@ -4,7 +4,7 @@ import { check, refresh, login, logout } from "../services/auth.service";
 import authSchema from "./validation/auth.schema";
 
 export default async (instance: FastifyInstance) => {
-  instance.post("/auth/login", {
+  instance.post("/api/auth/login", {
     handler: login,
     schema: {
       body: {
@@ -14,7 +14,7 @@ export default async (instance: FastifyInstance) => {
     },
   });
 
-  instance.post("/auth/refresh", {
+  instance.post("/api/auth/refresh", {
     handler: refresh,
     schema: {
       body: {
@@ -24,11 +24,11 @@ export default async (instance: FastifyInstance) => {
     },
   });
 
-  instance.get("/auth/check", {
+  instance.get("/api/auth/check", {
     handler: check,
   });
 
-  instance.post("/auth/logout", {
+  instance.post("/api/auth/logout", {
     onRequest: auth(),
     handler: logout,
     schema: {
