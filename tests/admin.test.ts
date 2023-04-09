@@ -1,4 +1,4 @@
-import { PrismaClient, User } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { expect, test, beforeAll, afterAll } from "vitest";
 import { hash } from "../utils/scrypt";
 import server from "../app";
