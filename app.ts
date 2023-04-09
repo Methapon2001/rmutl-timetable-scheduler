@@ -28,13 +28,13 @@ const schemaCompilers: Record<string, Ajv> = {
   }),
 };
 
-server.setErrorHandler((err, request, reply) => {
-  reply.code(err.statusCode ?? 500).send({
-    message: err.message,
+server.setErrorHandler((error, _, reply) => {
+  reply.code(error.statusCode ?? 500).send({
+    message: error.message,
   });
 });
 
-server.setNotFoundHandler((request, reply) => {
+server.setNotFoundHandler((_, reply) => {
   reply.code(404).send({
     message: "Not found.",
   });
