@@ -1,6 +1,5 @@
 import { User, Role, PrismaClient, Prisma } from "@prisma/client";
 import { FastifyReply, FastifyRequest } from "fastify";
-import { exclude } from "../utils/object";
 import { hash } from "../utils/scrypt";
 
 const prisma = new PrismaClient({
@@ -13,15 +12,6 @@ const userSelect: Prisma.UserSelect = {
   role: true,
   createdAt: true,
   updatedAt: true,
-};
-
-type Query = {
-  limit: number;
-  offset: number;
-} & Pick<User, "username" | "role">;
-
-type Param = {
-  id: string;
 };
 
 export async function createUser(
@@ -41,16 +31,19 @@ export async function createUser(
 }
 
 export async function requestUser(
-  request: FastifyRequest<{ Params: Param; Querystring: Query }>,
+  request: FastifyRequest<{
+    Params: Pick<User, "id">;
+    Querystring: {
+      limit: number;
+      offset: number;
+    } & Pick<User, "username" | "role">;
+  }>,
   reply: FastifyReply,
 ) {
   const { id } = request.params;
-  const { username, role, limit, offset } = request.query;
+  const { limit, offset, ...where } = request.query;
 
-  const userWhere: Prisma.UserWhereInput = {
-    username: username,
-    role: role,
-  };
+  const userWhere: Prisma.UserWhereInput = where;
 
   const user = id
     ? await prisma.user.findUnique({
@@ -84,7 +77,10 @@ export async function requestUser(
 }
 
 export async function updateUser(
-  request: FastifyRequest<{ Params: Param; Body: User }>,
+  request: FastifyRequest<{
+    Params: Pick<User, "id">;
+    Body: Omit<User, "id">;
+  }>,
   reply: FastifyReply,
 ) {
   const { id } = request.params;
@@ -116,7 +112,9 @@ export async function updateUser(
 }
 
 export async function deleteUser(
-  request: FastifyRequest<{ Params: Param }>,
+  request: FastifyRequest<{
+    Params: Pick<User, "id">;
+  }>,
   reply: FastifyReply,
 ) {
   const { id } = request.params;
