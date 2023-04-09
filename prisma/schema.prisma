@@ -107,7 +107,7 @@ model Building {
 }
 
 model Room {
-  id   String   @id @default(uuid())
+  id   String @id @default(nanoid(16))
   name   String
   type RoomType
 
