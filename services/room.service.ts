@@ -1,17 +1,37 @@
-import { Room, PrismaClient } from "@prisma/client";
+import { Room, Prisma, PrismaClient } from "@prisma/client";
 import { FastifyReply, FastifyRequest } from "fastify";
 
 const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
 
-type Query = {
-  limit: number;
-  offset: number;
-} & Room;
+const userSelect: Prisma.UserSelect = {
+  id: true,
+  username: true,
+  role: true,
+};
 
-type Param = {
-  id: string;
+const buildingSelect: Prisma.BuildingSelect = {
+  id: true,
+  code: true,
+  name: true,
+};
+
+const roomSelect: Prisma.RoomSelect = {
+  id: true,
+  name: true,
+  type: true,
+  building: {
+    select: buildingSelect,
+  },
+  createdAt: true,
+  createdBy: {
+    select: userSelect,
+  },
+  updatedAt: true,
+  updatedBy: {
+    select: userSelect,
+  },
 };
 
 export async function createRoom(
@@ -19,10 +39,12 @@ export async function createRoom(
   reply: FastifyReply,
 ) {
   const room = await prisma.room.create({
-    data: request.body,
-    include: {
-      building: true,
+    data: {
+      ...request.body,
+      createdByUserId: request.user.id,
+      updatedByUserId: request.user.id,
     },
+    select: roomSelect,
   });
 
   return reply.status(200).send({
@@ -31,33 +53,35 @@ export async function createRoom(
 }
 
 export async function requestRoom(
-  request: FastifyRequest<{ Params: Param; Querystring: Query }>,
+  request: FastifyRequest<{
+    Params: Pick<Room, "id">;
+    Querystring: {
+      limit: number;
+      offset: number;
+    } & Pick<
+      Room,
+      "name" | "type" | "buildingId" | "createdByUserId" | "updatedByUserId"
+    >;
+  }>,
   reply: FastifyReply,
 ) {
   const { id } = request.params;
-  const { name, type, limit, offset } = request.query;
+  const { limit, offset, ...where } = request.query;
+
+  const roomWhere: Prisma.RoomWhereInput = where;
 
   const room = id
     ? await prisma.room.findUnique({
+        select: roomSelect,
         where: {
           id: id,
         },
-        include: {
-          building: true,
-        },
       })
     : await prisma.room.findMany({
-        where: {
-          name: {
-            contains: name,
-          },
-          type: type,
-        },
-        include: {
-          building: true,
-        },
+        select: roomSelect,
+        where: roomWhere,
         orderBy: {
-          createdAt: "desc",
+          createdAt: "asc",
         },
         skip: offset,
         take: limit,
@@ -66,12 +90,7 @@ export async function requestRoom(
   const count = id
     ? undefined
     : await prisma.room.count({
-        where: {
-          name: {
-            contains: name,
-          },
-          type: type,
-        },
+        where: roomWhere,
       });
 
   reply.status(200).send({
@@ -83,18 +102,22 @@ export async function requestRoom(
 }
 
 export async function updateRoom(
-  request: FastifyRequest<{ Params: Param; Body: Room }>,
+  request: FastifyRequest<{
+    Params: Pick<Room, "id">;
+    Body: Omit<Room, "id">;
+  }>,
   reply: FastifyReply,
 ) {
   const { id } = request.params;
 
   const room = await prisma.room.update({
+    select: roomSelect,
     where: {
       id: id,
     },
-    data: request.body,
-    include: {
-      building: true,
+    data: {
+      ...request.body,
+      updatedByUserId: request.user.id,
     },
   });
 
@@ -104,17 +127,17 @@ export async function updateRoom(
 }
 
 export async function deleteRoom(
-  request: FastifyRequest<{ Params: Param }>,
+  request: FastifyRequest<{
+    Params: Pick<Room, "id">;
+  }>,
   reply: FastifyReply,
 ) {
   const { id } = request.params;
 
   const room = await prisma.room.delete({
+    select: roomSelect,
     where: {
       id: id,
-    },
-    include: {
-      building: true,
     },
   });
 

@@ -1,17 +1,28 @@
-import { Building, PrismaClient } from "@prisma/client";
+import { Building, Prisma, PrismaClient } from "@prisma/client";
 import { FastifyReply, FastifyRequest } from "fastify";
 
 const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
 
-type Query = {
-  limit: number;
-  offset: number;
-} & Building;
+const userSelect: Prisma.UserSelect = {
+  id: true,
+  username: true,
+  role: true,
+};
 
-type Param = {
-  id: string;
+const buildingSelect: Prisma.BuildingSelect = {
+  id: true,
+  code: true,
+  name: true,
+  createdAt: true,
+  createdBy: {
+    select: userSelect,
+  },
+  updatedAt: true,
+  updatedBy: {
+    select: userSelect,
+  },
 };
 
 export async function createBuilding(
@@ -19,7 +30,12 @@ export async function createBuilding(
   reply: FastifyReply,
 ) {
   const building = await prisma.building.create({
-    data: request.body,
+    data: {
+      ...request.body,
+      createdByUserId: request.user.id,
+      updatedByUserId: request.user.id,
+    },
+    select: buildingSelect,
   });
 
   return reply.status(200).send({
@@ -28,29 +44,32 @@ export async function createBuilding(
 }
 
 export async function requestBuilding(
-  request: FastifyRequest<{ Params: Param; Querystring: Query }>,
+  request: FastifyRequest<{
+    Params: Pick<Building, "id">;
+    Querystring: {
+      limit: number;
+      offset: number;
+    } & Pick<Building, "name" | "createdByUserId" | "updatedByUserId">;
+  }>,
   reply: FastifyReply,
 ) {
   const { id } = request.params;
-  const { name, code, limit, offset } = request.query;
+  const { limit, offset, ...where } = request.query;
+
+  const buildingWhere: Prisma.BuildingWhereInput = where;
 
   const building = id
     ? await prisma.building.findUnique({
+        select: buildingSelect,
         where: {
           id: id,
         },
       })
     : await prisma.building.findMany({
-        where: {
-          code: {
-            contains: code,
-          },
-          name: {
-            contains: name,
-          },
-        },
+        select: buildingSelect,
+        where: buildingWhere,
         orderBy: {
-          createdAt: "desc",
+          createdAt: "asc",
         },
         skip: offset,
         take: limit,
@@ -59,14 +78,7 @@ export async function requestBuilding(
   const count = id
     ? undefined
     : await prisma.building.count({
-        where: {
-          code: {
-            contains: code,
-          },
-          name: {
-            contains: name,
-          },
-        },
+        where: buildingWhere,
       });
 
   reply.status(200).send({
@@ -78,16 +90,23 @@ export async function requestBuilding(
 }
 
 export async function updateBuilding(
-  request: FastifyRequest<{ Params: Param; Body: Building }>,
+  request: FastifyRequest<{
+    Params: Pick<Building, "id">;
+    Body: Omit<Building, "id">;
+  }>,
   reply: FastifyReply,
 ) {
   const { id } = request.params;
 
   const building = await prisma.building.update({
+    select: buildingSelect,
     where: {
       id: id,
     },
-    data: request.body,
+    data: {
+      ...request.body,
+      updatedByUserId: request.user.id,
+    },
   });
 
   reply.status(200).send({
@@ -96,12 +115,15 @@ export async function updateBuilding(
 }
 
 export async function deleteBuilding(
-  request: FastifyRequest<{ Params: Param }>,
+  request: FastifyRequest<{
+    Params: Pick<Building, "id">;
+  }>,
   reply: FastifyReply,
 ) {
   const { id } = request.params;
 
   const building = await prisma.building.delete({
+    select: buildingSelect,
     where: {
       id: id,
     },

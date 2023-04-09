@@ -1,17 +1,27 @@
-import { Instructor, PrismaClient } from "@prisma/client";
+import { Instructor, Prisma, PrismaClient } from "@prisma/client";
 import { FastifyReply, FastifyRequest } from "fastify";
 
 const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
 
-type Query = {
-  limit: number;
-  offset: number;
-} & Instructor;
+const userSelect: Prisma.UserSelect = {
+  id: true,
+  username: true,
+  role: true,
+};
 
-type Param = {
-  id: string;
+const instructorSelect: Prisma.InstructorSelect = {
+  id: true,
+  name: true,
+  createdAt: true,
+  createdBy: {
+    select: userSelect,
+  },
+  updatedAt: true,
+  updatedBy: {
+    select: userSelect,
+  },
 };
 
 export async function createInstructor(
@@ -19,7 +29,12 @@ export async function createInstructor(
   reply: FastifyReply,
 ) {
   const instructor = await prisma.instructor.create({
-    data: request.body,
+    data: {
+      ...request.body,
+      createdByUserId: request.user.id,
+      updatedByUserId: request.user.id,
+    },
+    select: instructorSelect,
   });
 
   return reply.status(200).send({
@@ -28,26 +43,32 @@ export async function createInstructor(
 }
 
 export async function requestInstructor(
-  request: FastifyRequest<{ Params: Param; Querystring: Query }>,
+  request: FastifyRequest<{
+    Params: Pick<Instructor, "id">;
+    Querystring: {
+      limit: number;
+      offset: number;
+    } & Pick<Instructor, "name" | "createdByUserId" | "updatedByUserId">;
+  }>,
   reply: FastifyReply,
 ) {
   const { id } = request.params;
-  const { name, limit, offset } = request.query;
+  const { limit, offset, ...where } = request.query;
+
+  const instructorWhere: Prisma.InstructorWhereInput = where;
 
   const instructor = id
     ? await prisma.instructor.findUnique({
+        select: instructorSelect,
         where: {
           id: id,
         },
       })
     : await prisma.instructor.findMany({
-        where: {
-          name: {
-            contains: name,
-          },
-        },
+        select: instructorSelect,
+        where: instructorWhere,
         orderBy: {
-          createdAt: "desc",
+          createdAt: "asc",
         },
         skip: offset,
         take: limit,
@@ -56,11 +77,7 @@ export async function requestInstructor(
   const count = id
     ? undefined
     : await prisma.instructor.count({
-        where: {
-          name: {
-            contains: name,
-          },
-        },
+        where: instructorWhere,
       });
 
   reply.status(200).send({
@@ -72,16 +89,23 @@ export async function requestInstructor(
 }
 
 export async function updateInstructor(
-  request: FastifyRequest<{ Params: Param; Body: Instructor }>,
+  request: FastifyRequest<{
+    Params: Pick<Instructor, "id">;
+    Body: Omit<Instructor, "id">;
+  }>,
   reply: FastifyReply,
 ) {
   const { id } = request.params;
 
   const instructor = await prisma.instructor.update({
+    select: instructorSelect,
     where: {
       id: id,
     },
-    data: request.body,
+    data: {
+      ...request.body,
+      updatedByUserId: request.user.id,
+    },
   });
 
   reply.status(200).send({
@@ -90,12 +114,15 @@ export async function updateInstructor(
 }
 
 export async function deleteInstructor(
-  request: FastifyRequest<{ Params: Param }>,
+  request: FastifyRequest<{
+    Params: Pick<Instructor, "id">;
+  }>,
   reply: FastifyReply,
 ) {
   const { id } = request.params;
 
   const instructor = await prisma.instructor.delete({
+    select: instructorSelect,
     where: {
       id: id,
     },

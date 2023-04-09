@@ -19,6 +19,18 @@ model User {
   token   Token[]
   group   Group[]
   section Section[]
+
+  createdInstructor Instructor[] @relation("InstructorCreatedBy")
+  updatedInstructor Instructor[] @relation("InstructorUpdatedBy")
+
+  createdSubject Subject[] @relation("SubjectCreatedBy")
+  updatedSubject Subject[] @relation("SubjectUpdatedBy")
+
+  createdBuilding Building[] @relation("BuildingCreatedBy")
+  updatedBuilding Building[] @relation("BuildingUpdatedBy")
+
+  createdRoom Room[] @relation("RoomCreatedBy")
+  updatedRoom Room[] @relation("RoomUpdatedBy")
 }
 
 enum Role {
@@ -27,13 +39,11 @@ enum Role {
 }
 
 model Token {
-  id    String   @id @default(nanoid(16))
-  token String   @db.TinyText
-  iat   DateTime
-  exp   DateTime
+  id    String @id @default(nanoid(16))
+  token String @db.TinyText
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  iat DateTime
+  exp DateTime
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -41,39 +51,8 @@ model Token {
   @@index([userId])
 }
 
-model Building {
-  id   String @id @default(uuid())
-  code String
-  name String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  room Room[]
-}
-
-enum RoomType {
-  lecture
-  lab
-  both
-}
-
-model Room {
-  id   String   @id @default(uuid())
-  name String
-  type RoomType
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  buildingId String
-  building   Building @relation(fields: [buildingId], references: [id])
-
-  section Section[]
-}
-
 model Subject {
-  id      String @id @default(uuid())
+  id      String @id @default(nanoid(16))
   code    String
   name    String
   credit  Int
@@ -81,20 +60,75 @@ model Subject {
   lab     Int
   exam    Int
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdByUserId String
+  createdBy       User     @relation("SubjectCreatedBy", fields: [createdByUserId], references: [id])
+  createdAt       DateTime @default(now())
+
+  updatedByUserId String
+  updatedBy       User     @relation("SubjectUpdatedBy", fields: [updatedByUserId], references: [id])
+  updatedAt       DateTime @updatedAt
+
+  section Section[]
+
+  @@index([createdByUserId])
+}
+
+model Instructor {
+  id   String @id @default(nanoid(16))
+  name String
+
+  createdByUserId String
+  createdBy       User     @relation("InstructorCreatedBy", fields: [createdByUserId], references: [id])
+  createdAt       DateTime @default(now())
+
+  updatedByUserId String
+  updatedBy       User     @relation("InstructorUpdatedBy", fields: [updatedByUserId], references: [id])
+  updatedAt       DateTime @updatedAt
+
+  section Section[]
+
+  @@index([createdByUserId])
+}
+
+model Building {
+  id   String @id @default(nanoid(16))
+  code String
+  name String
+
+  createdByUserId String
+  createdBy       User     @relation("BuildingCreatedBy", fields: [createdByUserId], references: [id])
+  createdAt       DateTime @default(now())
+
+  updatedByUserId String
+  updatedBy       User     @relation("BuildingUpdatedBy", fields: [updatedByUserId], references: [id])
+  updatedAt       DateTime @updatedAt
+
+  room Room[]
+}
+
+model Room {
+  id   String   @id @default(uuid())
+  name   String
+  type RoomType
+
+  buildingId String
+  building   Building @relation(fields: [buildingId], references: [id])
+
+  createdByUserId String
+  createdBy       User     @relation("RoomCreatedBy", fields: [createdByUserId], references: [id])
+  createdAt       DateTime @default(now())
+
+  updatedByUserId String
+  updatedBy       User     @relation("RoomUpdatedBy", fields: [updatedByUserId], references: [id])
+  updatedAt       DateTime @updatedAt
 
   section Section[]
 }
 
-model Instructor {
-  id   String @id @default(uuid())
-  name String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  section Section[]
+enum RoomType {
+  lecture
+  lab
+  both
 }
 
 model Group {

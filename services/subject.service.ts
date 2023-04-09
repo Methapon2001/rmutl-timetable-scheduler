@@ -1,17 +1,32 @@
-import { Subject, PrismaClient } from "@prisma/client";
+import { Subject, Prisma, PrismaClient } from "@prisma/client";
 import { FastifyReply, FastifyRequest } from "fastify";
 
 const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
 
-type Query = {
-  limit: number;
-  offset: number;
-} & Subject;
+const userSelect: Prisma.UserSelect = {
+  id: true,
+  username: true,
+  role: true,
+};
 
-type Param = {
-  id: string;
+const subjectSelect: Prisma.SubjectSelect = {
+  id: true,
+  code: true,
+  name: true,
+  credit: true,
+  lecture: true,
+  lab: true,
+  exam: true,
+  createdAt: true,
+  createdBy: {
+    select: userSelect,
+  },
+  updatedAt: true,
+  updatedBy: {
+    select: userSelect,
+  },
 };
 
 export async function createSubject(
@@ -19,7 +34,12 @@ export async function createSubject(
   reply: FastifyReply,
 ) {
   const subject = await prisma.subject.create({
-    data: request.body,
+    data: {
+      ...request.body,
+      createdByUserId: request.user.id,
+      updatedByUserId: request.user.id,
+    },
+    select: subjectSelect,
   });
 
   return reply.status(200).send({
@@ -28,32 +48,42 @@ export async function createSubject(
 }
 
 export async function requestSubject(
-  request: FastifyRequest<{ Params: Param; Querystring: Query }>,
+  request: FastifyRequest<{
+    Params: Pick<Subject, "id">;
+    Querystring: {
+      limit: number;
+      offset: number;
+    } & Pick<
+      Subject,
+      | "code"
+      | "name"
+      | "credit"
+      | "lecture"
+      | "lab"
+      | "exam"
+      | "createdByUserId"
+      | "updatedByUserId"
+    >;
+  }>,
   reply: FastifyReply,
 ) {
   const { id } = request.params;
-  const { name, code, credit, lecture, exam, limit, offset } = request.query;
+  const { limit, offset, ...where } = request.query;
+
+  const subjectWhere: Prisma.SubjectWhereInput = where;
 
   const subject = id
     ? await prisma.subject.findUnique({
+        select: subjectSelect,
         where: {
           id: id,
         },
       })
     : await prisma.subject.findMany({
-        where: {
-          code: {
-            contains: code,
-          },
-          name: {
-            contains: name,
-          },
-          credit: credit,
-          lecture: lecture,
-          exam: exam,
-        },
+        select: subjectSelect,
+        where: subjectWhere,
         orderBy: {
-          createdAt: "desc",
+          createdAt: "asc",
         },
         skip: offset,
         take: limit,
@@ -62,17 +92,7 @@ export async function requestSubject(
   const count = id
     ? undefined
     : await prisma.subject.count({
-        where: {
-          code: {
-            contains: code,
-          },
-          name: {
-            contains: name,
-          },
-          credit: credit,
-          lecture: lecture,
-          exam: exam,
-        },
+        where: subjectWhere,
       });
 
   reply.status(200).send({
@@ -84,16 +104,23 @@ export async function requestSubject(
 }
 
 export async function updateSubject(
-  request: FastifyRequest<{ Params: Param; Body: Subject }>,
+  request: FastifyRequest<{
+    Params: Pick<Subject, "id">;
+    Body: Omit<Subject, "id">;
+  }>,
   reply: FastifyReply,
 ) {
   const { id } = request.params;
 
   const subject = await prisma.subject.update({
+    select: subjectSelect,
     where: {
       id: id,
     },
-    data: request.body,
+    data: {
+      ...request.body,
+      updatedByUserId: request.user.id,
+    },
   });
 
   reply.status(200).send({
@@ -102,12 +129,15 @@ export async function updateSubject(
 }
 
 export async function deleteSubject(
-  request: FastifyRequest<{ Params: Param }>,
+  request: FastifyRequest<{
+    Params: Pick<Subject, "id">;
+  }>,
   reply: FastifyReply,
 ) {
   const { id } = request.params;
 
   const subject = await prisma.subject.delete({
+    select: subjectSelect,
     where: {
       id: id,
     },
