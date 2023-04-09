@@ -73,9 +73,6 @@ export async function requestUser(
     ? undefined
     : await prisma.user.count({
         where: userWhere,
-        orderBy: {
-          createdAt: "asc",
-        },
       });
 
   return reply.status(200).send({
