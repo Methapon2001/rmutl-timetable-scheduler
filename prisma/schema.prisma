@@ -69,8 +69,6 @@ model Subject {
   updatedAt       DateTime @updatedAt
 
   section Section[]
-
-  @@index([createdByUserId])
 }
 
 model Instructor {
@@ -86,8 +84,6 @@ model Instructor {
   updatedAt       DateTime @updatedAt
 
   section Section[]
-
-  @@index([createdByUserId])
 }
 
 model Building {
