@@ -31,6 +31,12 @@ model User {
 
   createdRoom Room[] @relation("RoomCreatedBy")
   updatedRoom Room[] @relation("RoomUpdatedBy")
+
+  createdCourse Course[] @relation("CourseCreatedBy")
+  updatedCourse Course[] @relation("CourseUpdatedBy")
+
+  // createdPlan Plan[] @relation("PlanCreatedBy")
+  // updatedPlan Plan[] @relation("PlanUpdatedBy")
 }
 
 enum Role {
@@ -68,7 +74,8 @@ model Subject {
   updatedBy       User     @relation("SubjectUpdatedBy", fields: [updatedByUserId], references: [id])
   updatedAt       DateTime @updatedAt
 
-  section Section[]
+  section      Section[]
+  courseDetail CourseDetail[]
 }
 
 model Instructor {
@@ -103,8 +110,8 @@ model Building {
 }
 
 model Room {
-  id   String @id @default(nanoid(16))
-  name   String
+  id   String   @id @default(nanoid(16))
+  name String
   type RoomType
 
   buildingId String
@@ -125,6 +132,37 @@ enum RoomType {
   lecture
   lab
   both
+}
+
+model Course {
+  id   String @id @default(nanoid(16))
+  name String
+
+  createdByUserId String
+  createdBy       User     @relation("CourseCreatedBy", fields: [createdByUserId], references: [id])
+  createdAt       DateTime @default(now())
+
+  updatedByUserId String
+  updatedBy       User     @relation("CourseUpdatedBy", fields: [updatedByUserId], references: [id])
+  updatedAt       DateTime @updatedAt
+
+  detail CourseDetail[]
+}
+
+model CourseDetail {
+  id   String      @id @default(nanoid(16))
+  type SubjectType
+
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id])
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+enum SubjectType {
+  compulsory
+  elective
 }
 
 model Group {
