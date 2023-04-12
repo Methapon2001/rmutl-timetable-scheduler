@@ -1,19 +1,14 @@
 <script lang="ts">
   import type { PageData } from './$types';
-  import z, { ZodType } from 'zod';
   import { page } from '$app/stores';
   import { invalidate } from '$app/navigation';
   import { slide } from 'svelte/transition';
   import { blurOnEscape } from '$lib/utils/directives';
-  import { createInstructor, deleteInstructor, editInstructor } from '$lib/api/instructor';
+  import { deleteInstructor } from '$lib/api/instructor';
   import debounce from '$lib/utils/debounce';
   import Modal from '$lib/components/Modal.svelte';
   import Pagination from '$lib/components/Pagination.svelte';
-
-  type Form<T extends ZodType> = {
-    data: z.infer<T>;
-    error: z.inferFormattedError<T> | null;
-  };
+  import InstructorForm from './InstructorForm.svelte';
 
   const handleSearch = debounce(async (text: string) => {
     const url = new URL(window.location.toString());
@@ -22,88 +17,21 @@
     await invalidate('data:instructor');
   }, 300);
 
-  const schema = z.object({
-    id: z.string().nonempty().uuid(),
-    name: z.string().min(3),
-  });
-
-  const newSchema = schema.omit({
-    id: true,
-  });
-
   export let data: PageData;
 
-  let newInstructorState = false;
-  let editInstructorState = false;
-
-  let newForm: Form<typeof newSchema> = {
-    data: {
-      name: '',
-    },
-    error: null,
+  let newState = false;
+  let editState = false;
+  let editData: {
+    id: string;
+    name: string;
   };
 
-  let editForm: Form<typeof schema> = {
-    data: {
-      id: '',
-      name: '',
-    },
-    error: null,
-  };
-
-  async function handleCreate() {
-    newForm.error = null;
-
-    const result = newSchema.safeParse(newForm.data);
-
-    if (!result.success) {
-      newForm.error = result.error.format();
-      return;
-    }
-
-    const ret = await createInstructor(result.data).catch((r: Response) => console.error(r));
-
-    if (ret) {
-      newForm.data = {
-        name: '',
-      };
-
-      await invalidate('data:instructor');
-    }
+  function showEdit(instructor: { id: string; name: string }) {
+    editState = true;
+    editData = instructor;
   }
 
-  async function handleEdit() {
-    editForm.error = null;
-
-    const result = schema.safeParse(editForm.data);
-
-    if (!result.success) {
-      editForm.error = result.error.format();
-      return;
-    }
-
-    const ret = await editInstructor(result.data).catch((r: Response) => console.error(r));
-
-    if (ret) {
-      editInstructorState = false;
-
-      editForm.data = {
-        id: '',
-        name: '',
-      };
-
-      await invalidate('data:instructor');
-    }
-  }
-
-  function showEdit(instructor: z.infer<typeof schema>) {
-    editInstructorState = true;
-
-    editForm.data = instructor;
-    editForm.error = null;
-  }
-
-  async function handleDelete(instructor: Pick<z.infer<typeof schema>, 'id'>) {
+  async function handleDelete(instructor: { id: string }) {
     if (confirm('Are you sure?')) {
       await deleteInstructor(instructor).catch((e) => console.error(e));
       await invalidate('data:instructor');
@@ -142,99 +70,25 @@
     <button
       type="button"
       class="w-full cursor-pointer whitespace-nowrap rounded border border-slate-900 bg-slate-900 px-4 py-2 font-semibold text-slate-100 outline-none transition duration-150 hover:bg-slate-800 focus:ring focus:ring-slate-400/70 disabled:cursor-default disabled:border-slate-600 disabled:bg-slate-600 md:w-fit"
-      on:click={() => (newInstructorState = !newInstructorState)}
+      on:click={() => (newState = !newState)}
     >
       New Instructor
     </button>
   </div>
 
-  {#if newInstructorState}
+  {#if newState}
     <div id="instructor-new" class="border-y bg-slate-100 p-4" transition:slide>
       <h1 class="mb-4 block text-center text-2xl font-bold">New Instructor</h1>
-      <form
-        on:submit|preventDefault={() => handleCreate()}
-        class="mx-auto grid max-w-screen-sm grid-cols-4 gap-2 rounded-md border bg-white p-4"
-      >
-        <!-- Input name -->
-        <div class="col-span-1 flex items-center text-left font-semibold">
-          <label class="w-full" for="instructor-name">
-            Name <span class="text-red-600">*</span>
-          </label>
-        </div>
-        <div class="col-span-3">
-          <input
-            id="instructor-name"
-            name="instructor-name"
-            autocomplete="off"
-            type="text"
-            class="w-full rounded-t-md border-b-2 px-4 py-2 outline-none transition duration-150 focus:bg-slate-100
-            {newForm.error?.name?._errors ? 'border-b-red-600' : 'focus:border-b-slate-900'}"
-            bind:value={newForm.data.name}
-            use:blurOnEscape
-          />
-        </div>
-        <!-- End input name -->
-        <!-- Error input name -->
-        <div class="col-span-3 col-start-2 flex flex-col">
-          {#if newForm.error?.name?._errors}
-            <small transition:slide class="font-semibold text-red-600">
-              {newForm.error.name._errors}
-            </small>
-          {/if}
-        </div>
-        <!-- End error input name -->
-        <div class="col-span-4">
-          <button
-            type="submit"
-            class="w-full cursor-pointer whitespace-nowrap rounded border border-slate-900 bg-slate-900 px-4 py-2 font-semibold text-slate-100 outline-none transition duration-150 hover:bg-slate-800 focus:ring focus:ring-slate-400/70 disabled:cursor-default disabled:border-slate-600 disabled:bg-slate-600"
-          >
-            Save
-          </button>
-        </div>
-      </form>
+      <div class="mx-auto max-w-screen-md rounded-md border bg-white">
+        <InstructorForm />
+      </div>
     </div>
   {/if}
 
-  <Modal bind:open={editInstructorState} class="w-full max-w-screen-sm">
+  <Modal bind:open={editState} class="w-full max-w-screen-sm">
     <div id="instructor-edit">
       <h1 class="mb-4 block text-center text-2xl font-bold">Edit Instructor</h1>
-      <form
-        on:submit|preventDefault={() => handleEdit()}
-        class="mx-auto grid grid-cols-4 gap-2 p-4"
-      >
-        <div class="col-span-1 flex items-center text-left font-semibold">
-          <label class="w-full" for="instructor-name">Name</label>
-        </div>
-        <div class="col-span-3">
-          <input
-            id="instructor-name"
-            name="instructor-name"
-            autocomplete="off"
-            type="text"
-            class="w-full rounded-t-md border-b-2 px-4 py-2 outline-none transition duration-150 focus:bg-slate-100 {editForm
-              .error?.name?._errors
-              ? 'border-b-red-600'
-              : 'focus:border-b-slate-900'}"
-            bind:value={editForm.data.name}
-            use:blurOnEscape
-          />
-        </div>
-        <div class="col-span-3 col-start-2 flex flex-col">
-          {#if editForm.error?.name?._errors}
-            <small transition:slide class="font-semibold text-red-600">
-              {editForm.error.name._errors}
-            </small>
-          {/if}
-        </div>
-        <div class="col-span-4">
-          <button
-            type="submit"
-            class="w-full cursor-pointer whitespace-nowrap rounded border border-slate-900 bg-slate-900 px-4 py-2 font-semibold text-slate-100 outline-none transition duration-150 hover:bg-slate-800 focus:ring focus:ring-slate-400/70 disabled:cursor-default disabled:border-slate-600 disabled:bg-slate-600"
-          >
-            Save
-          </button>
-        </div>
-      </form>
+      <InstructorForm edit={true} {editData} callback={() => (editState = false)} />
     </div>
   </Modal>
 
@@ -258,24 +112,24 @@
         {/if}
         {#each data.instructor.data as { id, name, createdAt, updatedAt } (id)}
           <tr class="border-b text-sm hover:bg-slate-100">
-            <td class="px-4 py-2" width="40%">{name}</td>
-            <td class="px-4 py-2 text-center">
-              <span class="block font-semibold text-slate-600">
+            <td class="px-4 py-2">{name}</td>
+            <td class="px-6 py-2 text-center" style="width: 1%!important;">
+              <span class="block whitespace-nowrap font-semibold text-slate-600">
                 {new Date(createdAt).toLocaleDateString()}
               </span>
-              <span class="block text-slate-400">
+              <span class="block whitespace-nowrap text-slate-400">
                 {new Date(createdAt).toLocaleTimeString()}
               </span>
             </td>
-            <td class="px-4 py-2 text-center">
-              <span class="block font-semibold text-slate-600">
+            <td class="px-6 py-2 text-center" style="width: 1%!important;">
+              <span class="block whitespace-nowrap font-semibold text-slate-600">
                 {new Date(updatedAt).toLocaleDateString()}
               </span>
-              <span class="block text-slate-400">
+              <span class="block whitespace-nowrap text-slate-400">
                 {new Date(updatedAt).toLocaleTimeString()}
               </span>
             </td>
-            <td class="px-4 py-2 text-center">
+            <td class="px-6 py-2 text-center" style="width: 1%!important;">
               <div class="space-x-4 whitespace-nowrap">
                 <button
                   class="font-semibold text-blue-600 outline-none hover:underline"

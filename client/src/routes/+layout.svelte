@@ -15,6 +15,14 @@
       path: '/instructor',
       text: 'Instructor',
     },
+    {
+      path: '/subject',
+      text: 'Subject',
+    },
+    {
+      path: '/building',
+      text: 'Building',
+    },
   ];
 
   let sidebar = true;
@@ -30,11 +38,9 @@
 
 {#if innerWidth}
   <div class="main">
-    <div
-      class="header flex items-center border-b border-b-slate-700 bg-slate-900 px-3 py-2 text-slate-50 shadow-lg"
-    >
+    <div class="header flex items-center border-b px-3 py-2">
       <button
-        class="rounded-full p-2 outline-none transition hover:bg-slate-800"
+        class="rounded-full p-2 outline-none transition hover:bg-slate-100"
         on:click={() => (sidebar = !sidebar)}
       >
         <MenuIcon />
@@ -42,11 +48,7 @@
       <span class="ml-2 font-bold uppercase">Menu</span>
       <span class="ml-auto font-semibold capitalize">{data.session?.user.username ?? 'Guest'}</span>
     </div>
-    <div
-      class="sidebar border-r border-r-slate-700 bg-slate-900"
-      class:active={sidebar}
-      data-sveltekit-reload
-    >
+    <div class="sidebar border-r-slate border-r" class:active={sidebar}>
       <Sidebar {menu} />
     </div>
     <div class="content">
