@@ -8,7 +8,7 @@ import {
   VerifierOptions,
 } from "fast-jwt";
 
-const key = async () => process.env.SECRET;
+const key = async () => process.env.APP_SECRET;
 
 export async function sign(
   payload: object,
