@@ -34,9 +34,6 @@ model User {
 
   createdCourse Course[] @relation("CourseCreatedBy")
   updatedCourse Course[] @relation("CourseUpdatedBy")
-
-  // createdPlan Plan[] @relation("PlanCreatedBy")
-  // updatedPlan Plan[] @relation("PlanUpdatedBy")
 }
 
 enum Role {
