@@ -19,6 +19,10 @@
       path: '/subject',
       text: 'Subject',
     },
+    {
+      path: '/instructor',
+      text: 'Instructor',
+    },
   ];
 
   $: if (innerWidth && innerWidth < 768) {
