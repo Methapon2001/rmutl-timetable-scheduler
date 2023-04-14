@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-white: #fff;
+    --color-black: #000;
+
+    --color-light: #f1f5f9;
+    --color-light-hover: #e2e8f0;
+    --color-light-disabled: #cbd5e1;
+    --color-light-inverse: #0f172a;
+
+    --color-dark: #0f172a;
+    --color-dark-hover: #1e293b;
+    --color-dark-disabled: #1e293b;
+    --color-dark-inverse: #f1f5f9;
+
+    --color-primary: #0f172a;
+    --color-primary-hover: #1e293b;
+    --color-primary-disabled: #475569;
+    --color-primary-inverse: #fff;
+
+    --color-secondary: #94a3b8;
+    --color-secondary-hover: #64748b;
+    --color-secondary-disabled: #cbd5e1;
+    --color-secondary-inverse: #fff;
+
+    --rounded: 0.5rem;
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+    --transition: all 150ms ease-in-out;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition: var(--transition);
+  }
+
+  ::-webkit-scrollbar {
+    width: 0.5rem;
+    height: 0.5rem;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    border: 0.15rem solid rgba(0, 0, 0, 0);
+    background-color: hsla(0, 0%, 50%, 0.75);
+    background-clip: padding-box;
+    border-radius: 0.5rem;
+  }
+}
+
+@layer components {
+  .button,
+  .input,
+  .search {
+    border-radius: var(--rounded);
+    border-width: 1px;
+    outline: none;
+    padding: 0.5rem 1rem;
+  }
+
+  .button {
+    color: var(--color-primary-inverse);
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    white-space: nowrap;
+    font-weight: 600;
+  }
+
+  .button:hover {
+    background-color: var(--color-primary-hover);
+  }
+
+  .button:disabled {
+    color: var(--color-primary-inverse);
+    background-color: var(--color-primary-disabled);
+    border-color: var(--color-primary-disabled);
+  }
+
+  .search,
+  .input {
+    color: var(--color-light-inverse);
+    background-color: var(--color-light);
+    border-color: var(--color-light);
+    border-radius: var(--rounded);
+  }
+
+  .input {
+    width: 100%;
+  }
+
+  .search:focus,
+  .input:focus {
+    background-color: var(--color-light-hover);
+  }
+
+  .search:disabled,
+  .input:disabled {
+    color: var(--color-secondary);
+    background-color: var(--color-light-disabled);
+    border-color: var(--color-light-disabled);
+  }
+}
