@@ -44,4 +44,14 @@ declare namespace API {
     updatedAt: string;
     updatedBy: Omit<API.User, 'createdAt' | 'updatedAt'>;
   };
+
+  type Building = {
+    id: string;
+    code: string;
+    name: string;
+    createdAt: string;
+    createdBy: Omit<API.User, 'createdAt' | 'updatedAt'>;
+    updatedAt: string;
+    updatedBy: Omit<API.User, 'createdAt' | 'updatedAt'>;
+  };
 }
