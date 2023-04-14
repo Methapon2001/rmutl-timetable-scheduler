@@ -12,11 +12,7 @@
 
   const handleSearch = debounce(async (text: string) => {
     const url = new URL(window.location.toString());
-    if (text.length == 0) {
-      url.searchParams.delete('search');
-    } else {
-      url.searchParams.set('search', text);
-    }
+    url.searchParams.set('search', text);
     history.replaceState({}, '', url);
     await invalidate('data:subject');
   }, 300);
@@ -159,15 +155,13 @@
   </table>
 </div>
 
-{#if (!$page.url.searchParams.has('search') || $page.url.searchParams.get('search')?.length == 0) && data.subject.total / data.subject.limit != 0}
-  <div id="pagination">
-    <Pagination
-      current={+($page.url.searchParams.get('page') ?? 1)}
-      range={3}
-      total={Math.ceil(data.subject.total / data.subject.limit)}
-    />
-  </div>
-{/if}
+<div id="pagination">
+  <Pagination
+    current={+($page.url.searchParams.get('page') ?? 1)}
+    range={3}
+    total={Math.ceil(data.subject.total / data.subject.limit)}
+  />
+</div>
 
 <style lang="postcss">
   tr {

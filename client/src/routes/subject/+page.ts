@@ -12,7 +12,14 @@ export const load = (async ({ fetch, parent, depends, url }) => {
   if (!session) throw error(401, { message: 'Unauthorized' });
 
   const page = url.searchParams.get('page');
+  const search = url.searchParams.get('search');
 
+  if (search && search.length > 0) {
+    api.searchParams.set('search', search);
+  } else {
+    api.searchParams.delete('search');
+  }
+  
   api.searchParams.set('limit', String(20));
   api.searchParams.set('offset', String((+(page ?? 1) - 1) * 20));
 
