@@ -46,6 +46,7 @@ export async function requestInstructor(
   request: FastifyRequest<{
     Params: Pick<Instructor, "id">;
     Querystring: {
+      search: string;
       limit: number;
       offset: number;
     } & Pick<Instructor, "name" | "createdByUserId" | "updatedByUserId">;
@@ -53,7 +54,11 @@ export async function requestInstructor(
   reply: FastifyReply,
 ) {
   const { id } = request.params;
-  const { limit, offset, ...where } = request.query;
+  const { limit, offset, search, ...where } = request.query;
+
+  if (search) {
+    return await searchInstructor(request, reply);
+  }
 
   const instructorWhere: Prisma.InstructorWhereInput = where;
 
@@ -130,5 +135,45 @@ export async function deleteInstructor(
 
   reply.status(200).send({
     data: instructor,
+  });
+}
+
+export async function searchInstructor(
+  request: FastifyRequest<{
+    Querystring: { search: string; limit: number; offset: number };
+  }>,
+  reply: FastifyReply,
+) {
+  const { limit, offset, search } = request.query;
+
+  const instructorWhere: Prisma.InstructorWhereInput = {
+    OR: [
+      {
+        name: {
+          contains: search,
+        },
+      },
+    ],
+  };
+
+  const instructor = await prisma.instructor.findMany({
+    select: instructorSelect,
+    where: instructorWhere,
+    orderBy: {
+      createdAt: "asc",
+    },
+    skip: offset,
+    take: limit,
+  });
+
+  const count = await prisma.instructor.count({
+    where: instructorWhere,
+  });
+
+  reply.status(200).send({
+    data: instructor,
+    limit: limit,
+    offset: offset,
+    total: count,
   });
 }
