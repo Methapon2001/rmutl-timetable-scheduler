@@ -51,6 +51,7 @@ export async function requestSubject(
   request: FastifyRequest<{
     Params: Pick<Subject, "id">;
     Querystring: {
+      search: string;
       limit: number;
       offset: number;
     } & Pick<
@@ -68,7 +69,11 @@ export async function requestSubject(
   reply: FastifyReply,
 ) {
   const { id } = request.params;
-  const { limit, offset, ...where } = request.query;
+  const { limit, offset, search, ...where } = request.query;
+
+  if (search) {
+    return await searchSubject(request, reply);
+  }
 
   const subjectWhere: Prisma.SubjectWhereInput = where;
 
@@ -145,5 +150,50 @@ export async function deleteSubject(
 
   reply.status(200).send({
     data: subject,
+  });
+}
+
+export async function searchSubject(
+  request: FastifyRequest<{
+    Querystring: { search: string; limit: number; offset: number };
+  }>,
+  reply: FastifyReply,
+) {
+  const { limit, offset, search } = request.query;
+
+  const subjectWhere: Prisma.SubjectWhereInput = {
+    OR: [
+      {
+        code: {
+          contains: search,
+        },
+      },
+      {
+        name: {
+          contains: search,
+        },
+      },
+    ],
+  };
+
+  const subject = await prisma.subject.findMany({
+    select: subjectSelect,
+    where: subjectWhere,
+    orderBy: {
+      createdAt: "asc",
+    },
+    skip: offset,
+    take: limit,
+  });
+
+  const count = await prisma.subject.count({
+    where: subjectWhere,
+  });
+
+  reply.status(200).send({
+    data: subject,
+    limit: limit,
+    offset: offset,
+    total: count,
   });
 }
