@@ -91,13 +91,11 @@
     width: 100%;
   }
 
-  .search:focus,
-  .input:focus {
+  :where(.search, .input):focus {
     background-color: var(--color-light-hover);
   }
 
-  .search:disabled,
-  .input:disabled {
+  :where(.search, .input):disabled {
     color: var(--color-secondary);
     background-color: var(--color-light-disabled);
     border-color: var(--color-light-disabled);
