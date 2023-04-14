@@ -47,6 +47,7 @@ export async function requestBuilding(
   request: FastifyRequest<{
     Params: Pick<Building, "id">;
     Querystring: {
+      search: string;
       limit: number;
       offset: number;
     } & Pick<Building, "name" | "createdByUserId" | "updatedByUserId">;
@@ -54,7 +55,11 @@ export async function requestBuilding(
   reply: FastifyReply,
 ) {
   const { id } = request.params;
-  const { limit, offset, ...where } = request.query;
+  const { limit, offset, search, ...where } = request.query;
+
+  if (search) {
+    return await searchBuilding(request, reply);
+  }
 
   const buildingWhere: Prisma.BuildingWhereInput = where;
 
@@ -131,5 +136,50 @@ export async function deleteBuilding(
 
   reply.status(200).send({
     data: building,
+  });
+}
+
+export async function searchBuilding(
+  request: FastifyRequest<{
+    Querystring: { search: string; limit: number; offset: number };
+  }>,
+  reply: FastifyReply,
+) {
+  const { limit, offset, search } = request.query;
+
+  const buildingWhere: Prisma.BuildingWhereInput = {
+    OR: [
+      {
+        code: {
+          contains: search,
+        },
+      },
+      {
+        name: {
+          contains: search,
+        },
+      },
+    ],
+  };
+
+  const building = await prisma.building.findMany({
+    select: buildingSelect,
+    where: buildingWhere,
+    orderBy: {
+      createdAt: "asc",
+    },
+    skip: offset,
+    take: limit,
+  });
+
+  const count = await prisma.building.count({
+    where: buildingWhere,
+  });
+
+  reply.status(200).send({
+    data: building,
+    limit: limit,
+    offset: offset,
+    total: count,
   });
 }
