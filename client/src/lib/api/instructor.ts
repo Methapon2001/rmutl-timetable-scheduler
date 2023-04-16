@@ -20,7 +20,9 @@ export const createInstructor = async (
   return (await res.json()).data as API.Instructor;
 };
 
-export const deleteInstructor = async (data: Pick<API.Instructor, 'id'>): Promise<API.Instructor> => {
+export const deleteInstructor = async (
+  data: Pick<API.Instructor, 'id'>,
+): Promise<API.Instructor> => {
   const userSession = await refresh();
 
   const res = await fetch(`${PUBLIC_API_HOST}/api/instructor/${data.id}`, {

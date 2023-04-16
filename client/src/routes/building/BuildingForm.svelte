@@ -16,13 +16,16 @@
     id: true,
   });
 
-  export let edit: boolean = false;
+  export let edit = false;
   export let editData: typeof form.data = {
     id: '',
     code: '',
     name: '',
   };
-  export let callback: Function = () => {};
+
+  export let callback: () => void = function () {
+    // do nothing.
+  };
 
   let form: {
     data: z.infer<typeof schema>;

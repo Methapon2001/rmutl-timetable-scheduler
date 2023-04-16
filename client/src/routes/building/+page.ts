@@ -19,7 +19,7 @@ export const load = (async ({ fetch, parent, depends, url }) => {
   } else {
     api.searchParams.delete('search');
   }
-  
+
   api.searchParams.set('limit', String(20));
   api.searchParams.set('offset', String((+(page ?? 1) - 1) * 20));
 

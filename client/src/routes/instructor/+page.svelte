@@ -26,10 +26,7 @@
     name: string;
   };
 
-  function showEdit(instructor: {
-    id: string;
-    name: string;
-  }) {
+  function showEdit(instructor: { id: string; name: string }) {
     editState = true;
     editData = instructor;
   }
@@ -100,7 +97,7 @@
     <tbody>
       {#if data.instructor.total == 0}
         <tr>
-          <td class="text-secondary text-center" colspan="4">No records found.</td>
+          <td class="text-center text-secondary" colspan="4">No records found.</td>
         </tr>
       {/if}
       {#each data.instructor.data as instructor (instructor.id)}
@@ -109,16 +106,19 @@
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(instructor.createdAt).toLocaleDateString()}</p>
             <p class="text-dark">{new Date(instructor.createdAt).toLocaleTimeString()}</p>
-            <p class="text-secondary capitalize">{instructor.createdBy.username}</p>
+            <p class="capitalize text-secondary">{instructor.createdBy.username}</p>
           </td>
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(instructor.updatedAt).toLocaleDateString()}</p>
             <p class="text-dark">{new Date(instructor.updatedAt).toLocaleTimeString()}</p>
-            <p class="text-secondary capitalize">{instructor.updatedBy.username}</p>
+            <p class="capitalize text-secondary">{instructor.updatedBy.username}</p>
           </td>
           <td class="fit-width text-center">
             <div class="space-x-4 whitespace-nowrap">
-              <button class="action-button text-blue-600" on:click={() => showEdit({ ...instructor })}>
+              <button
+                class="action-button text-blue-600"
+                on:click={() => showEdit({ ...instructor })}
+              >
                 Edit
               </button>
               <button
@@ -153,7 +153,7 @@
   }
 
   td {
-    @apply py-2 px-4;
+    @apply px-4 py-2;
   }
 
   .action-button {
