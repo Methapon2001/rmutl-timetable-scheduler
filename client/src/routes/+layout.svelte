@@ -131,7 +131,7 @@
   }
 
   header {
-    background-color: var(--color-white);
+    background-color: var(--color-primary-inverse);
     box-shadow: var(--shadow);
     display: flex;
     align-items: center;
