@@ -28,12 +28,6 @@
       text: 'Building',
     },
   ];
-  $: menuList2 = [
-    {
-      path: data.session ? '/logout' : '/login',
-      text: data.session ? 'Logout' : 'Login',
-    },
-  ];
 
   $: if (innerWidth && innerWidth < 768) {
     menu = false;
@@ -56,11 +50,21 @@
     {/each}
   </ul>
 
-  <ul data-sveltekit-preload-data="off">
-    {#each menuList2 as { path, text }}
-      <li><a class:active={route == path} href={path} role="button">{text}</a></li>
-    {/each}
-  </ul>
+  {#if !data.session}
+    <ul>
+      {#each [{ path: '/login', text: 'Login' }] as { path, text }}
+        <li><a class:active={route == path} href={path} role="button">{text}</a></li>
+      {/each}
+    </ul>
+  {/if}
+
+  {#if data.session}
+    <ul data-sveltekit-preload-data="off">
+      {#each [{ path: '/logout', text: 'Logout' }] as { path, text }}
+        <li><a class:active={route == path} href={path} role="button">{text}</a></li>
+      {/each}
+    </ul>
+  {/if}
 </nav>
 
 <header style:margin-left={menu ? '16rem' : '0'}>
@@ -174,5 +178,10 @@
     text-transform: capitalize;
     user-select: none;
     font-weight: 600;
+  }
+
+  main {
+    overflow-x: hidden;
+    min-height: calc(100vh - 4rem);
   }
 </style>
