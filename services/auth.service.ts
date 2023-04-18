@@ -121,7 +121,7 @@ export async function logout(
     });
   }
 
-  return reply.code(200).send();
+  return reply.code(200).send({});
 }
 
 export async function refresh(
