@@ -28,6 +28,12 @@
       text: 'Building',
     },
   ];
+  $: menuList2 = [
+    {
+      path: data.session ? '/logout' : '/login',
+      text: data.session ? 'Logout' : 'Login',
+    },
+  ];
 
   $: if (innerWidth && innerWidth < 768) {
     menu = false;
@@ -46,6 +52,12 @@
   </ul>
   <ul>
     {#each menuList1 as { path, text }}
+      <li><a class:active={route == path} href={path} role="button">{text}</a></li>
+    {/each}
+  </ul>
+
+  <ul data-sveltekit-preload-data="off">
+    {#each menuList2 as { path, text }}
       <li><a class:active={route == path} href={path} role="button">{text}</a></li>
     {/each}
   </ul>
