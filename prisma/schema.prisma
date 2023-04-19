@@ -17,7 +17,6 @@ model User {
   updatedAt DateTime @updatedAt
 
   token   Token[]
-  group   Group[]
   section Section[]
 
   createdInstructor Instructor[] @relation("InstructorCreatedBy")
@@ -34,6 +33,9 @@ model User {
 
   createdCourse Course[] @relation("CourseCreatedBy")
   updatedCourse Course[] @relation("CourseUpdatedBy")
+
+  createdGroup Group[] @relation("GroupCreatedBy")
+  updatedGroup Group[] @relation("GroupUpdatedBy")
 }
 
 enum Role {
@@ -144,6 +146,7 @@ model Course {
   updatedAt       DateTime @updatedAt
 
   detail CourseDetail[]
+  group  Group[]
 }
 
 model CourseDetail {
@@ -163,14 +166,19 @@ enum SubjectType {
 }
 
 model Group {
-  id   String @id @default(uuid())
+  id   String @id @default(nanoid(16))
   name String
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id])
 
-  createdBy String
-  creator   User   @relation(fields: [createdBy], references: [id])
+  createdByUserId String
+  createdBy       User     @relation("GroupCreatedBy", fields: [createdByUserId], references: [id])
+  createdAt       DateTime @default(now())
+
+  updatedByUserId String
+  updatedBy       User     @relation("GroupUpdatedBy", fields: [updatedByUserId], references: [id])
+  updatedAt       DateTime @updatedAt
 
   section Section[]
 }
