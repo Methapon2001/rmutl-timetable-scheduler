@@ -56,6 +56,7 @@ export async function requestRoom(
   request: FastifyRequest<{
     Params: Pick<Room, "id">;
     Querystring: {
+      search: string;
       limit: number;
       offset: number;
     } & Pick<
@@ -66,7 +67,11 @@ export async function requestRoom(
   reply: FastifyReply,
 ) {
   const { id } = request.params;
-  const { limit, offset, ...where } = request.query;
+  const { limit, offset, search, ...where } = request.query;
+
+  if (search) {
+    return await searchRoom(request, reply);
+  }
 
   const roomWhere: Prisma.RoomWhereInput = where;
 
@@ -143,5 +148,52 @@ export async function deleteRoom(
 
   reply.status(200).send({
     data: room,
+  });
+}
+
+export async function searchRoom(
+  request: FastifyRequest<{
+    Querystring: { search: string; limit: number; offset: number };
+  }>,
+  reply: FastifyReply,
+) {
+  const { limit, offset, search } = request.query;
+
+  const roomWhere: Prisma.RoomWhereInput = {
+    OR: [
+      {
+        name: {
+          contains: search,
+        },
+      },
+      {
+        building: {
+          name: {
+            contains: search,
+          },
+        },
+      },
+    ],
+  };
+
+  const room = await prisma.room.findMany({
+    select: roomSelect,
+    where: roomWhere,
+    orderBy: {
+      createdAt: "asc",
+    },
+    skip: offset,
+    take: limit,
+  });
+
+  const count = await prisma.room.count({
+    where: roomWhere,
+  });
+
+  reply.status(200).send({
+    data: room,
+    limit: limit,
+    offset: offset,
+    total: count,
   });
 }
