@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { tick } from 'svelte';
+  import { createEventDispatcher, tick } from 'svelte';
+
+  const dispatch = createEventDispatcher();
 
   export let id: string | undefined = undefined;
   export let name: string | undefined = undefined;
@@ -75,6 +77,8 @@
   }
 
   async function handleKeydown(event: KeyboardEvent) {
+    let activeOption: (typeof options)[number] | null = null;
+
     switch (event.key) {
       case 'Escape':
       case 'Tab':
@@ -100,8 +104,6 @@
           activeIndex = null;
           return;
         }
-
-        let activeOption: (typeof options)[number] | null = null;
 
         if (activeIndex == null) {
           activeIndex =
@@ -157,6 +159,10 @@
     selectInputRef.focus();
     activeIndex = null;
 
+    dispatch('change', {
+      value,
+    });
+
     if (!multiple) closeDropdown();
   }
 
@@ -168,6 +174,8 @@
 
   function removeAll() {
     selected = [];
+
+    dispatch('change');
 
     if (open) selectInputRef.focus();
   }
