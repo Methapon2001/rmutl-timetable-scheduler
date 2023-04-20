@@ -82,7 +82,7 @@
 </div>
 
 {#if newState}
-  <div id="new" class="bg-light p-4" transition:slide>
+  <div id="new" class="bg-light p-4">
     <h1 class="mb-4 block text-center text-2xl font-bold">New Subject</h1>
     <div class="mx-auto max-w-screen-md rounded bg-white p-4 shadow">
       <SubjectForm />

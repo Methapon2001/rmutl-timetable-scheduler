@@ -27,6 +27,14 @@
       path: '/building',
       text: 'Building',
     },
+    {
+      path: '/room',
+      text: 'Room',
+    },
+    {
+      path: '/course',
+      text: 'Course',
+    },
   ];
 
   $: if (innerWidth && innerWidth < 768) {
@@ -81,7 +89,10 @@
     <MenuIcon />
   </button>
 
-  <span id="user">{data.session?.user.username ?? 'Guest'}</span>
+  <span id="user">
+    {data.session?.user.username ?? 'Guest'}
+    {#if data.session}({data.session.user.role}){/if}
+  </span>
 </header>
 
 <main style:margin-left={menu ? '16rem' : '0'}>
@@ -155,6 +166,7 @@
     top: 0px;
     height: 4rem;
     padding: 0 1rem;
+    z-index: 40;
   }
 
   header #menu-button {

@@ -4,18 +4,25 @@
   import { invalidate } from '$app/navigation';
   import { slide } from 'svelte/transition';
   import { blurOnEscape } from '$lib/utils/directives';
-  import { deleteInstructor } from '$lib/api/instructor';
+  import { deleteRoom } from '$lib/api/room';
   import debounce from '$lib/utils/debounce';
   import Modal from '$lib/components/Modal.svelte';
   import Pagination from '$lib/components/Pagination.svelte';
-  import Instructor from './InstructorForm.svelte';
+  import Room from './RoomForm.svelte';
 
   const handleSearch = debounce(async (text: string) => {
     const url = new URL(window.location.toString());
     url.searchParams.set('search', text);
     history.replaceState({}, '', url);
-    await invalidate('data:instructor');
+    await invalidate('data:room');
   }, 300);
+
+  const buildingOptions = async () => {
+    return (await data.lazy.building).data.map((building) => ({
+      label: building.name,
+      value: building.id,
+    }));
+  };
 
   export let data: PageData;
 
@@ -24,30 +31,32 @@
   let editData: {
     id: string;
     name: string;
+    type: string[];
+    buildingId: string[];
   };
 
-  function showEdit(instructor: { id: string; name: string }) {
+  function showEdit(room: { id: string; name: string; type: string[]; buildingId: string[] }) {
     editState = true;
-    editData = instructor;
+    editData = room;
   }
 
-  async function handleDelete(instructor: { id: string }) {
+  async function handleDelete(room: { id: string }) {
     if (confirm('Are you sure?')) {
-      await deleteInstructor(instructor).catch((e: Response) => console.error(e));
-      await invalidate('data:instructor');
+      await deleteRoom(room).catch((e: Response) => console.error(e));
+      await invalidate('data:room');
     }
   }
 </script>
 
 <svelte:head>
-  <title>Instructor</title>
+  <title>Room</title>
 </svelte:head>
 
 <div class="flex flex-wrap items-center justify-between gap-4 p-4 md:flex-nowrap">
   <div class="inline-flex w-full items-center space-x-2 font-medium md:w-fit">
     <a class="text-primary" href="/">Home</a>
     <span>/</span>
-    <span class="text-secondary">Instructor</span>
+    <span class="text-secondary">Room</span>
   </div>
 
   <div class="w-full md:w-fit md:flex-grow md:px-16">
@@ -64,23 +73,31 @@
   </div>
 
   <button type="button" class="button w-full md:w-fit" on:click={() => (newState = !newState)}>
-    New Instructor
+    New Room
   </button>
 </div>
 
 {#if newState}
   <div id="new" class="bg-light p-4">
-    <h1 class="mb-4 block text-center text-2xl font-bold">New Instructor</h1>
+    <h1 class="mb-4 block text-center text-2xl font-bold">New Room</h1>
     <div class="mx-auto max-w-screen-md rounded bg-white p-4 shadow">
-      <Instructor />
+      {#await buildingOptions()}
+        Loading...
+      {:then options}
+        <Room buildingOptions={options} />
+      {/await}
     </div>
   </div>
 {/if}
 
 <Modal bind:open={editState}>
   <div id="edit" class="p-4">
-    <h1 class="mb-4 block text-center text-2xl font-bold">Edit Instructor</h1>
-    <Instructor edit={true} {editData} callback={() => (editState = false)} />
+    <h1 class="mb-4 block text-center text-2xl font-bold">Edit Room</h1>
+    {#await buildingOptions()}
+      Loading...
+    {:then options}
+      <Room buildingOptions={options} edit={true} {editData} callback={() => (editState = false)} />
+    {/await}
   </div>
 </Modal>
 
@@ -88,39 +105,47 @@
   <table class="w-full">
     <thead>
       <tr>
+        <th>Building</th>
         <th>Name</th>
+        <th>Type</th>
         <th>Created</th>
         <th>Updated</th>
         <th>•••</th>
       </tr>
     </thead>
     <tbody>
-      {#if data.instructor.total == 0}
+      {#if data.room.total == 0}
         <tr>
           <td class="text-secondary text-center" colspan="4">No records found.</td>
         </tr>
       {/if}
-      {#each data.instructor.data as instructor (instructor.id)}
+      {#each data.room.data as room (room.id)}
         <tr class="hover:bg-light">
-          <td>{instructor.name}</td>
+          <td class="text-center">{room.building.name}</td>
+          <td class="text-center">{room.name}</td>
+          <td class="text-center capitalize">{room.type}</td>
           <td class="fit-width whitespace-nowrap text-center text-sm">
-            <p class="font-semibold">{new Date(instructor.createdAt).toLocaleDateString()}</p>
-            <p class="text-dark">{new Date(instructor.createdAt).toLocaleTimeString()}</p>
-            <p class="text-secondary capitalize">{instructor.createdBy.username}</p>
+            <p class="font-semibold">{new Date(room.createdAt).toLocaleDateString()}</p>
+            <p class="text-dark">{new Date(room.createdAt).toLocaleTimeString()}</p>
+            <p class="text-secondary capitalize">{room.createdBy.username}</p>
           </td>
           <td class="fit-width whitespace-nowrap text-center text-sm">
-            <p class="font-semibold">{new Date(instructor.updatedAt).toLocaleDateString()}</p>
-            <p class="text-dark">{new Date(instructor.updatedAt).toLocaleTimeString()}</p>
-            <p class="text-secondary capitalize">{instructor.updatedBy.username}</p>
+            <p class="font-semibold">{new Date(room.updatedAt).toLocaleDateString()}</p>
+            <p class="text-dark">{new Date(room.updatedAt).toLocaleTimeString()}</p>
+            <p class="text-secondary capitalize">{room.updatedBy.username}</p>
           </td>
           <td class="fit-width text-center">
             <div class="space-x-4 whitespace-nowrap">
-              <button class="action-button text-blue-600" on:click={() => showEdit(instructor)}>
+              <button
+                class="action-button text-blue-600"
+                on:click={() =>
+                  showEdit({ ...room, type: [room.type], buildingId: [room.building.id] })}
+              >
                 Edit
               </button>
               <button
                 class="action-button text-red-600"
-                on:click={() => handleDelete({ id: instructor.id })}
+                on:click={() => handleDelete({ id: room.id })}
               >
                 Delete
               </button>
@@ -136,7 +161,7 @@
   <Pagination
     current={+($page.url.searchParams.get('page') ?? 1)}
     range={3}
-    total={Math.ceil(data.instructor.total / data.instructor.limit)}
+    total={Math.ceil(data.room.total / data.room.limit)}
   />
 </div>
 

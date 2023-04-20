@@ -54,4 +54,28 @@ declare namespace API {
     updatedAt: string;
     updatedBy: Omit<API.User, 'createdAt' | 'updatedAt'>;
   };
+
+  type Room = {
+    id: string;
+    type: string;
+    name: string;
+    building: Omit<Building, 'createdAt' | 'updatedAt'>;
+    createdAt: string;
+    createdBy: Omit<API.User, 'createdAt' | 'updatedAt'>;
+    updatedAt: string;
+    updatedBy: Omit<API.User, 'createdAt' | 'updatedAt'>;
+  };
+
+  type Course = {
+    id: string;
+    name: string;
+    detail: {
+      subject: Omit<Subject, 'createdAt' | 'updatedAt'>;
+      type: string;
+    }[];
+    createdAt: string;
+    createdBy: Omit<API.User, 'createdAt' | 'updatedAt'>;
+    updatedAt: string;
+    updatedBy: Omit<API.User, 'createdAt' | 'updatedAt'>;
+  };
 }
