@@ -115,7 +115,7 @@
     <tbody>
       {#if data.room.total == 0}
         <tr>
-          <td class="text-secondary text-center" colspan="4">No records found.</td>
+          <td class="text-secondary text-center" colspan="6">No records found.</td>
         </tr>
       {/if}
       {#each data.room.data as room (room.id)}
