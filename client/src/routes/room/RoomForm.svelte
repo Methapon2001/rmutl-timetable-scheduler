@@ -187,7 +187,7 @@
     </div>
   </section>
   <section id="input-name" class="grid grid-cols-6">
-    <div class="col-span-2 flex text-center">
+    <div class="col-span-2 flex items-center">
       <label for="" class="font-semibold">
         Name <span class="text-red-600">*</span>
       </label>
