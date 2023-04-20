@@ -1,9 +1,4 @@
-import {
-  Section,
-  Prisma,
-  PrismaClient,
-  Instructor,
-} from "@prisma/client";
+import { Section, Prisma, PrismaClient, Instructor } from "@prisma/client";
 import { FastifyReply, FastifyRequest } from "fastify";
 
 const prisma = new PrismaClient({
@@ -258,9 +253,19 @@ export async function requestSection(
     : await prisma.section.findMany({
         select: sectionSelect,
         where: sectionWhere,
-        orderBy: {
-          createdAt: "asc",
-        },
+        orderBy: [
+          {
+            subject: {
+              name: "asc",
+            },
+          },
+          {
+            no: "asc",
+          },
+          {
+            lab: "asc",
+          },
+        ],
         skip: offset,
         take: limit,
       });
@@ -486,9 +491,19 @@ export async function searchSection(
   const section = await prisma.section.findMany({
     select: sectionSelect,
     where: sectionWhere,
-    orderBy: {
-      createdAt: "asc",
-    },
+    orderBy: [
+      {
+        subject: {
+          name: "asc",
+        },
+      },
+      {
+        no: "asc",
+      },
+      {
+        lab: "asc",
+      },
+    ],
     skip: offset,
     take: limit,
   });
