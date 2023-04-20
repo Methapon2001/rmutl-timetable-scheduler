@@ -15,7 +15,7 @@ export default async (server: FastifyInstance) => {
     schema: {
       body: {
         ...sectionSchema.bodyCreate,
-        required: ["subjectId", "type", "sections"],
+        required: ["subjectId", "type", "section"],
       },
     },
   });

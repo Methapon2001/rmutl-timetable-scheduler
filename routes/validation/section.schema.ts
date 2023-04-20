@@ -23,30 +23,25 @@ export default {
     type: "object",
     properties: {
       subjectId: { type: "string" },
-      groupId: { type: "string" },
+      groupId: { type: ["string", "null"] },
       manual: { type: "boolean", default: false },
       type: { type: "string", enum: ["lecture", "lab"] },
       no: { type: "number" },
-      sections: {
+      section: {
         type: "array",
         minItems: 1,
         maxItems: 10,
         items: {
           type: "object",
           properties: {
-            roomId: { type: "string" },
-            instructorId: {
+            roomId: { type: ["string", "null"] },
+            instructor: {
               type: "array",
               items: {
-                anyOf: [
-                  { type: "string" },
-                  {
-                    type: "object",
-                    properties: {
-                      name: { type: "string" },
-                    },
-                  },
-                ],
+                type: "object",
+                properties: {
+                  id: { type: "string" },
+                },
               },
             },
           },
@@ -59,19 +54,13 @@ export default {
     properties: {
       groupId: { type: ["string", "null"] },
       roomId: { type: ["string", "null"] },
-      no: { type: "number" },
-      instructorId: {
-        type: ["array", "null"],
+      instructor: {
+        type: "array",
         items: {
-          anyOf: [
-            { type: "string" },
-            {
-              type: "object",
-              properties: {
-                name: { type: "string" },
-              },
-            },
-          ],
+          type: "object",
+          properties: {
+            id: { type: "string" },
+          },
         },
       },
     },

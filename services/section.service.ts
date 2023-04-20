@@ -1,80 +1,206 @@
-import { Section, PrismaClient, SectionType, Instructor } from "@prisma/client";
+import {
+  Section,
+  Prisma,
+  PrismaClient,
+  Instructor,
+} from "@prisma/client";
 import { FastifyReply, FastifyRequest } from "fastify";
 
 const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
 
-type Body = {
-  subjectId: string;
-  groupId: null | string;
-  manual: boolean;
-  type: SectionType;
-  no: number;
-  sections: {
-    roomId: null | string;
-    instructorId: null | string[] | Instructor[];
-  }[];
+const userSelect: Prisma.UserSelect = {
+  id: true,
+  username: true,
+  role: true,
 };
 
-type Query = {
-  limit: number;
-  offset: number;
-  user: string;
-  instructorId: string;
-} & Section;
-
-type Param = {
-  id: string;
+const subjectSelect: Prisma.SubjectSelect = {
+  id: true,
+  code: true,
+  name: true,
+  credit: true,
+  lecture: true,
+  lab: true,
+  exam: true,
 };
+
+const courseDetailSelect: Prisma.CourseDetailSelect = {
+  id: true,
+  type: true,
+  subject: {
+    select: subjectSelect,
+  },
+};
+
+const courseSelect: Prisma.CourseSelect = {
+  id: true,
+  name: true,
+  detail: {
+    select: courseDetailSelect,
+  },
+};
+
+const groupSelect: Prisma.GroupSelect = {
+  id: true,
+  name: true,
+  course: {
+    select: courseSelect,
+  },
+};
+
+const buildingSelect: Prisma.BuildingSelect = {
+  id: true,
+  code: true,
+  name: true,
+};
+
+const roomSelect: Prisma.RoomSelect = {
+  id: true,
+  name: true,
+  type: true,
+  building: {
+    select: buildingSelect,
+  },
+};
+
+const instructorSelect: Prisma.InstructorSelect = {
+  id: true,
+  name: true,
+};
+
+const childSectionSelect: Prisma.SectionSelect = {
+  id: true,
+  no: true,
+  lab: true,
+  type: true,
+  group: {
+    select: groupSelect,
+  },
+  room: {
+    select: roomSelect,
+  },
+  subject: {
+    select: subjectSelect,
+  },
+  instructor: {
+    select: instructorSelect,
+  },
+};
+
+const sectionSelect: Prisma.SectionSelect = {
+  ...childSectionSelect,
+  child: {
+    select: childSectionSelect,
+  },
+  createdAt: true,
+  createdBy: {
+    select: userSelect,
+  },
+  updatedAt: true,
+  updatedBy: {
+    select: userSelect,
+  },
+};
+
+async function nextSectionNo(subjectId: string) {
+  const manual = await prisma.section.findMany({
+    select: {
+      no: true,
+    },
+    where: {
+      subjectId: subjectId,
+      parentId: null,
+      manual: true,
+    },
+    orderBy: {
+      no: "desc",
+    },
+  });
+
+  const auto = await prisma.section.findFirst({
+    select: {
+      no: true,
+    },
+    where: {
+      subjectId: subjectId,
+      parentId: null,
+      manual: false,
+    },
+    orderBy: {
+      no: "desc",
+    },
+  });
+
+  let next = auto ? auto.no + 1 : 1;
+
+  while (manual.findIndex((man) => man.no == next) != -1) next++;
+
+  return next;
+}
+
+type CreateBody = Pick<Section, "type" | "subjectId"> &
+  Partial<Pick<Section, "no" | "manual" | "groupId">> & {
+    section: {
+      roomId: string | null;
+      instructor?: Instructor[];
+    }[];
+  };
 
 export async function createSection(
-  request: FastifyRequest<{ Body: Body }>,
+  request: FastifyRequest<{
+    Body: CreateBody;
+  }>,
   reply: FastifyReply,
 ) {
-  if (request.body.manual == false) {
-    request.body.no =
-      (await prisma.section.count({
-        where: {
-          subjectId: request.body.subjectId,
-          parentId: null,
-        },
-      })) + 1;
-  }
+  const sectionNo =
+    request.body.manual && request.body.no
+      ? request.body.no
+      : await nextSectionNo(request.body.subjectId);
 
-  const data = request.body.sections.map((val, idx) => {
-    const section = { ...val };
-
-    if (section.instructorId == null) {
-      section.instructorId = [] as Instructor[];
-    } else {
-      section.instructorId = section.instructorId.map((instructor) => {
-        if (typeof instructor == "string") {
-          return { id: instructor } as Instructor;
-        }
-        return instructor as Instructor;
-      }) as Instructor[];
-    }
-
+  const data = request.body.section.map((val, idx) => {
     return {
-      subjectId: request.body.subjectId,
-      groupId: request.body.groupId,
-      roomId: section.roomId,
-      manual: request.body.manual,
       type: idx == 0 ? request.body.type : "lab",
-      no: request.body.no,
+      no: sectionNo,
       lab:
         idx != 0 && request.body.type == "lecture"
           ? idx
-          : idx != 0 && request.body.type == "lab"
+          : request.body.type == "lab"
           ? idx + 1
           : null,
-      createdBy: request.user.id,
+      manual: request.body.manual,
+      subjectId: request.body.subjectId,
+      groupId: request.body.groupId,
+      roomId: val.roomId,
       instructor: {
-        connect: section.instructorId as Instructor[],
+        connect: val.instructor,
       },
+      createdByUserId: request.user.id,
+      updatedByUserId: request.user.id,
     };
   });
+
+  const validateRoomConstraint = data.every(async (sec) => {
+    if (!sec.roomId) return true;
+
+    const room = await prisma.room.findUnique({
+      select: {
+        type: true,
+      },
+      where: {
+        id: sec.roomId,
+      },
+    });
+
+    return room?.type == "both" || room?.type == sec.type;
+  });
+
+  if (!validateRoomConstraint) {
+    return reply.code(400).send({
+      message: "Room type must matched with section type.",
+    });
+  }
 
   const main = data.shift()!;
   const child = data;
@@ -86,169 +212,55 @@ export async function createSection(
         create: child,
       },
     },
-    include: {
-      creator: {
-        select: {
-          id: true,
-          username: true,
-          role: true,
-        },
-      },
-      room: {
-        include: {
-          building: true,
-        },
-      },
-      group: true,
-      instructor: true,
-      subject: true,
-      child: {
-        include: {
-          room: {
-            include: {
-              building: true,
-            },
-          },
-          group: true,
-          instructor: true,
-          subject: true,
-        },
-        orderBy: [
-          {
-            no: "desc",
-          },
-          {
-            lab: "asc",
-          },
-        ],
-      },
-    },
+    select: sectionSelect,
   });
 
-  reply.code(200).send({
+  return reply.status(200).send({
     data: section,
   });
 }
 
 export async function requestSection(
-  request: FastifyRequest<{ Params: Param; Querystring: Query }>,
+  request: FastifyRequest<{
+    Params: Pick<Section, "id">;
+    Querystring: {
+      search: string;
+      limit: number;
+      offset: number;
+    } & Pick<
+      Section,
+      | "groupId"
+      | "roomId"
+      | "subjectId"
+      | "no"
+      | "createdByUserId"
+      | "updatedByUserId"
+    >;
+  }>,
   reply: FastifyReply,
 ) {
   const { id } = request.params;
-  const {
-    no,
-    type,
-    subjectId,
-    roomId,
-    instructorId,
-    parentId,
-    user,
-    limit,
-    offset,
-  } = request.query;
+  const { limit, offset, search, ...where } = request.query;
+
+  if (search) {
+    return await searchSection(request, reply);
+  }
+
+  const sectionWhere: Prisma.SectionWhereInput = where;
 
   const section = id
     ? await prisma.section.findUnique({
+        select: sectionSelect,
         where: {
           id: id,
         },
-        include: {
-          creator: {
-            select: {
-              id: true,
-              username: true,
-              role: true,
-            },
-          },
-          room: {
-            include: {
-              building: true,
-            },
-          },
-          group: true,
-          instructor: true,
-          subject: true,
-          child: {
-            include: {
-              room: {
-                include: {
-                  building: true,
-                },
-              },
-              group: true,
-              instructor: true,
-              subject: true,
-            },
-            orderBy: [
-              {
-                no: "desc",
-              },
-              {
-                lab: "asc",
-              },
-            ],
-          },
-        },
       })
     : await prisma.section.findMany({
-        where: {
-          no: no,
-          type: type,
-          subjectId: subjectId,
-          roomId: roomId,
-          parentId: parentId,
-          instructor: {
-            some: {
-              id: instructorId,
-            },
-          },
-          createdBy: user,
+        select: sectionSelect,
+        where: sectionWhere,
+        orderBy: {
+          createdAt: "asc",
         },
-        include: {
-          creator: {
-            select: {
-              id: true,
-              username: true,
-              role: true,
-            },
-          },
-          room: {
-            include: {
-              building: true,
-            },
-          },
-          group: true,
-          instructor: true,
-          subject: true,
-          child: {
-            include: {
-              room: {
-                include: {
-                  building: true,
-                },
-              },
-              group: true,
-              instructor: true,
-              subject: true,
-            },
-            orderBy: [
-              {
-                no: "desc",
-              },
-              {
-                lab: "asc",
-              },
-            ],
-          },
-        },
-        orderBy: [
-          {
-            no: "desc",
-          },
-          {
-            lab: "asc",
-          },
-        ],
         skip: offset,
         take: limit,
       });
@@ -256,19 +268,7 @@ export async function requestSection(
   const count = id
     ? undefined
     : await prisma.section.count({
-        where: {
-          no: no,
-          type: type,
-          subjectId: subjectId,
-          roomId: roomId,
-          parentId: parentId,
-          instructor: {
-            some: {
-              id: instructorId,
-            },
-          },
-          createdBy: user,
-        },
+        where: sectionWhere,
       });
 
   reply.status(200).send({
@@ -281,170 +281,119 @@ export async function requestSection(
 
 export async function updateSection(
   request: FastifyRequest<{
-    Params: Param;
-    Body: Section & {
-      instructorId: null | string[] | Instructor[];
+    Params: Pick<Section, "id">;
+    Body: Partial<Pick<Section, "roomId" | "groupId">> & {
+      instructor?: Instructor[];
     };
   }>,
   reply: FastifyReply,
 ) {
   const { id } = request.params;
-  const { no, roomId, groupId, instructorId } = request.body;
 
-  const rec = await prisma.section.findFirst({
+  const rec = await prisma.section.findUnique({
+    select: {
+      createdByUserId: true,
+    },
     where: {
       id: id,
     },
   });
 
-  if (rec?.createdBy != request.user.id) {
+  if (rec?.createdByUserId != request.user.id) {
     return reply.code(403).send({
       message: "Forbidden.",
     });
   }
 
-  if (no) {
-    const query = await prisma.section.findFirst({
-      where: {
-        id: id,
-      },
-    });
-
-    const updateId = query?.parentId ?? id;
-
-    await prisma.section.updateMany({
-      where: {
-        OR: [{ id: updateId }, { parentId: updateId }],
-      },
-      data: {
-        manual: true,
-        no: no,
-      },
-    });
-  }
-
   const section = await prisma.section.update({
+    select: sectionSelect,
     where: {
       id: id,
     },
     data: {
-      roomId: roomId,
-      groupId: groupId,
-      instructor: {
-        set: [],
-        connect: instructorId?.map((instructor) => {
-          if (typeof instructor == "string") {
-            return { id: instructor } as Instructor;
+      ...request.body,
+      instructor: request.body.instructor
+        ? {
+            set: [],
+            connect: request.body.instructor,
           }
-          return instructor as Instructor;
-        }) as Instructor[],
-      },
-    },
-    include: {
-      creator: {
-        select: {
-          id: true,
-          username: true,
-          role: true,
-        },
-      },
-      room: {
-        include: {
-          building: true,
-        },
-      },
-      group: true,
-      instructor: true,
-      subject: true,
-      child: {
-        include: {
-          room: {
-            include: {
-              building: true,
-            },
-          },
-          group: true,
-          instructor: true,
-          subject: true,
-        },
-      },
+        : undefined,
+      updatedByUserId: request.user.id,
     },
   });
 
-  reply.status(200).send({
+  return reply.status(200).send({
     data: section,
   });
 }
 
 export async function deleteSection(
-  request: FastifyRequest<{ Params: Param }>,
+  request: FastifyRequest<{
+    Params: Pick<Section, "id">;
+  }>,
   reply: FastifyReply,
 ) {
   const { id } = request.params;
 
-  const rec = await prisma.section.findFirst({
+  const rec = await prisma.section.findUnique({
+    select: {
+      createdByUserId: true,
+    },
     where: {
       id: id,
     },
   });
 
-  if (rec?.createdBy != request.user.id) {
+  if (rec?.createdByUserId != request.user.id) {
     return reply.code(403).send({
       message: "Forbidden.",
     });
   }
 
   const section = await prisma.section.delete({
+    select: sectionSelect,
     where: {
       id: id,
     },
-    include: {
-      creator: {
-        select: {
-          id: true,
-          username: true,
-          role: true,
-        },
-      },
-      room: {
-        include: {
-          building: true,
-        },
-      },
-      group: true,
-      instructor: true,
-      subject: true,
-      child: {
-        include: {
-          room: {
-            include: {
-              building: true,
-            },
-          },
-          group: true,
-          instructor: true,
-          subject: true,
-        },
-        orderBy: [
-          {
-            no: "desc",
-          },
-          {
-            lab: "asc",
-          },
-        ],
-      },
-    },
   });
 
-  if (section.parentId == null) {
-    await prisma.section.updateMany({
+  if (section && section.child?.length != 0) {
+    const manual = await prisma.section.findMany({
       where: {
-        subjectId: section.subject.id,
-        manual: false,
         no: {
           gt: section.no,
         },
+        subjectId: section.subject?.id,
+        parentId: null,
+        manual: true,
+      },
+      orderBy: {
+        no: "desc",
+      },
+    });
+
+    manual.forEach(async (man) => {
+      await prisma.section.updateMany({
+        where: {
+          no: man.no + 1,
+          manual: false,
+          subjectId: section.subject?.id,
+        },
+        data: {
+          no: {
+            decrement: 1,
+          },
+        },
+      });
+    });
+
+    await prisma.section.updateMany({
+      where: {
+        no: {
+          gt: section.no,
+        },
+        manual: false,
+        subjectId: section.subject?.id,
       },
       data: {
         no: {
@@ -452,13 +401,13 @@ export async function deleteSection(
         },
       },
     });
-  } else {
+  }
+
+  if (section && section.child?.length == 0) {
     await prisma.section.updateMany({
       where: {
-        parentId: section.parentId,
-        lab: {
-          gt: section.lab!,
-        },
+        no: section.no,
+        subjectId: section.subject?.id,
       },
       data: {
         lab: {
@@ -470,5 +419,88 @@ export async function deleteSection(
 
   reply.status(200).send({
     data: section,
+  });
+}
+
+export async function searchSection(
+  request: FastifyRequest<{
+    Querystring: { search: string; limit: number; offset: number };
+  }>,
+  reply: FastifyReply,
+) {
+  const { limit, offset, search } = request.query;
+
+  const sectionWhere: Prisma.SectionWhereInput = {
+    OR: [
+      {
+        group: {
+          name: {
+            contains: search,
+          },
+        },
+      },
+      {
+        group: {
+          course: {
+            name: {
+              contains: search,
+            },
+          },
+        },
+      },
+      {
+        room: {
+          name: {
+            contains: search,
+          },
+        },
+      },
+      {
+        room: {
+          building: {
+            name: {
+              contains: search,
+            },
+          },
+        },
+      },
+      {
+        subject: {
+          name: {
+            contains: search,
+          },
+        },
+      },
+      {
+        instructor: {
+          some: {
+            name: {
+              contains: search,
+            },
+          },
+        },
+      },
+    ],
+  };
+
+  const section = await prisma.section.findMany({
+    select: sectionSelect,
+    where: sectionWhere,
+    orderBy: {
+      createdAt: "asc",
+    },
+    skip: offset,
+    take: limit,
+  });
+
+  const count = await prisma.section.count({
+    where: sectionWhere,
+  });
+
+  reply.status(200).send({
+    data: section,
+    limit: limit,
+    offset: offset,
+    total: count,
   });
 }

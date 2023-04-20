@@ -134,6 +134,21 @@ export async function updateGroup(
 ) {
   const { id } = request.params;
 
+  const rec = await prisma.group.findUnique({
+    select: {
+      createdByUserId: true,
+    },
+    where: {
+      id: id,
+    },
+  });
+
+  if (rec?.createdByUserId != request.user.id) {
+    return reply.code(403).send({
+      message: "Forbidden.",
+    });
+  }
+
   const group = await prisma.group.update({
     select: groupSelect,
     where: {
@@ -157,6 +172,21 @@ export async function deleteGroup(
   reply: FastifyReply,
 ) {
   const { id } = request.params;
+
+  const rec = await prisma.group.findUnique({
+    select: {
+      createdByUserId: true,
+    },
+    where: {
+      id: id,
+    },
+  });
+
+  if (rec?.createdByUserId != request.user.id) {
+    return reply.code(403).send({
+      message: "Forbidden.",
+    });
+  }
 
   const group = await prisma.group.delete({
     select: groupSelect,
