@@ -7,7 +7,7 @@
   import debounce from '$lib/utils/debounce';
   import Modal from '$lib/components/Modal.svelte';
   import Pagination from '$lib/components/Pagination.svelte';
-  import Room from './RoomForm.svelte';
+  import RoomForm from './RoomForm.svelte';
 
   const handleSearch = debounce(async (text: string) => {
     const url = new URL(window.location.toString());
@@ -83,7 +83,7 @@
       {#await buildingOptions()}
         Loading...
       {:then options}
-        <Room buildingOptions={options} />
+        <RoomForm buildingOptions={options} />
       {/await}
     </div>
   </div>
@@ -95,7 +95,7 @@
     {#await buildingOptions()}
       Loading...
     {:then options}
-      <Room buildingOptions={options} edit={true} {editData} callback={() => (editState = false)} />
+      <RoomForm buildingOptions={options} edit={true} {editData} callback={() => (editState = false)} />
     {/await}
   </div>
 </Modal>
@@ -115,7 +115,7 @@
     <tbody>
       {#if data.room.total == 0}
         <tr>
-          <td class="text-secondary text-center" colspan="6">No records found.</td>
+          <td class="text-center text-secondary" colspan="6">No records found.</td>
         </tr>
       {/if}
       {#each data.room.data as room (room.id)}
@@ -126,19 +126,18 @@
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(room.createdAt).toLocaleDateString()}</p>
             <p class="text-dark">{new Date(room.createdAt).toLocaleTimeString()}</p>
-            <p class="text-secondary capitalize">{room.createdBy.username}</p>
+            <p class="capitalize text-secondary">{room.createdBy.username}</p>
           </td>
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(room.updatedAt).toLocaleDateString()}</p>
             <p class="text-dark">{new Date(room.updatedAt).toLocaleTimeString()}</p>
-            <p class="text-secondary capitalize">{room.updatedBy.username}</p>
+            <p class="capitalize text-secondary">{room.updatedBy.username}</p>
           </td>
           <td class="fit-width text-center">
             <div class="space-x-4 whitespace-nowrap">
               <button
                 class="action-button text-blue-600"
-                on:click={() =>
-                  showEdit({ ...room, buildingId: room.building.id })}
+                on:click={() => showEdit({ ...room, buildingId: room.building.id })}
               >
                 Edit
               </button>
