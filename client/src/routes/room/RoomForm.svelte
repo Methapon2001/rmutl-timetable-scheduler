@@ -72,8 +72,8 @@
 
   // Must have to reset selected value of select component (Needed for single select only)
   let selected = {
-    type: [],
-    buildingId: [],
+    type: editData ? [editData.type] : [],
+    buildingId: editData ? [editData.buildingId] : [],
   };
 
   async function handleSubmit() {

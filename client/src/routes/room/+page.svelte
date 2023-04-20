@@ -2,7 +2,6 @@
   import type { PageData } from './$types';
   import { page } from '$app/stores';
   import { invalidate } from '$app/navigation';
-  import { slide } from 'svelte/transition';
   import { blurOnEscape } from '$lib/utils/directives';
   import { deleteRoom } from '$lib/api/room';
   import debounce from '$lib/utils/debounce';
@@ -31,11 +30,11 @@
   let editData: {
     id: string;
     name: string;
-    type: string[];
-    buildingId: string[];
+    type: string;
+    buildingId: string;
   };
 
-  function showEdit(room: { id: string; name: string; type: string[]; buildingId: string[] }) {
+  function showEdit(room: { id: string; name: string; type: string; buildingId: string }) {
     editState = true;
     editData = room;
   }
@@ -139,7 +138,7 @@
               <button
                 class="action-button text-blue-600"
                 on:click={() =>
-                  showEdit({ ...room, type: [room.type], buildingId: [room.building.id] })}
+                  showEdit({ ...room, buildingId: room.building.id })}
               >
                 Edit
               </button>
