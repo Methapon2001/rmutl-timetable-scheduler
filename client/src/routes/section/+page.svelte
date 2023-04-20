@@ -1,0 +1,282 @@
+<script lang="ts">
+  import type { PageData } from './$types';
+  import { page } from '$app/stores';
+  import { invalidate } from '$app/navigation';
+  import { blurOnEscape } from '$lib/utils/directives';
+  import { deleteSection } from '$lib/api/section';
+  import debounce from '$lib/utils/debounce';
+  import Modal from '$lib/components/Modal.svelte';
+  import Pagination from '$lib/components/Pagination.svelte';
+  import SectionNewForm from './NewForm.svelte';
+
+  const handleSearch = debounce(async (text: string) => {
+    const url = new URL(window.location.toString());
+    url.searchParams.set('search', text);
+    history.replaceState({}, '', url);
+    await invalidate('data:section');
+  }, 300);
+
+  const groupOptions = async () => {
+    return (await data.lazy.group).data.map((group) => ({
+      label: group.name,
+      value: group.id,
+    }));
+  };
+
+  const roomOptions = async () => {
+    return (await data.lazy.room).data.map((room) => ({
+      label: `${room.building.code}-${room.name} (${
+        room.type.charAt(0).toLocaleUpperCase()
+      }${room.type.slice(1)})`,
+      value: room.id,
+      detail: room,
+    }));
+  };
+
+  const subjectOptions = async () => {
+    return (await data.lazy.subject).data.map((subject) => ({
+      label: subject.name,
+      value: subject.id,
+      detail: subject,
+    }));
+  };
+
+  const instructorOptions = async () => {
+    return (await data.lazy.instructor).data.map((instructor) => ({
+      label: instructor.name,
+      value: instructor.id,
+    }));
+  };
+
+  const formOptions = async () => {
+    return {
+      group: await groupOptions(),
+      subject: await subjectOptions(),
+      room: await roomOptions(),
+      instructor: await instructorOptions(),
+    };
+  };
+
+  export let data: PageData;
+
+  let newState = false;
+  let editState = false;
+  let editData: {
+    id: string;
+    no: number;
+    lab: number;
+    type: string;
+    groupId: string;
+    roomId: string;
+    subjectId: string;
+    instructorId: string[];
+    child: {
+      id: string;
+      no: number;
+      lab: number;
+      type: string;
+      groupId: string;
+      roomId: string;
+      subjectId: string;
+      instructorId: string[];
+    }[];
+  };
+
+  function showEdit(section: {
+    id: string;
+    no: number;
+    lab: number;
+    type: string;
+    groupId: string;
+    roomId: string;
+    subjectId: string;
+    instructorId: string[];
+    child: {
+      id: string;
+      no: number;
+      lab: number;
+      type: string;
+      groupId: string;
+      roomId: string;
+      subjectId: string;
+      instructorId: string[];
+    }[];
+  }) {
+    editState = true;
+    editData = section;
+  }
+
+  async function handleDelete(section: { id: string }) {
+    if (confirm('Are you sure?')) {
+      await deleteSection(section).catch((e: Response) => console.error(e));
+      await invalidate('data:section');
+    }
+  }
+</script>
+
+<svelte:head>
+  <title>Section</title>
+</svelte:head>
+
+<div class="flex flex-wrap items-center justify-between gap-4 p-4 md:flex-nowrap">
+  <div class="inline-flex w-full items-center space-x-2 font-medium md:w-fit">
+    <a class="text-primary" href="/">Home</a>
+    <span>/</span>
+    <span class="text-secondary">Section</span>
+  </div>
+
+  <div class="w-full md:w-fit md:flex-grow md:px-16">
+    <input
+      name="search"
+      type="text"
+      class="search w-full"
+      placeholder="Search"
+      autocomplete="off"
+      value={$page.url.searchParams.get('search')}
+      on:input={(e) => handleSearch(e.currentTarget.value)}
+      use:blurOnEscape
+    />
+  </div>
+
+  <button type="button" class="button w-full md:w-fit" on:click={() => (newState = !newState)}>
+    New Section
+  </button>
+</div>
+
+{#if newState}
+  <div id="new" class="bg-light p-4">
+    <h1 class="mb-4 block text-center text-2xl font-bold">New Section</h1>
+    <div class="mx-auto max-w-screen-md rounded bg-white p-4 shadow">
+      {#await formOptions()}
+        Loading...
+      {:then options}
+        <SectionNewForm
+          groupOptions={options.group}
+          roomOptions={options.room}
+          subjectOptions={options.subject}
+          instructorOptions={options.instructor}
+        />
+      {/await}
+    </div>
+  </div>
+{/if}
+
+<Modal bind:open={editState}>
+  <div id="edit" class="p-4">
+    <h1 class="mb-4 block text-center text-2xl font-bold">Edit Section</h1>
+    <!-- {#await roomOptions()}
+      Loading...
+    {:then options}
+      <SectionForm
+        groupOptions={options}
+        roomOptions={options}
+        subjectOptions={options}
+        instructorOptions={options}
+        edit={true}
+        {editData}
+        callback={() => (editState = false)}
+      />
+    {/await} -->
+  </div>
+</Modal>
+
+<div id="records" class="overflow-x-auto">
+  <table class="w-full">
+    <thead>
+      <tr>
+        <th>Subject</th>
+        <th>No.</th>
+        <th>Type</th>
+        <th>Lab No.</th>
+        <th>Group</th>
+        <th>Room</th>
+        <th>Instructors</th>
+        <th>Created</th>
+        <th>Updated</th>
+        <th>•••</th>
+      </tr>
+    </thead>
+    <tbody>
+      {#if data.section.total == 0}
+        <tr>
+          <td class="text-secondary text-center" colspan="6">No records found.</td>
+        </tr>
+      {/if}
+      {#each data.section.data as section (section.id)}
+        <tr class="hover:bg-light">
+          <td class="text-center">{section.subject.name}</td>
+          <td class="text-center">{section.no}</td>
+          <td class="text-center capitalize">{section.type}</td>
+          <td class="text-center">{section.lab ?? '-'}</td>
+          <td class="text-center">{section.group.name}</td>
+          <td class="text-center">{section.room?.building.code}-{section.room?.name ?? ''}</td>
+          <td class="text-center">
+            {#each section.instructor as instructor (instructor.id)}
+              <span class="bg-light-hover whitespace-nowrap rounded px-2">{instructor.name}</span>
+            {/each}
+          </td>
+          <td class="fit-width whitespace-nowrap text-center text-sm">
+            <p class="font-semibold">{new Date(section.createdAt).toLocaleDateString()}</p>
+            <p class="text-dark">{new Date(section.createdAt).toLocaleTimeString()}</p>
+            <p class="text-secondary capitalize">{section.createdBy.username}</p>
+          </td>
+          <td class="fit-width whitespace-nowrap text-center text-sm">
+            <p class="font-semibold">{new Date(section.updatedAt).toLocaleDateString()}</p>
+            <p class="text-dark">{new Date(section.updatedAt).toLocaleTimeString()}</p>
+            <p class="text-secondary capitalize">{section.updatedBy.username}</p>
+          </td>
+          <td class="fit-width text-center">
+            <div class="space-x-4 whitespace-nowrap">
+              <!-- <button
+                class="action-button text-blue-600"
+                on:click={() => showEdit({ ...section, buildingId: section.building.id })}
+              >
+                Edit
+              </button> -->
+              <button
+                class="action-button text-red-600"
+                on:click={() => handleDelete({ id: section.id })}
+              >
+                Delete
+              </button>
+            </div>
+          </td>
+        </tr>
+      {/each}
+    </tbody>
+  </table>
+</div>
+
+<div id="pagination">
+  <Pagination
+    current={+($page.url.searchParams.get('page') ?? 1)}
+    range={3}
+    total={Math.ceil(data.section.total / data.section.limit)}
+  />
+</div>
+
+<style lang="postcss">
+  tr {
+    @apply border-b;
+  }
+
+  th {
+    @apply p-4;
+  }
+
+  td {
+    @apply px-4 py-2;
+  }
+
+  .action-button {
+    @apply font-semibold outline-none;
+  }
+
+  .action-button:hover {
+    @apply underline;
+  }
+
+  .fit-width {
+    width: 1% !important;
+  }
+</style>
