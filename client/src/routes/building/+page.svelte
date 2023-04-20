@@ -2,7 +2,6 @@
   import type { PageData } from './$types';
   import { page } from '$app/stores';
   import { invalidate } from '$app/navigation';
-  import { slide } from 'svelte/transition';
   import { blurOnEscape } from '$lib/utils/directives';
   import { deleteBuilding } from '$lib/api/building';
   import debounce from '$lib/utils/debounce';
@@ -99,7 +98,7 @@
     <tbody>
       {#if data.building.total == 0}
         <tr>
-          <td class="text-secondary text-center" colspan="5">No records found.</td>
+          <td class="text-center text-secondary" colspan="5">No records found.</td>
         </tr>
       {/if}
       {#each data.building.data as building (building.id)}
@@ -109,12 +108,12 @@
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(building.createdAt).toLocaleDateString()}</p>
             <p class="text-dark">{new Date(building.createdAt).toLocaleTimeString()}</p>
-            <p class="text-secondary capitalize">{building.createdBy.username}</p>
+            <p class="capitalize text-secondary">{building.createdBy.username}</p>
           </td>
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(building.updatedAt).toLocaleDateString()}</p>
             <p class="text-dark">{new Date(building.updatedAt).toLocaleTimeString()}</p>
-            <p class="text-secondary capitalize">{building.updatedBy.username}</p>
+            <p class="capitalize text-secondary">{building.updatedBy.username}</p>
           </td>
           <td class="fit-width text-center">
             <div class="space-x-4 whitespace-nowrap">

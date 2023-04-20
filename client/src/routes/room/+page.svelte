@@ -95,7 +95,12 @@
     {#await buildingOptions()}
       Loading...
     {:then options}
-      <RoomForm buildingOptions={options} edit={true} {editData} callback={() => (editState = false)} />
+      <RoomForm
+        buildingOptions={options}
+        edit={true}
+        {editData}
+        callback={() => (editState = false)}
+      />
     {/await}
   </div>
 </Modal>

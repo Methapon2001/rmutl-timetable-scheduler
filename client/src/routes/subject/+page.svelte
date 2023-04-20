@@ -2,7 +2,6 @@
   import type { PageData } from './$types';
   import { page } from '$app/stores';
   import { invalidate } from '$app/navigation';
-  import { slide } from 'svelte/transition';
   import { blurOnEscape } from '$lib/utils/directives';
   import { deleteSubject } from '$lib/api/subject';
   import debounce from '$lib/utils/debounce';

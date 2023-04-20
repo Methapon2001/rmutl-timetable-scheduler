@@ -98,7 +98,7 @@
     <tbody>
       {#if data.user.total == 0}
         <tr>
-          <td class="text-secondary text-center" colspan="4">No records found.</td>
+          <td class="text-center text-secondary" colspan="4">No records found.</td>
         </tr>
       {/if}
       {#each data.user.data as user (user.id)}
