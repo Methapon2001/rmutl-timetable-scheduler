@@ -42,7 +42,9 @@ export const deleteRoom = async (data: Pick<API.Room, 'id'>): Promise<API.Room> 
 };
 
 export const editRoom = async (
-  data: Omit<API.Room, 'building' | 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy' > & { buildingId: string; },
+  data: Omit<API.Room, 'building' | 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'> & {
+    buildingId: string;
+  },
 ): Promise<API.Room> => {
   const userSession = await refresh();
 

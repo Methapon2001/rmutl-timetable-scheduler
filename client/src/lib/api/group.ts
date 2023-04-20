@@ -2,10 +2,7 @@ import { PUBLIC_API_HOST } from '$env/static/public';
 import { refresh } from './auth';
 
 export const createGroup = async (
-  data: Omit<
-    API.Group,
-    'id' | 'course' | 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'
-  > & {
+  data: Omit<API.Group, 'id' | 'course' | 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'> & {
     courseId: string;
   },
 ): Promise<API.Group> => {
@@ -42,7 +39,9 @@ export const deleteGroup = async (data: Pick<API.Group, 'id'>): Promise<API.Grou
 };
 
 export const editGroup = async (
-  data: Omit<API.Group, 'course' | 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy' > & { courseId: string; },
+  data: Omit<API.Group, 'course' | 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'> & {
+    courseId: string;
+  },
 ): Promise<API.Group> => {
   const userSession = await refresh();
 
