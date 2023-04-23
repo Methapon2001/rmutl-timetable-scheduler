@@ -1,11 +1,11 @@
 <script lang="ts">
   import { type ZodError, z } from 'zod';
   import { invalidate } from '$app/navigation';
-  import { blurOnEscape } from '$lib/utils/directives';
   import { getZodErrorMessage } from '$lib/utils/zod';
   import { createSection } from '$lib/api/section';
-  import { onMount, tick } from 'svelte';
+  import { tick } from 'svelte';
   import Select from '$lib/components/Select.svelte';
+  import CrossIcon from '$lib/icons/CrossIcon.svelte';
 
   const schema = z.object({
     type: z.string(),
@@ -46,6 +46,10 @@
     value: string;
     disabled?: boolean;
   }[];
+
+  export let callback: () => void = function () {
+    // do nothing.
+  };
 
   let form: {
     data: z.infer<typeof schema>;
@@ -141,7 +145,51 @@
   }
 
   async function handleSubmit() {
-    console.log(form.data);
+    form.error = undefined;
+
+    const result = schema
+      .transform((val) => {
+        return {
+          ...val,
+          no: val.no ?? undefined,
+          groupId: val.groupId === '' ? null : val.groupId,
+          section: val.section.map((sec) => {
+            return {
+              roomId: sec.roomId === '' ? null : sec.roomId,
+              instructor: sec.instructor.map((inst) => ({ id: inst })),
+            };
+          }),
+        };
+      })
+      .safeParse(form.data);
+
+    if (!result.success) {
+      form.error = result.error;
+      return;
+    }
+
+    const ret = await createSection(result.data).catch((r: Response) => console.error(r.json()));
+
+    if (ret) {
+      form.data = {
+        type: '',
+        subjectId: '',
+        groupId: '',
+        manual: false,
+        no: null,
+        section: [],
+      };
+
+      selected = {
+        subjectId: [],
+        groupId: [],
+        section: [],
+      };
+
+      await invalidate('data:subject');
+
+      callback();
+    }
   }
 </script>
 
@@ -212,7 +260,10 @@
   </section>
   {#if form.data.subjectId != ''}
     {#each form.data.section as _, sectionIdx}
-      <div class="space-y-4 rounded border p-3">
+      <div class="relative space-y-4 rounded border p-3">
+        <button class="absolute top-0 right-0 p-3" on:click={() => removeSection(sectionIdx)}>
+          <CrossIcon />
+        </button>
         <h2 class="font-2xl text-center font-semibold capitalize">
           Section {sectionIdx + 1} ({sectionIdx == 0 ? form.data.type : 'lab'})
         </h2>
@@ -244,7 +295,7 @@
         </section>
         <section id="input-instructor" class="grid grid-cols-6">
           <div class="col-span-2 flex items-center">
-            <label for="room" class="font-semibold">
+            <label for="instructor" class="font-semibold">
               Instructor <span class="text-red-600">*</span>
             </label>
           </div>

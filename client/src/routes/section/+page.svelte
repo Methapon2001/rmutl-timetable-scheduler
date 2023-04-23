@@ -8,6 +8,7 @@
   import Modal from '$lib/components/Modal.svelte';
   import Pagination from '$lib/components/Pagination.svelte';
   import SectionNewForm from './NewForm.svelte';
+  import EditForm from './EditForm.svelte';
 
   const handleSearch = debounce(async (text: string) => {
     const url = new URL(window.location.toString());
@@ -25,9 +26,9 @@
 
   const roomOptions = async () => {
     return (await data.lazy.room).data.map((room) => ({
-      label: `${room.building.code}-${room.name} (${
-        room.type.charAt(0).toLocaleUpperCase()
-      }${room.type.slice(1)})`,
+      label: `${room.building.code}-${room.name} (${room.type
+        .charAt(0)
+        .toLocaleUpperCase()}${room.type.slice(1)})`,
       value: room.id,
       detail: room,
     }));
@@ -63,47 +64,40 @@
   let editState = false;
   let editData: {
     id: string;
-    no: number;
-    lab: number;
-    type: string;
     groupId: string;
     roomId: string;
-    subjectId: string;
-    instructorId: string[];
-    child: {
-      id: string;
-      no: number;
-      lab: number;
-      type: string;
-      groupId: string;
-      roomId: string;
-      subjectId: string;
-      instructorId: string[];
-    }[];
+    instructor: string[];
   };
 
-  function showEdit(section: {
-    id: string;
+  let showData: {
     no: number;
-    lab: number;
+    lab: number | null;
+    subject: { name: string };
     type: string;
-    groupId: string;
-    roomId: string;
-    subjectId: string;
-    instructorId: string[];
-    child: {
+  };
+
+  function showEdit(
+    editSectionData: {
       id: string;
-      no: number;
-      lab: number;
-      type: string;
       groupId: string;
       roomId: string;
-      subjectId: string;
-      instructorId: string[];
-    }[];
-  }) {
+      instructor: {
+        id: string;
+      }[];
+    },
+    showSectionData: {
+      no: number;
+      type: string;
+      lab: number | null;
+      subject: { name: string };
+    },
+  ) {
     editState = true;
-    editData = section;
+    editData = {
+      ...editSectionData,
+      instructor: editSectionData.instructor.map((inst) => inst.id),
+    };
+    showData = showSectionData;
   }
 
   async function handleDelete(section: { id: string }) {
@@ -164,19 +158,19 @@
 <Modal bind:open={editState}>
   <div id="edit" class="p-4">
     <h1 class="mb-4 block text-center text-2xl font-bold">Edit Section</h1>
-    <!-- {#await roomOptions()}
+    {#await formOptions()}
       Loading...
     {:then options}
-      <SectionForm
-        groupOptions={options}
-        roomOptions={options}
-        subjectOptions={options}
-        instructorOptions={options}
+      <EditForm
+        groupOptions={options.group}
+        roomOptions={options.room}
+        instructorOptions={options.instructor}
         edit={true}
         {editData}
+        {showData}
         callback={() => (editState = false)}
       />
-    {/await} -->
+    {/await}
   </div>
 </Modal>
 
@@ -208,11 +202,18 @@
           <td class="text-center">{section.no}</td>
           <td class="text-center capitalize">{section.type}</td>
           <td class="text-center">{section.lab ?? '-'}</td>
-          <td class="text-center">{section.group.name}</td>
-          <td class="text-center">{section.room?.building.code}-{section.room?.name ?? ''}</td>
+          <td class="text-center">{section.group?.name ?? ''}</td>
           <td class="text-center">
+            {section.room?.building.code ?? ''}-{section.room?.name ?? ''}
+          </td>
+          <td class="space-y-2 text-center">
+            {section.instructor.length ? '' : '-'}
             {#each section.instructor as instructor (instructor.id)}
-              <span class="bg-light-hover whitespace-nowrap rounded px-2">{instructor.name}</span>
+              <p>
+                <span class="bg-light-hover whitespace-nowrap rounded px-2"
+                  >{instructor.name ?? '-'}</span
+                >
+              </p>
             {/each}
           </td>
           <td class="fit-width whitespace-nowrap text-center text-sm">
@@ -227,12 +228,26 @@
           </td>
           <td class="fit-width text-center">
             <div class="space-x-4 whitespace-nowrap">
-              <!-- <button
+              <button
                 class="action-button text-blue-600"
-                on:click={() => showEdit({ ...section, buildingId: section.building.id })}
+                on:click={() =>
+                  showEdit(
+                    {
+                      id: section.id,
+                      groupId: section.group?.id ?? '',
+                      roomId: section.room?.id ?? '',
+                      instructor: section.instructor,
+                    },
+                    {
+                      no: section.no,
+                      type: section.type,
+                      lab: section.lab,
+                      subject: section.subject,
+                    },
+                  )}
               >
                 Edit
-              </button> -->
+              </button>
               <button
                 class="action-button text-red-600"
                 on:click={() => handleDelete({ id: section.id })}

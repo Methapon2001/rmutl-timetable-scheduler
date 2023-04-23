@@ -40,7 +40,7 @@
     height: fit-content;
     max-height: 100%;
     max-width: 100%;
-    overflow-y: auto;
+    overflow-y: visible;
     background-color: #fff;
     border-radius: 0.5rem;
   }

@@ -13,7 +13,6 @@
         label: string;
         value: string;
         disabled?: boolean;
-        preselected?: boolean;
       }
   )[];
   export let value: string | string[] = multiple ? [] : '';

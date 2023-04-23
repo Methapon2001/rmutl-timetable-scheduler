@@ -4,10 +4,10 @@ import { refresh } from './auth';
 export const createSection = async (data: {
   type: string;
   subjectId: string;
-  groupId: string;
+  groupId: string | null;
   manual: boolean;
   section: {
-    roomId: string;
+    roomId: string | null;
     instructor: { id: string }[];
   }[];
 }): Promise<API.Section> => {
@@ -43,12 +43,14 @@ export const deleteSection = async (data: Pick<API.Section, 'id'>): Promise<API.
   return (await res.json()).data as API.Section;
 };
 
-export const editSection = async (
-  data: Pick<API.Section, 'id' | 'instructor'> & {
-    groupId: string;
-    roomId: string;
-  },
-): Promise<API.Section> => {
+export const editSection = async (data: {
+  id: string;
+  groupId: string | null;
+  roomId: string | null;
+  instructor: {
+    id: string;
+  }[];
+}): Promise<API.Section> => {
   const userSession = await refresh();
 
   const res = await fetch(`${PUBLIC_API_HOST}/api/section/${data.id}`, {

@@ -39,6 +39,10 @@
       path: '/group',
       text: 'Group',
     },
+    {
+      path: '/section',
+      text: 'Section',
+    },
   ];
 
   $: if (innerWidth && innerWidth < 768) {
