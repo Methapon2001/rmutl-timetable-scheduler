@@ -55,7 +55,7 @@
     border-radius: var(--rounded);
     border-width: 1px;
     outline: none;
-    padding: 0.5rem 1rem;
+    padding: 0.5rem 0.75rem;
   }
 
   .button {
@@ -98,7 +98,17 @@
     border-color: var(--color-light-disabled);
   }
 
+  .svs {
+    --svs-background-color: var(--color-light);
+    --svs-background-color-active: var(--color-light-hover);
+    --svs-border-color: var(--color-light);
+    --svs-border-color-active: var(--color-light-hover);
+    --svs-selected-border-color: transparent;
+    --svs-dropdown-z-index: 30;
+    --svs-shadow: none;
+  }
+
   .invalid > .svs {
-    --svs-border: 1px solid rgb(220 38 38) !important;
+    --svs-border-color: rgb(220 38 38);
   }
 }

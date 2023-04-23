@@ -1,16 +1,15 @@
 <script lang="ts">
   import { type ZodError, z } from 'zod';
   import { invalidate } from '$app/navigation';
-  import { blurOnEscape } from '$lib/utils/directives';
   import { getZodErrorMessage } from '$lib/utils/zod';
   import { editSection } from '$lib/api/section';
-  import { onMount, tick } from 'svelte';
+  import { onMount } from 'svelte';
   import Select from '$lib/components/Select.svelte';
 
   const schema = z.object({
     id: z.string(),
-    groupId: z.string(),
-    roomId: z.string(),
+    groupId: z.string().transform((v) => v.trim() || null),
+    roomId: z.string().transform((v) => v.trim() || null),
     instructor: z.string().array(),
   });
 
@@ -24,7 +23,7 @@
     label: string;
     value: string;
     disabled?: boolean;
-    detail: API.Room;
+    detail: API.Room; // eslint-disable-line no-undef
   }[];
 
   export let instructorOptions: {
@@ -38,7 +37,7 @@
   };
 
   let form: {
-    data: z.infer<typeof schema>;
+    data: z.input<typeof schema>;
     error: ZodError | undefined;
   } = {
     data: {
@@ -63,14 +62,6 @@
     type: string;
     lab: number | null;
     subject: { name: string };
-  };
-
-  let selected: {
-    groupId: string[];
-    roomId: string[];
-  } = {
-    groupId: edit && editData && editData.groupId != '' ? [editData.groupId] : [],
-    roomId: edit && editData && editData.roomId != '' ? [editData.roomId] : [],
   };
 
   async function handleSubmit() {
@@ -98,11 +89,6 @@
         groupId: '',
         roomId: '',
         instructor: [],
-      };
-
-      selected = {
-        groupId: [],
-        roomId: [],
       };
 
       await invalidate('data:section');
@@ -133,11 +119,7 @@
       class="col-span-4"
       class:invalid={form.error && getZodErrorMessage(form.error, ['groupId']).length > 0}
     >
-      <Select
-        options={groupOptions}
-        bind:value={form.data.groupId}
-        bind:selected={selected.groupId}
-      />
+      <Select options={groupOptions} bind:value={form.data.groupId} />
     </div>
     <div class="col-span-4 col-start-3 text-red-600">
       {form.error ? getZodErrorMessage(form.error, ['groupId']) : ''}
@@ -153,7 +135,12 @@
       class="col-span-4"
       class:invalid={form.error && getZodErrorMessage(form.error, ['roomId']).length > 0}
     >
-      <Select options={roomOptions} bind:value={form.data.roomId} bind:selected={selected.roomId} />
+      <Select
+        options={roomOptions.filter(
+          (opt) => opt.detail.type == 'both' || showData.type == opt.detail.type,
+        )}
+        bind:value={form.data.roomId}
+      />
     </div>
     <div class="col-span-4 col-start-3 text-red-600">
       {form.error ? getZodErrorMessage(form.error, ['roomId']) : ''}
@@ -169,7 +156,7 @@
       class="col-span-4"
       class:invalid={form.error && getZodErrorMessage(form.error, ['instructor']).length > 0}
     >
-      <Select options={instructorOptions} bind:selected={form.data.instructor} multiple />
+      <Select options={instructorOptions} bind:value={form.data.instructor} multiple />
     </div>
     <div class="col-span-4 col-start-3 text-red-600">
       {form.error ? getZodErrorMessage(form.error, ['instructor']) : ''}

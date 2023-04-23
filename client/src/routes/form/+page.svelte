@@ -4,7 +4,7 @@
 
 <div class="p-4">
   <h1 class="mb-4 block text-center text-2xl font-bold">New Form</h1>
-  <form class="mx-auto grid grid-cols-3 gap-2 rounded-md border bg-white p-4">
+  <form class="rounded-md mx-auto grid grid-cols-3 gap-2 border bg-white p-4">
     <!-- Input semester -->
     <div class="col-span-1 flex items-center text-left font-semibold">
       <label class="w-full after:ml-0.5 after:text-red-500 after:content-['*']" for="year">
@@ -15,7 +15,7 @@
       <select
         id="semester"
         name="semester"
-        class="w-full rounded-t-md border px-4 py-2 outline-none transition duration-150 focus:bg-slate-100"
+        class="rounded-t-md w-full border px-4 py-2 outline-none transition duration-150 focus:bg-slate-100"
         use:blurOnEscape
       >
         <option value="1">1</option>
@@ -72,7 +72,7 @@
     </div>
   </form>
 
-  <form class="mx-auto grid grid-cols-6 gap-2 rounded-md border bg-white p-4">
+  <form class="rounded-md mx-auto grid grid-cols-6 gap-2 border bg-white p-4">
     <h1 class="col-span-6 mb-4 block text-xl font-bold">Group: Com-eng1</h1>
     <!-- Input year -->
     <div class="col-span-1 flex items-center text-left font-semibold">
@@ -84,7 +84,7 @@
       <select
         id="semester"
         name="semester"
-        class="w-full rounded-t-md border px-4 py-2 outline-none transition duration-150 focus:bg-slate-100"
+        class="rounded-t-md w-full border px-4 py-2 outline-none transition duration-150 focus:bg-slate-100"
         use:blurOnEscape
       >
         <option value="1">1</option>
@@ -159,7 +159,7 @@
       <select
         id="semester"
         name="semester"
-        class="w-full rounded-t-md border px-4 py-2 outline-none transition duration-150 focus:bg-slate-100"
+        class="rounded-t-md w-full border px-4 py-2 outline-none transition duration-150 focus:bg-slate-100"
         use:blurOnEscape
       >
         <option value="1">1</option>
@@ -233,7 +233,7 @@
     </div>
   </form>
 
-  <form class="mx-auto grid grid-cols-6 gap-2 rounded-md border bg-white p-4">
+  <form class="rounded-md mx-auto grid grid-cols-6 gap-2 border bg-white p-4">
     <h1 class="col-span-6 mb-4 block text-xl font-bold">Group: Com-eng1</h1>
     <div
       class="col-span-2 text-lg font-semibold after:ml-0.5 after:text-red-500 after:content-['*']"
@@ -242,7 +242,7 @@
       <input
         type="text"
         value="1"
-        class="w-16 rounded-t-md border-b-2 px-4 py-2 text-center outline-none transition duration-150 focus:bg-slate-100"
+        class="rounded-t-md w-16 border-b-2 px-4 py-2 text-center outline-none transition duration-150 focus:bg-slate-100"
         use:blurOnEscape
       /> sections(s)
     </div>
@@ -263,7 +263,7 @@
       <select
         id="instructor"
         name="instructor"
-        class="w-full rounded-t-md border px-4 py-2 outline-none transition duration-150 focus:bg-slate-100"
+        class="rounded-t-md w-full border px-4 py-2 outline-none transition duration-150 focus:bg-slate-100"
         use:blurOnEscape
         multiple
       >
@@ -284,7 +284,7 @@
       <select
         id="instructor"
         name="instructor"
-        class="w-full rounded-t-md border px-4 py-2 outline-none transition duration-150 focus:bg-slate-100"
+        class="rounded-t-md w-full border px-4 py-2 outline-none transition duration-150 focus:bg-slate-100"
         use:blurOnEscape
         multiple
       >
@@ -305,7 +305,7 @@
       <select
         id="instructor"
         name="instructor"
-        class="w-full rounded-t-md border px-4 py-2 outline-none transition duration-150 focus:bg-slate-100"
+        class="rounded-t-md w-full border px-4 py-2 outline-none transition duration-150 focus:bg-slate-100"
         use:blurOnEscape
         multiple
       >

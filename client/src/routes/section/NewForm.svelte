@@ -10,12 +10,12 @@
   const schema = z.object({
     type: z.string(),
     subjectId: z.string().nonempty('Must select one of the options.'),
-    groupId: z.string(),
+    groupId: z.string().transform((v) => v.trim() || null),
     manual: z.boolean(),
     no: z.number().nullable(),
     section: z
       .object({
-        roomId: z.string(),
+        roomId: z.string().transform((v) => v.trim() || null),
         instructor: z.string().array(),
       })
       .array(),
@@ -31,14 +31,14 @@
     label: string;
     value: string;
     disabled?: boolean;
-    detail: API.Room;
+    detail: API.Room; // eslint-disable-line no-undef
   }[];
 
   export let subjectOptions: {
     label: string;
     value: string;
     disabled?: boolean;
-    detail: API.Subject;
+    detail: API.Subject; // eslint-disable-line no-undef
   }[];
 
   export let instructorOptions: {
@@ -52,7 +52,7 @@
   };
 
   let form: {
-    data: z.infer<typeof schema>;
+    data: z.input<typeof schema>;
     error: ZodError | undefined;
   } = {
     data: {
@@ -66,18 +66,6 @@
     error: undefined,
   };
 
-  let selected: {
-    subjectId: string[];
-    groupId: string[];
-    section: {
-      roomId: string[];
-    }[];
-  } = {
-    subjectId: [],
-    groupId: [],
-    section: [],
-  };
-
   function addSection() {
     form.data.section = [
       ...form.data.section,
@@ -86,20 +74,12 @@
         instructor: [],
       },
     ];
-
-    selected.section = [
-      ...selected.section,
-      {
-        roomId: [],
-      },
-    ];
   }
 
   function removeSection(index: number) {
     if (form.data.section.length == 1) return;
 
     form.data.section = form.data.section.filter((_, idx) => idx != index);
-    selected.section = selected.section.filter((_, idx) => idx != index);
   }
 
   async function handleChange() {
@@ -120,25 +100,12 @@
       },
     ];
 
-    selected.section = [
-      ...selected.section,
-      {
-        roomId: [],
-      },
-    ];
-
     if (subject && subject.lecture > 0 && subject.lab > 0) {
       form.data.section = [
         ...form.data.section,
         {
           roomId: '',
           instructor: [],
-        },
-      ];
-      selected.section = [
-        ...selected.section,
-        {
-          roomId: [],
         },
       ];
     }
@@ -177,12 +144,6 @@
         groupId: '',
         manual: false,
         no: null,
-        section: [],
-      };
-
-      selected = {
-        subjectId: [],
-        groupId: [],
         section: [],
       };
 
@@ -227,11 +188,7 @@
       class="col-span-4"
       class:invalid={form.error && getZodErrorMessage(form.error, ['groupId']).length > 0}
     >
-      <Select
-        options={groupOptions}
-        bind:value={form.data.groupId}
-        bind:selected={selected.groupId}
-      />
+      <Select options={groupOptions} bind:value={form.data.groupId} />
     </div>
     <div class="col-span-4 col-start-3 text-red-600">
       {form.error ? getZodErrorMessage(form.error, ['groupId']) : ''}
@@ -250,7 +207,6 @@
       <Select
         options={subjectOptions}
         bind:value={form.data.subjectId}
-        bind:selected={selected.subjectId}
         on:change={() => handleChange()}
       />
     </div>
@@ -261,7 +217,7 @@
   {#if form.data.subjectId != ''}
     {#each form.data.section as _, sectionIdx}
       <div class="relative space-y-4 rounded border p-3">
-        <button class="absolute top-0 right-0 p-3" on:click={() => removeSection(sectionIdx)}>
+        <button class="absolute right-0 top-0 p-3" on:click={() => removeSection(sectionIdx)}>
           <CrossIcon />
         </button>
         <h2 class="font-2xl text-center font-semibold capitalize">
@@ -286,7 +242,6 @@
                   (sectionIdx != 0 && opt.detail.type == 'lab'),
               )}
               bind:value={form.data.section[sectionIdx].roomId}
-              bind:selected={selected.section[sectionIdx].roomId}
             />
           </div>
           <div class="col-span-4 col-start-3 text-red-600">
@@ -306,7 +261,7 @@
           >
             <Select
               options={instructorOptions}
-              bind:selected={form.data.section[sectionIdx].instructor}
+              bind:value={form.data.section[sectionIdx].instructor}
               multiple
             />
           </div>

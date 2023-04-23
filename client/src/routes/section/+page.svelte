@@ -193,24 +193,26 @@
     <tbody>
       {#if data.section.total == 0}
         <tr>
-          <td class="text-secondary text-center" colspan="6">No records found.</td>
+          <td class="text-center text-secondary" colspan="6">No records found.</td>
         </tr>
       {/if}
       {#each data.section.data as section (section.id)}
         <tr class="hover:bg-light">
-          <td class="text-center">{section.subject.name}</td>
+          <td class="whitespace-nowrap text-center"
+            >{section.subject.code} {section.subject.name}</td
+          >
           <td class="text-center">{section.no}</td>
           <td class="text-center capitalize">{section.type}</td>
           <td class="text-center">{section.lab ?? '-'}</td>
           <td class="text-center">{section.group?.name ?? ''}</td>
-          <td class="text-center">
+          <td class="whitespace-nowrap text-center">
             {section.room?.building.code ?? ''}-{section.room?.name ?? ''}
           </td>
           <td class="space-y-2 text-center">
             {section.instructor.length ? '' : '-'}
             {#each section.instructor as instructor (instructor.id)}
               <p>
-                <span class="bg-light-hover whitespace-nowrap rounded px-2"
+                <span class="whitespace-nowrap rounded bg-light-hover px-2"
                   >{instructor.name ?? '-'}</span
                 >
               </p>
@@ -219,12 +221,12 @@
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(section.createdAt).toLocaleDateString()}</p>
             <p class="text-dark">{new Date(section.createdAt).toLocaleTimeString()}</p>
-            <p class="text-secondary capitalize">{section.createdBy.username}</p>
+            <p class="capitalize text-secondary">{section.createdBy.username}</p>
           </td>
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(section.updatedAt).toLocaleDateString()}</p>
             <p class="text-dark">{new Date(section.updatedAt).toLocaleTimeString()}</p>
-            <p class="text-secondary capitalize">{section.updatedBy.username}</p>
+            <p class="capitalize text-secondary">{section.updatedBy.username}</p>
           </td>
           <td class="fit-width text-center">
             <div class="space-x-4 whitespace-nowrap">

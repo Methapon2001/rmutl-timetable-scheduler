@@ -1,23 +1,27 @@
 <script lang="ts">
-  import { createEventDispatcher, tick } from 'svelte';
-
-  const dispatch = createEventDispatcher();
+  import { tick, createEventDispatcher } from 'svelte';
 
   export let id: string | undefined = undefined;
   export let name: string | undefined = undefined;
   export let placeholder: string | undefined = undefined;
-  export let multiple = false;
   export let options: (
     | string
     | {
         label: string;
         value: string;
         disabled?: boolean;
+        [key: string]: unknown;
       }
   )[];
+  export let multiple = false;
   export let value: string | string[] = multiple ? [] : '';
-  export let selected: string[] =
-    typeof value == 'string' && value != '' ? [value] : Array.isArray(value) ? value : [];
+
+  const dispatch = createEventDispatcher<{
+    change: {
+      label: string | string[];
+      value: string | string[];
+    };
+  }>();
 
   let selectContainerRef: HTMLDivElement;
   let selectInputRef: HTMLInputElement;
@@ -25,30 +29,42 @@
   let searchText = '';
   let open = false;
 
-  $: value = multiple ? selected : selected[0] ?? '';
-  $: matchedOptions = options.filter((opt, idx) => {
-    if (options.indexOf(opt) != idx) return false;
-
-    if (opt instanceof Object) {
+  $: filteredOptions = options
+    .map((option) => {
+      return typeof option === 'string' ? { label: option, value: option } : option;
+    })
+    .filter((option, idx, arr) => {
       return (
-        !selected.includes(opt.value) &&
-        opt.label.toLowerCase().includes(searchText.toLowerCase()) &&
-        options.findIndex(
-          (op) =>
-            op == opt.value ||
-            (op instanceof Object && (op.value == opt.value || op.label == opt.label)),
-        ) == idx
+        arr.findIndex((opt) => opt.value === option.value || opt.label == option.label) === idx
       );
-    }
-    return !selected.includes(opt) && opt.toLowerCase().includes(searchText);
+    });
+
+  $: matchedOptions = filteredOptions.filter((option) => {
+    const val = Array.isArray(value) ? value : value != '' ? [value] : [];
+
+    return (
+      !val.includes(option.value) &&
+      option.label.toLocaleLowerCase().includes(searchText.toLocaleLowerCase())
+    );
   });
 
-  function debounce<T extends (...args: any[]) => any>(
-    func: T,
+  $: selectedValues = Array.isArray(value)
+    ? value.filter((val, idx, arr) => arr.findIndex((v) => v === val) === idx)
+    : value !== ''
+    ? [value]
+    : [];
+
+  $: selectedOptions = selectedValues.map(
+    (v) => filteredOptions.find((opt) => opt.value === v) ?? { label: v, value: v },
+  );
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function debounce<TFunction extends (...args: any[]) => any>(
+    func: TFunction,
     wait: number,
-  ): (...args: Parameters<T>) => void {
+  ): (...args: Parameters<TFunction>) => void {
     let timeout: ReturnType<typeof setTimeout>;
-    return (...args: Parameters<T>) => {
+    return (...args: Parameters<TFunction>) => {
       clearTimeout(timeout);
       timeout = setTimeout(() => func(...args), wait);
     };
@@ -66,6 +82,7 @@
 
   function closeDropdown() {
     open = false;
+    searchText = '';
     activeIndex = null;
     selectInputRef.value = '';
     selectInputRef.blur();
@@ -75,25 +92,36 @@
     if (!selectContainerRef.contains(event.target as Node | null)) closeDropdown();
   }
 
+  async function scrollActiveIntoView() {
+    await tick();
+
+    document.querySelector('ul.options.open > li.active')?.scrollIntoView({
+      block: 'nearest',
+    });
+  }
+
   async function handleKeydown(event: KeyboardEvent) {
-    let activeOption: (typeof options)[number] | null = null;
+    let activeOption: (typeof matchedOptions)[number] | null =
+      activeIndex != null ? matchedOptions[activeIndex] : null;
 
     switch (event.key) {
       case 'Escape':
+        closeDropdown();
+        break;
       case 'Tab':
-        if (event.key == 'Tab' && activeIndex != null) {
+        if (activeIndex != null) {
           event.preventDefault();
-          add(matchedOptions[activeIndex]);
+          add(activeOption);
         } else {
           closeDropdown();
         }
         break;
       case 'Enter':
         event.preventDefault();
-        if (activeIndex != null) add(matchedOptions[activeIndex]);
+        if (activeOption != null) add(activeOption);
         break;
       case 'Backspace':
-        if (selected.length > 0 && searchText == '') remove(selected.length - 1);
+        if (value.length > 0 && searchText == '') remove(-1);
         break;
       case 'ArrowDown':
       case 'ArrowUp':
@@ -107,22 +135,14 @@
         if (activeIndex == null) {
           activeIndex =
             event.key == 'ArrowDown'
-              ? matchedOptions.findIndex(
-                  (opt) => typeof opt == 'string' || (opt instanceof Object && !opt.disabled),
-                )
-              : matchedOptions.findLastIndex(
-                  (opt) => typeof opt == 'string' || (opt instanceof Object && !opt.disabled),
-                );
+              ? matchedOptions.findIndex((opt) => !opt.disabled)
+              : matchedOptions.findLastIndex((opt) => !opt.disabled);
 
-          await tick();
-
-          document.querySelector('ul.options.open > li.active')?.scrollIntoView({
-            block: 'nearest',
-          });
+          scrollActiveIntoView();
           return;
         }
 
-        if (matchedOptions.every((opt) => opt instanceof Object && opt.disabled)) return;
+        if (matchedOptions.every((opt) => opt.disabled)) return;
 
         do {
           let increment = 0;
@@ -135,61 +155,86 @@
           if (activeIndex > matchedOptions.length - 1) activeIndex = 0;
           if (activeIndex < 0) activeIndex = matchedOptions.length - 1;
 
-          await tick();
-
           activeOption = matchedOptions[activeIndex];
-        } while (activeOption instanceof Object && activeOption.disabled);
+        } while (activeOption.disabled);
 
-        document.querySelector('ul.options.open > li.active')?.scrollIntoView({
-          block: 'nearest',
-        });
+        scrollActiveIntoView();
         break;
     }
   }
 
-  function add(opt: (typeof matchedOptions)[number]) {
-    if (typeof opt == 'string') selected = multiple ? [...selected, opt] : [opt];
+  async function add(option: (typeof matchedOptions)[number] | null) {
+    if (!option || option.disabled) return;
 
-    if (opt instanceof Object && !opt.disabled)
-      selected = multiple ? [...selected, opt.value] : [opt.value];
+    if (!multiple) {
+      value = option.value;
+      closeDropdown();
+    } else {
+      value = Array.isArray(value) ? [...value, option.value] : [option.value];
+      selectInputRef.focus();
+    }
+
+    await tick();
 
     searchText = '';
     selectInputRef.value = '';
-    selectInputRef.focus();
-    activeIndex = null;
 
     dispatch('change', {
-      value,
+      label: selectedOptions.map((option) => option.label),
+      value: value,
     });
-
-    if (!multiple) closeDropdown();
   }
 
-  function remove(index: number) {
-    selected = selected.filter((_, idx) => idx != index);
+  async function remove(index: number) {
+    if (!multiple) {
+      value = '';
+    } else if (!Array.isArray(value)) {
+      value = [];
+    } else {
+      value = index === -1 ? value.slice(0, -1) : value.filter((_, idx) => idx !== index);
+    }
 
     if (open) selectInputRef.focus();
+
+    await tick();
+
+    dispatch('change', {
+      label: selectedOptions.map((option) => option.label),
+      value: value,
+    });
   }
 
-  function removeAll() {
-    selected = [];
-
-    dispatch('change');
+  async function removeAll() {
+    if (!multiple) {
+      value = '';
+    } else {
+      value = [];
+    }
 
     if (open) selectInputRef.focus();
+
+    await tick();
+
+    dispatch('change', {
+      label: selectedOptions.map((option) => option.label),
+      value: value,
+    });
   }
 </script>
 
 <svelte:window on:touchstart={handleOutclick} on:click={handleOutclick} />
 
 <div class="svs" bind:this={selectContainerRef} on:mouseup|stopPropagation={openDropdown}>
+  <select {id} {name} {multiple} tabindex="-1" aria-hidden="true">
+    {#each selectedOptions as option (option.value)}
+      <option value={option.label} selected>{option.value}</option>
+    {/each}
+  </select>
+
   <ul class="selected">
-    {#each selected as val, idx (val)}
-      {@const opt = options.find((op) => {
-        return op == val || (op instanceof Object && op.value == val);
-      })}
+    {#each selectedOptions as option, idx (option.value)}
       <li>
-        {opt instanceof Object ? opt.label : opt}
+        {option.label}
         <button
           on:mouseup|stopPropagation={() => remove(idx)}
           on:keydown={(e) => {
@@ -214,9 +259,7 @@
       </li>
     {/each}
     <input
-      {id}
-      {name}
-      placeholder={selected.length == 0 ? placeholder : undefined}
+      placeholder={selectedValues.length == 0 ? placeholder : undefined}
       autocomplete="off"
       type="text"
       bind:this={selectInputRef}
@@ -226,7 +269,8 @@
       on:keydown|stopPropagation={handleKeydown}
     />
   </ul>
-  {#if selected.length > 1}
+
+  {#if selectedValues.length > 1}
     <button
       class="clear"
       on:mouseup|stopPropagation={() => removeAll()}
@@ -250,43 +294,27 @@
       </svg>
     </button>
   {/if}
-  <div class="chevron">
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 20 20"
-      fill="currentColor"
-      height="16"
-      width="16"
-    >
-      <path
-        fill-rule="evenodd"
-        d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-        clip-rule="evenodd"
-      />
-    </svg>
-  </div>
 
   <ul class="options" class:open>
-    {#each matchedOptions as opt, idx (opt instanceof Object ? opt.value : opt)}
-      {@const { label, disabled = false } = opt instanceof Object ? opt : { label: opt }}
+    {#each matchedOptions as opt, idx (opt.value)}
       <li
-        class:disabled={opt instanceof Object && opt.disabled}
+        class:disabled={opt.disabled}
         class:active={activeIndex == idx}
         on:mouseup|stopPropagation={() => add(opt)}
         on:mouseover={() => {
-          if (!disabled) activeIndex = idx;
+          if (!opt.disabled) activeIndex = idx;
         }}
         on:mouseout={() => {
-          if (!disabled) activeIndex = null;
+          if (!opt.disabled) activeIndex = null;
         }}
         on:focus={() => {
-          if (!disabled) activeIndex = idx;
+          if (!opt.disabled) activeIndex = idx;
         }}
         on:blur={() => {
-          if (!disabled) activeIndex = null;
+          if (!opt.disabled) activeIndex = null;
         }}
       >
-        {label}
+        {opt.label}
       </li>
     {/each}
 
@@ -297,24 +325,92 @@
 </div>
 
 <style>
-  .svs {
-    --svs-spacing: 0.5rem;
-    --svs-max-height: 16rem;
+  :root {
     --svs-border-radius: 0.5rem;
+
+    --svs-padding-verticle: 0.25rem;
+    --svs-padding-horizontal: 0.25rem;
+
+    --svs-selected-input-padding-verticle: 0.25rem;
+    --svs-selected-input-padding-horizontal: 0.5rem;
+
+    --svs-options-padding-verticle: 0.25rem;
+    --svs-options-padding-horizontal: 0.75rem;
+
+    --svs-selected-input-gap: 0.4rem;
+
     --svs-color: #000;
-    --svs-background-color: var(--color-light);
-    --svs-background-color-active: var(--color-light-hover);
-    --svs-selected-color: hsl(204 10% 50% / 0.2);
-    --svs-option-background-color: #fff;
-    --svs-option-background-color-active: var(--color-light);
-    --svs-border: 1px solid transparent;
-    --svs-icon-color: hsl(204, 10%, 50%);
+    --svs-color-active: #000;
+
+    --svs-selected-color: #000;
+
+    --svs-options-color: #000;
+    --svs-options-color-active: #000;
+    --svs-options-color-disabled: hsl(240 30% 50% / 0.3);
+
+    --svs-icon-color: hsl(240 30% 50% / 0.5);
+    --svs-icon-color-active: hsl(240 30% 50% / 0.8);
+
+    --svs-background-color: #fff;
+    --svs-background-color-active: #fff;
+
+    --svs-selected-background-color: hsl(240 30% 50% / 0.1);
+
+    --svs-icon-background-color: transparent;
+    --svs-icon-background-color-active: transparent;
+
+    --svs-dropdown-background-color: #fff;
+
+    --svs-options-background-color: #fff;
+    --svs-options-background-color-active: hsl(240 30% 70% / 0.1);
+    --svs-options-background-color-disabled: #fff;
+
+    --svs-border-color: hsl(240 30% 50% / 0.2);
+    --svs-border-color-active: hsl(240 30% 50% / 0.5);
+
+    --svs-selected-border-color: transparent;
+
+    --svs-dropdown-border-color: hsl(240 30% 50% / 0.2);
+
+    --svs-shadow: 0 2px 6px -1px hsl(0 0% 0% / 0.1);
+
+    --svs-dropdown-shadow: 0 4px 12px hsl(0 0% 0% / 0.175);
+
+    --svs-dropdown-margin: 0.25rem;
+    --svs-dropdown-max-height: 16rem;
+    --svs-dropdown-z-index: 30;
+  }
+
+  *,
+  ::before,
+  ::after {
+    border-width: 0px;
+    border-style: solid;
+  }
+
+  button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    background-image: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
   }
 
   input {
     flex: 1;
-    min-width: 2rem;
+    min-width: 1rem;
+    border-width: 1px;
+    border-color: transparent;
     background-color: transparent;
+    transition: none;
   }
 
   input:focus {
@@ -322,24 +418,19 @@
     box-shadow: none;
   }
 
+  select {
+    display: none;
+  }
+
   .svs {
     display: flex;
     position: relative;
-    color: var(--svs-color);
-    border: var(--svs-border);
+    border-width: 1px;
+    border-color: var(--svs-border-color);
     border-radius: var(--svs-border-radius);
     background-color: var(--svs-background-color);
-  }
-
-  .svs > :where(.chevron, .clear) {
-    display: flex;
-    align-items: center;
-    padding: var(--svs-spacing);
-    color: var(--svs-icon-color);
-  }
-
-  .svs:has(> .options.open) {
-    background-color: var(--svs-background-color-active);
+    color: var(--svs-color);
+    box-shadow: var(--svs-shadow);
   }
 
   .svs > .selected {
@@ -347,29 +438,52 @@
     display: flex;
     flex-wrap: wrap;
     white-space: nowrap;
-    gap: var(--svs-spacing);
-    padding: var(--svs-spacing);
+    gap: var(--svs-selected-input-gap);
+    padding: var(--svs-padding-verticle) var(--svs-padding-horizontal);
+  }
+
+  .svs > .clear {
+    border-radius: var(--svs-border-radius);
+    padding: var(--svs-padding-verticle) var(--svs-padding-horizontal);
+    color: var(--svs-icon-color);
+  }
+  .svs > .clear:hover {
+    color: var(--svs-icon-color-active);
   }
 
   .svs > .selected > li {
     flex: 1 auto content;
     display: flex;
     align-items: center;
-    background-color: var(--svs-selected-color);
+    border-width: 1px;
+    border-color: var(--svs-selected-border-color);
     border-radius: var(--svs-border-radius);
+    color: var(--svs-selected-color);
+    background-color: var(--svs-selected-background-color);
   }
 
   .svs > .selected > :where(input, li) {
-    padding: 0 var(--svs-spacing);
+    padding: var(--svs-selected-input-padding-verticle) var(--svs-selected-input-padding-horizontal);
   }
 
   .svs > .selected > li > button {
+    margin-left: 0.3rem;
     border-radius: var(--svs-border-radius);
-    margin-left: var(--svs-spacing);
     color: var(--svs-icon-color);
+    background-color: var(--svs-icon-background-color);
+  }
+
+  .svs > .selected > li > button:hover {
+    color: var(--svs-icon-color-active);
+    background-color: var(--svs-icon-background-color-active);
   }
 
   .svs > .selected > input {
+    padding-left: var(--svs-selected-input-padding-horizontal);
+    padding-right: var(--svs-selected-input-padding-horizontal);
+  }
+
+  .svs > .selected > input:not(:only-child) {
     padding-left: 0;
     padding-right: 0;
   }
@@ -378,15 +492,22 @@
     position: absolute;
     display: none;
     overflow-y: auto;
-    box-shadow: 0 1px 6px 0 rgba(0, 0, 0, 0.1), 0 1px 4px -1px rgba(0, 0, 0, 0.2);
     top: 100%;
     width: 100%;
-    border: 1px solid var(--svs-border);
-    background-color: var(--svs-option-background-color);
+    border-width: 1px;
     border-radius: var(--svs-border-radius);
-    max-height: var(--svs-max-height);
-    border: 1px solid hsl(204 10% 50% / 0.2);
-    z-index: 999;
+    border-color: var(--svs-dropdown-border-color);
+    box-shadow: var(--svs-dropdown-shadow);
+    max-height: var(--svs-dropdown-max-height);
+    margin-top: var(--svs-dropdown-margin);
+    background-color: var(--svs-dropdown-background-color);
+    z-index: var(--svs-dropdown-z-index);
+  }
+
+  .svs:has(> .open) {
+    color: var(--svs-color-active);
+    border-color: var(--svs-border-color-active);
+    background-color: var(--svs-background-color-active);
   }
 
   .svs > .options.open {
@@ -395,19 +516,17 @@
 
   .svs > .options > li {
     cursor: pointer;
-    padding: calc(var(--svs-spacing) / 2) var(--svs-spacing);
-  }
-
-  .svs > .options > li:last-child {
-    margin-bottom: 0;
+    padding: var(--svs-options-padding-verticle) var(--svs-options-padding-horizontal);
   }
 
   .svs > .options > li.disabled {
     cursor: default;
-    color: var(--svs-selected-color);
+    color: var(--svs-options-color-disabled);
+    background-color: var(--svs-options-background-color-disabled);
   }
 
   .svs > .options > li.active:not(.disabled) {
-    background-color: var(--svs-option-background-color-active);
+    color: var(--svs-options-color-active);
+    background-color: var(--svs-options-background-color-active);
   }
 </style>

@@ -47,11 +47,6 @@
     error: undefined,
   };
 
-  // Must have to reset selected value of select component (Needed for single select only)
-  let selected = {
-    courseId: edit && editData ? [editData.courseId] : [],
-  };
-
   async function handleSubmit() {
     return edit ? await handleEdit() : await handleCreate();
   }
@@ -73,10 +68,6 @@
         id: '',
         name: '',
         courseId: '',
-      };
-
-      selected = {
-        courseId: [],
       };
 
       await invalidate('data:group');
@@ -102,10 +93,6 @@
         id: '',
         name: '',
         courseId: '',
-      };
-
-      selected = {
-        courseId: [],
       };
 
       await invalidate('data:group');
@@ -153,11 +140,7 @@
       class="col-span-4"
       class:invalid={form.error && getZodErrorMessage(form.error, ['courseId']).length > 0}
     >
-      <Select
-        options={courseOptions}
-        bind:value={form.data.courseId}
-        bind:selected={selected.courseId}
-      />
+      <Select options={courseOptions} bind:value={form.data.courseId} placeholder="Select Course" />
     </div>
     <div class="col-span-4 col-start-3 text-red-600">
       {form.error ? getZodErrorMessage(form.error, ['courseId']) : ''}

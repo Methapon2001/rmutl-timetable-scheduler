@@ -13,12 +13,12 @@
     disabled?: boolean;
   }[] = [
     {
-      label: 'Admin',
-      value: 'admin',
-    },
-    {
       label: 'User',
       value: 'user',
+    },
+    {
+      label: 'Admin',
+      value: 'admin',
     },
   ];
 
@@ -59,14 +59,9 @@
       id: '',
       username: '',
       password: '',
-      role: '',
+      role: 'user',
     },
     error: undefined,
-  };
-
-  // Must have to reset selected value of select component (Needed for single select only)
-  let selected = {
-    role: edit && editData ? [editData.role] : [],
   };
 
   async function handleSubmit() {
@@ -90,11 +85,7 @@
         id: '',
         username: '',
         password: '',
-        role: '',
-      };
-
-      selected = {
-        role: [],
+        role: 'user',
       };
 
       await invalidate('data:user');
@@ -108,7 +99,7 @@
 
     const result = editSchema
       .superRefine((val, ctx) => {
-        if (val.password && val.password != '' && val.password.length < 4) {
+        if (val.password && val.password.length < 4) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: 'Password must be longer than 4 characters.',
@@ -130,11 +121,7 @@
         id: '',
         username: '',
         password: '',
-        role: '',
-      };
-
-      selected = {
-        role: [],
+        role: 'user',
       };
 
       await invalidate('data:user');
@@ -161,7 +148,7 @@
       class="col-span-4"
       class:invalid={form.error && getZodErrorMessage(form.error, ['role']).length > 0}
     >
-      <Select options={roleOptions} bind:value={form.data.role} bind:selected={selected.role} />
+      <Select options={roleOptions} bind:value={form.data.role} placeholder="Select Role" />
     </div>
     <div class="col-span-4 col-start-3 text-red-600">
       {form.error ? getZodErrorMessage(form.error, ['role']) : ''}

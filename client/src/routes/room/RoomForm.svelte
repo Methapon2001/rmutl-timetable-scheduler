@@ -11,7 +11,6 @@
     label: string;
     value: string;
     disabled?: boolean;
-    preselected?: boolean;
   }[] = [
     {
       label: 'Lab',
@@ -70,12 +69,6 @@
     error: undefined,
   };
 
-  // Must have to reset selected value of select component (Needed for single select only)
-  let selected = {
-    type: edit && editData ? [editData.type] : [],
-    buildingId: edit && editData ? [editData.buildingId] : [],
-  };
-
   async function handleSubmit() {
     return edit ? await handleEdit() : await handleCreate();
   }
@@ -98,11 +91,6 @@
         name: '',
         type: '',
         buildingId: '',
-      };
-
-      selected = {
-        type: [],
-        buildingId: [],
       };
 
       await invalidate('data:room');
@@ -131,11 +119,6 @@
         buildingId: '',
       };
 
-      selected = {
-        type: [],
-        buildingId: [],
-      };
-
       await invalidate('data:room');
 
       callback();
@@ -148,8 +131,6 @@
     }
   });
 </script>
-
-
 
 <form on:submit|preventDefault={() => handleSubmit()} class="space-y-4">
   <section id="input-building" class="grid grid-cols-6">
@@ -165,7 +146,7 @@
       <Select
         options={buildingOptions}
         bind:value={form.data.buildingId}
-        bind:selected={selected.buildingId}
+        placeholder="Select Building"
       />
     </div>
     <div class="col-span-4 col-start-3 text-red-600">
@@ -182,7 +163,7 @@
       class="col-span-4"
       class:invalid={form.error && getZodErrorMessage(form.error, ['type']).length > 0}
     >
-      <Select options={typeOptions} bind:value={form.data.type} bind:selected={selected.type} />
+      <Select options={typeOptions} bind:value={form.data.type} placeholder="Select Room Type" />
     </div>
     <div class="col-span-4 col-start-3 text-red-600">
       {form.error ? getZodErrorMessage(form.error, ['type']) : ''}
