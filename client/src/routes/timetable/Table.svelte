@@ -15,7 +15,7 @@
   export let small = false;
   export let data: {
     id: string;
-    section: API.Scheduler['section'];
+    section: API.Scheduler['section']; // eslint-disable-line no-undef
     weekday: WeekdayShort;
     period: number;
     size: number;
@@ -23,14 +23,15 @@
   export let state: {
     status: boolean;
     selected: boolean;
-    section: API.Section | null;
+    section: API.Section | null; // eslint-disable-line no-undef
     weekday: WeekdayShort;
     period: number;
     size: number;
   };
-  export let group: API.Scheduler['section']['group'] | undefined = undefined;
-  export let room: API.Scheduler['section']['room'] | undefined = undefined;
-  export let instructor: API.Scheduler['section']['instructor'][number] | undefined = undefined;
+
+  export let group: API.Scheduler['section']['group'] | undefined = undefined; // eslint-disable-line no-undef
+  export let room: API.Scheduler['section']['room'] | undefined = undefined; // eslint-disable-line no-undef
+  export let instructor: API.Scheduler['section']['instructor'][number] | undefined = undefined; // eslint-disable-line no-undef
 
   $: shareSelectedData = data.filter((obj) => {
     return (

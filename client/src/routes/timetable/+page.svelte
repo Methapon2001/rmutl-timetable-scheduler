@@ -16,7 +16,7 @@
   });
 
   let instructor = scheduler.reduce<
-    Omit<API.Instructor, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>[]
+    Omit<API.Instructor, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>[] // eslint-disable-line no-undef
   >((acc, curr) => {
     return acc
       .concat(curr.section.instructor)
@@ -24,7 +24,7 @@
   }, []);
 
   let room = scheduler.reduce<
-    Omit<API.Room, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>[]
+    Omit<API.Room, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>[] // eslint-disable-line no-undef
   >((acc, curr) => {
     return acc
       .concat(curr.section.room ?? [])
@@ -32,7 +32,7 @@
   }, []);
 
   let group = scheduler.reduce<
-    Omit<API.Group, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>[]
+    Omit<API.Group, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>[] // eslint-disable-line no-undef
   >((acc, curr) => {
     return acc
       .concat(curr.section.group ?? [])
@@ -52,11 +52,11 @@
 <div class="flex">
   <div class="flex-grow">
     <div>
-      <div class="grid grid-cols-2 z-20 shadow">
+      <div class="z-20 grid grid-cols-2 shadow">
         <div class="table-small-container border-b border-r">
           {#each instructor as i (i.id)}
             <div>
-              <h6 class="font-semibold text-center">Instructor - {i.name}</h6>
+              <h6 class="text-center font-semibold">Instructor - {i.name}</h6>
               <Table
                 bind:data={scheduler}
                 small={true}
@@ -68,7 +68,7 @@
           {/each}
           {#each instructor as i (i.id)}
             <div>
-              <h6 class="font-semibold text-center">Instructor - {i.name}</h6>
+              <h6 class="text-center font-semibold">Instructor - {i.name}</h6>
               <Table
                 bind:data={scheduler}
                 small={true}
@@ -82,7 +82,7 @@
         <div class="table-small-container border-b">
           {#each room as r (r.id)}
             <div>
-              <h6 class="font-semibold text-center">Room - {r.building.code}-{r.name}</h6>
+              <h6 class="text-center font-semibold">Room - {r.building.code}-{r.name}</h6>
               <Table bind:data={scheduler} small={true} bind:state selectable={true} room={r} />
             </div>
           {/each}
@@ -91,7 +91,7 @@
       <div class="main-table-container">
         {#each group as g (g.id)}
           <div class="p-4">
-            <h6 class="font-semibold text-center">Group - {g.name}</h6>
+            <h6 class="text-center font-semibold">Group - {g.name}</h6>
             <Table bind:data={scheduler} bind:state selectable={true} group={g} />
           </div>
         {/each}

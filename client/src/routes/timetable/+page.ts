@@ -2,7 +2,7 @@ import type { PageLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import { PUBLIC_API_HOST } from '$env/static/public';
 
-export const load = (async ({ fetch, parent, depends, url }) => {
+export const load = (async ({ fetch, parent, depends }) => {
   const { session } = await parent();
 
   depends('data:scheduler');
