@@ -193,7 +193,7 @@
     <tbody>
       {#if data.section.total == 0}
         <tr>
-          <td class="text-center text-secondary" colspan="6">No records found.</td>
+          <td class="text-center text-secondary" colspan="10">No records found.</td>
         </tr>
       {/if}
       {#each data.section.data as section (section.id)}
