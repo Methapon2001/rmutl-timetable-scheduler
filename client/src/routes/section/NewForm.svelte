@@ -147,7 +147,7 @@
         section: [],
       };
 
-      await invalidate('data:subject');
+      await invalidate('data:section');
 
       callback();
     }
