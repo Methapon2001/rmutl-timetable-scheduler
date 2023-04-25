@@ -126,13 +126,13 @@
       class="search w-full"
       placeholder="Search"
       autocomplete="off"
-      value={$page.url.searchParams.get('search')}
-      on:input={(e) => handleSearch(e.currentTarget.value)}
+      value="{$page.url.searchParams.get('search')}"
+      on:input="{(e) => handleSearch(e.currentTarget.value)}"
       use:blurOnEscape
     />
   </div>
 
-  <button type="button" class="button w-full md:w-fit" on:click={() => (newState = !newState)}>
+  <button type="button" class="button w-full md:w-fit" on:click="{() => (newState = !newState)}">
     New Section
   </button>
 </div>
@@ -145,30 +145,30 @@
         Loading...
       {:then options}
         <SectionNewForm
-          groupOptions={options.group}
-          roomOptions={options.room}
-          subjectOptions={options.subject}
-          instructorOptions={options.instructor}
+          groupOptions="{options.group}"
+          roomOptions="{options.room}"
+          subjectOptions="{options.subject}"
+          instructorOptions="{options.instructor}"
         />
       {/await}
     </div>
   </div>
 {/if}
 
-<Modal bind:open={editState}>
+<Modal bind:open="{editState}">
   <div id="edit" class="p-4">
     <h1 class="mb-4 block text-center text-2xl font-bold">Edit Section</h1>
     {#await formOptions()}
       Loading...
     {:then options}
       <EditForm
-        groupOptions={options.group}
-        roomOptions={options.room}
-        instructorOptions={options.instructor}
-        edit={true}
-        {editData}
-        {showData}
-        callback={() => (editState = false)}
+        groupOptions="{options.group}"
+        roomOptions="{options.room}"
+        instructorOptions="{options.instructor}"
+        edit="{true}"
+        editData="{editData}"
+        showData="{showData}"
+        callback="{() => (editState = false)}"
       />
     {/await}
   </div>
@@ -232,7 +232,7 @@
             <div class="space-x-4 whitespace-nowrap">
               <button
                 class="action-button text-blue-600"
-                on:click={() =>
+                on:click="{() =>
                   showEdit(
                     {
                       id: section.id,
@@ -246,13 +246,13 @@
                       lab: section.lab,
                       subject: section.subject,
                     },
-                  )}
+                  )}"
               >
                 Edit
               </button>
               <button
                 class="action-button text-red-600"
-                on:click={() => handleDelete({ id: section.id })}
+                on:click="{() => handleDelete({ id: section.id })}"
               >
                 Delete
               </button>
@@ -266,9 +266,9 @@
 
 <div id="pagination">
   <Pagination
-    current={+($page.url.searchParams.get('page') ?? 1)}
-    range={3}
-    total={Math.ceil(data.section.total / data.section.limit)}
+    current="{+($page.url.searchParams.get('page') ?? 1)}"
+    range="{3}"
+    total="{Math.ceil(data.section.total / data.section.limit)}"
   />
 </div>
 

@@ -52,9 +52,9 @@
   $: route = $page.route.id;
 </script>
 
-<svelte:window bind:innerWidth />
+<svelte:window bind:innerWidth="{innerWidth}" />
 
-<nav style:width={menu ? '16rem' : '0'}>
+<nav style:width="{menu ? '16rem' : '0'}">
   <ul>
     <li>
       <div id="app-icon"><img src="./favicon.png" alt="icon" /></div>
@@ -62,14 +62,14 @@
   </ul>
   <ul>
     {#each menuList1 as { path, text }}
-      <li><a class:active={route == path} href={path} role="button">{text}</a></li>
+      <li><a class:active="{route == path}" href="{path}" role="button">{text}</a></li>
     {/each}
   </ul>
 
   {#if !data.session}
     <ul>
       {#each [{ path: '/login', text: 'Login' }] as { path, text }}
-        <li><a class:active={route == path} href={path} role="button">{text}</a></li>
+        <li><a class:active="{route == path}" href="{path}" role="button">{text}</a></li>
       {/each}
     </ul>
   {/if}
@@ -77,25 +77,25 @@
   {#if data.session}
     <ul data-sveltekit-preload-data="off">
       {#if data.session.user.role == 'admin'}
-        <li><a class:active={route == 'user'} href={'user'} role="button">User</a></li>
+        <li><a class:active="{route == 'user'}" href="{'user'}" role="button">User</a></li>
       {/if}
       {#each [{ path: '/logout', text: 'Logout' }] as { path, text }}
-        <li><a class:active={route == path} href={path} role="button">{text}</a></li>
+        <li><a class:active="{route == path}" href="{path}" role="button">{text}</a></li>
       {/each}
     </ul>
   {/if}
 </nav>
 
-<header style:margin-left={menu ? '16rem' : '0'}>
+<header style:margin-left="{menu ? '16rem' : '0'}">
   <button
     id="menu-button"
     use:clickOutside
-    on:click={() => (menu = !menu)}
-    on:outclick={() => {
+    on:click="{() => (menu = !menu)}"
+    on:outclick="{() => {
       if (innerWidth && innerWidth < 768) {
         menu = false;
       }
-    }}
+    }}"
   >
     <MenuIcon />
   </button>
@@ -106,7 +106,7 @@
   </span>
 </header>
 
-<main style:margin-left={menu ? '16rem' : '0'}>
+<main style:margin-left="{menu ? '16rem' : '0'}">
   <slot />
 </main>
 

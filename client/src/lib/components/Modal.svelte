@@ -8,15 +8,20 @@
 </script>
 
 <svelte:window
-  on:keydown={(e) => {
+  on:keydown="{(e) => {
     if (e.code == 'Escape') open = false;
-  }}
+  }}"
 />
 
 {#if open}
-  <div class="modal" transition:fade={{ duration: 150 }}>
-    <div class="modal-content" style:width on:outclick={() => (open = false)} use:clickOutside>
-      <button class="close" on:click={() => (open = false)}>
+  <div class="modal" transition:fade="{{ duration: 150 }}">
+    <div
+      class="modal-content"
+      style:width="{width}"
+      on:outclick="{() => (open = false)}"
+      use:clickOutside
+    >
+      <button class="close" on:click="{() => (open = false)}">
         <CrossIcon />
       </button>
       <slot />

@@ -222,12 +222,12 @@
   }
 </script>
 
-<svelte:window on:touchstart={handleOutclick} on:click={handleOutclick} />
+<svelte:window on:touchstart="{handleOutclick}" on:click="{handleOutclick}" />
 
-<div class="svs" bind:this={selectContainerRef} on:mouseup|stopPropagation={openDropdown}>
-  <select {id} {name} {multiple} tabindex="-1" aria-hidden="true">
+<div class="svs" bind:this="{selectContainerRef}" on:mouseup|stopPropagation="{openDropdown}">
+  <select id="{id}" name="{name}" multiple="{multiple}" tabindex="-1" aria-hidden="true">
     {#each selectedOptions as option (option.value)}
-      <option value={option.label} selected>{option.value}</option>
+      <option value="{option.label}" selected>{option.value}</option>
     {/each}
   </select>
 
@@ -236,13 +236,13 @@
       <li>
         {option.label}
         <button
-          on:mouseup|stopPropagation={() => remove(idx)}
-          on:keydown={(e) => {
+          on:mouseup|stopPropagation="{() => remove(idx)}"
+          on:keydown="{(e) => {
             if (e.code == 'Enter' || e.code == 'Space') {
               e.preventDefault();
               remove(idx);
             }
-          }}
+          }}"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -253,33 +253,33 @@
           >
             <path
               d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"
-            />
+            ></path>
           </svg>
         </button>
       </li>
     {/each}
     <input
-      placeholder={selectedValues.length == 0 ? placeholder : undefined}
+      placeholder="{selectedValues.length == 0 ? placeholder : undefined}"
       autocomplete="off"
       type="text"
-      bind:this={selectInputRef}
-      on:input={handleInput}
-      on:focus={openDropdown}
-      on:mouseup|self|stopPropagation={openDropdown}
-      on:keydown|stopPropagation={handleKeydown}
+      bind:this="{selectInputRef}"
+      on:input="{handleInput}"
+      on:focus="{openDropdown}"
+      on:mouseup|self|stopPropagation="{openDropdown}"
+      on:keydown|stopPropagation="{handleKeydown}"
     />
   </ul>
 
   {#if selectedValues.length > 1}
     <button
       class="clear"
-      on:mouseup|stopPropagation={() => removeAll()}
-      on:keydown={(e) => {
+      on:mouseup|stopPropagation="{() => removeAll()}"
+      on:keydown="{(e) => {
         if (e.code == 'Enter' || e.code == 'Space') {
           e.preventDefault();
           removeAll();
         }
-      }}
+      }}"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -290,29 +290,29 @@
       >
         <path
           d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"
-        />
+        ></path>
       </svg>
     </button>
   {/if}
 
-  <ul class="options" class:open>
+  <ul class="options" class:open="{open}">
     {#each matchedOptions as opt, idx (opt.value)}
       <li
-        class:disabled={opt.disabled}
-        class:active={activeIndex == idx}
-        on:mouseup|stopPropagation={() => add(opt)}
-        on:mouseover={() => {
+        class:disabled="{opt.disabled}"
+        class:active="{activeIndex == idx}"
+        on:mouseup|stopPropagation="{() => add(opt)}"
+        on:mouseover="{() => {
           if (!opt.disabled) activeIndex = idx;
-        }}
-        on:mouseout={() => {
+        }}"
+        on:mouseout="{() => {
           if (!opt.disabled) activeIndex = null;
-        }}
-        on:focus={() => {
+        }}"
+        on:focus="{() => {
           if (!opt.disabled) activeIndex = idx;
-        }}
-        on:blur={() => {
+        }}"
+        on:blur="{() => {
           if (!opt.disabled) activeIndex = null;
-        }}
+        }}"
       >
         {opt.label}
       </li>

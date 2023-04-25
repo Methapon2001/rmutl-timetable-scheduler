@@ -95,7 +95,7 @@
   });
 </script>
 
-<form on:submit|preventDefault={() => handleSubmit()} class="space-y-4">
+<form on:submit|preventDefault="{() => handleSubmit()}" class="space-y-4">
   <section id="input-name" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
       <label for="" class="font-semibold">
@@ -109,7 +109,7 @@
         {form.error && getZodErrorMessage(form.error, ['name']).length > 0
           ? 'border border-red-600'
           : ''}"
-        bind:value={form.data.name}
+        bind:value="{form.data.name}"
         use:blurOnEscape
       />
     </div>

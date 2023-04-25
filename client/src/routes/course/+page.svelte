@@ -84,13 +84,13 @@
       class="search w-full"
       placeholder="Search"
       autocomplete="off"
-      value={$page.url.searchParams.get('search')}
-      on:input={(e) => handleSearch(e.currentTarget.value)}
+      value="{$page.url.searchParams.get('search')}"
+      on:input="{(e) => handleSearch(e.currentTarget.value)}"
       use:blurOnEscape
     />
   </div>
 
-  <button type="button" class="button w-full md:w-fit" on:click={() => (newState = !newState)}>
+  <button type="button" class="button w-full md:w-fit" on:click="{() => (newState = !newState)}">
     New Course
   </button>
 </div>
@@ -102,23 +102,23 @@
       {#await subjectOptions()}
         Loading...
       {:then options}
-        <Course subjectOptions={options} />
+        <Course subjectOptions="{options}" />
       {/await}
     </div>
   </div>
 {/if}
 
-<Modal bind:open={editState}>
+<Modal bind:open="{editState}">
   <div id="edit" class="p-4">
     <h1 class="mb-4 block text-center text-2xl font-bold">Edit Course</h1>
     {#await subjectOptions()}
       Loading...
     {:then options}
       <Course
-        subjectOptions={options}
-        edit={true}
-        {editData}
-        callback={() => (editState = false)}
+        subjectOptions="{options}"
+        edit="{true}"
+        editData="{editData}"
+        callback="{() => (editState = false)}"
       />
     {/await}
   </div>
@@ -155,12 +155,12 @@
           </td>
           <td class="fit-width text-center">
             <div class="space-x-4 whitespace-nowrap">
-              <button class="action-button text-blue-600" on:click={() => showEdit(course)}>
+              <button class="action-button text-blue-600" on:click="{() => showEdit(course)}">
                 Edit
               </button>
               <button
                 class="action-button text-red-600"
-                on:click={() => handleDelete({ id: course.id })}
+                on:click="{() => handleDelete({ id: course.id })}"
               >
                 Delete
               </button>
@@ -174,9 +174,9 @@
 
 <div id="pagination">
   <Pagination
-    current={+($page.url.searchParams.get('page') ?? 1)}
-    range={3}
-    total={Math.ceil(data.course.total / data.course.limit)}
+    current="{+($page.url.searchParams.get('page') ?? 1)}"
+    range="{3}"
+    total="{Math.ceil(data.course.total / data.course.limit)}"
   />
 </div>
 

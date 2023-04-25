@@ -47,7 +47,7 @@
 </script>
 
 <article class="mx-auto max-w-screen-md p-4">
-  <form on:submit|preventDefault={() => handleSubmit()} class="space-y-4">
+  <form on:submit|preventDefault="{() => handleSubmit()}" class="space-y-4">
     <section id="input-name" class="grid grid-cols-6">
       <div class="col-span-2 flex items-center">
         <label for="" class="font-semibold"> Username </label>
@@ -59,7 +59,7 @@
         {form.error && getZodErrorMessage(form.error, ['username']).length > 0
             ? 'border border-red-600'
             : ''}"
-          bind:value={form.data.username}
+          bind:value="{form.data.username}"
           use:blurOnEscape
         />
       </div>
@@ -79,7 +79,7 @@
         {form.error && getZodErrorMessage(form.error, ['password']).length > 0
             ? 'border border-red-600'
             : ''}"
-          bind:value={form.data.password}
+          bind:value="{form.data.password}"
           use:blurOnEscape
         />
       </div>

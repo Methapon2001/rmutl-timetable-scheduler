@@ -112,16 +112,18 @@
   }
 </script>
 
-<div class="relative grid w-full bg-white" class:small>
+<div class="relative grid w-full bg-white" class:small="{small}">
   {#each Object.keys(weekdayMapRow) as weekday}
-    <div class="col-span-3 select-none bg-slate-100 font-semibold capitalize" class:text-sm={small}>
+    <div
+      class="col-span-3 select-none bg-slate-100 font-semibold capitalize"
+      class:text-sm="{small}"
+    >
       {weekday}
     </div>
     {#each Array(25) as _, period}
       <button
         class="transition-none hover:bg-slate-100"
-        on:click={() => handleClick(weekday, period + 1, 2)}
-      />
+        on:click="{() => handleClick(weekday, period + 1, 2)}"></button>
     {/each}
   {/each}
 
@@ -130,10 +132,10 @@
       class="pointer-events-none absolute z-30 w-full {state.status
         ? 'bg-green-600/70'
         : 'bg-red-600/70'}"
-      style:grid-row={weekdayMapRow[state.weekday]}
-      style:grid-column={`${state.period + 3}/${state.period + state.size + 3}`}
+      style:grid-row="{weekdayMapRow[state.weekday]}"
+      style:grid-column="{`${state.period + 3}/${state.period + state.size + 3}`}"
     >
-      <div class="h-full w-full" />
+      <div class="h-full w-full"></div>
     </div>
   {/if}
 
@@ -141,12 +143,12 @@
     {@const overlapMaxOffset = Math.max(...processedData.map((obj) => obj._offset)) + 1}
     <div
       class="absolute z-10 w-full border bg-blue-600 text-xs font-bold text-white"
-      style:grid-row={weekdayMapRow[item.weekday]}
-      style:grid-column={`${item.period + 3}/${item.period + item.size + 3}`}
-      style:height={item._overlap ? `${(100 / overlapMaxOffset).toPrecision(6)}%` : '100%'}
-      style:top={item._overlap
+      style:grid-row="{weekdayMapRow[item.weekday]}"
+      style:grid-column="{`${item.period + 3}/${item.period + item.size + 3}`}"
+      style:height="{item._overlap ? `${(100 / overlapMaxOffset).toPrecision(6)}%` : '100%'}"
+      style:top="{item._overlap
         ? `${((item._offset * 100) / overlapMaxOffset).toPrecision(6)}%`
-        : '0%'}
+        : '0%'}"
     >
       {#if !small}
         <div class="text-center">

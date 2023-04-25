@@ -120,7 +120,7 @@
   });
 </script>
 
-<form on:submit|preventDefault={() => handleSubmit()} class="space-y-4">
+<form on:submit|preventDefault="{() => handleSubmit()}" class="space-y-4">
   <section id="input-code" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
       <label for="" class="font-semibold">
@@ -134,7 +134,7 @@
         {form.error && getZodErrorMessage(form.error, ['code']).length > 0
           ? 'border border-red-600'
           : ''}"
-        bind:value={form.data.code}
+        bind:value="{form.data.code}"
         use:blurOnEscape
       />
     </div>
@@ -156,7 +156,7 @@
         {form.error && getZodErrorMessage(form.error, ['name']).length > 0
           ? 'border border-red-600'
           : ''}"
-        bind:value={form.data.name}
+        bind:value="{form.data.name}"
         use:blurOnEscape
       />
     </div>
@@ -178,7 +178,7 @@
         {form.error && getZodErrorMessage(form.error, ['credit']).length > 0
           ? 'border border-red-600'
           : ''}"
-        bind:value={form.data.credit}
+        bind:value="{form.data.credit}"
         use:blurOnEscape
       />
     </div>
@@ -200,7 +200,7 @@
         {form.error && getZodErrorMessage(form.error, ['lecture']).length > 0
           ? 'border border-red-600'
           : ''}"
-        bind:value={form.data.lecture}
+        bind:value="{form.data.lecture}"
         use:blurOnEscape
       />
     </div>
@@ -222,7 +222,7 @@
         {form.error && getZodErrorMessage(form.error, ['lab']).length > 0
           ? 'border border-red-600'
           : ''}"
-        bind:value={form.data.lab}
+        bind:value="{form.data.lab}"
         use:blurOnEscape
       />
     </div>
@@ -244,7 +244,7 @@
         {form.error && getZodErrorMessage(form.error, ['exam']).length > 0
           ? 'border border-red-600'
           : ''}"
-        bind:value={form.data.exam}
+        bind:value="{form.data.exam}"
         use:blurOnEscape
       />
     </div>

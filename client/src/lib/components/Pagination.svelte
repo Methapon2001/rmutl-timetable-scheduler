@@ -28,7 +28,7 @@
     </a>
 
     {#each Array(end - start + 1) as _, i}
-      <a class:active={current == start + i} href="?{query}page={start + i}">
+      <a class:active="{current == start + i}" href="?{query}page={start + i}">
         {start + i}
       </a>
     {/each}

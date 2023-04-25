@@ -154,7 +154,7 @@
   }
 </script>
 
-<form on:submit|preventDefault={() => handleSubmit()} class="space-y-4">
+<form on:submit|preventDefault="{() => handleSubmit()}" class="space-y-4">
   <section id="input-manual" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
       <label for="" class="font-semibold">
@@ -163,17 +163,17 @@
     </div>
     <div class="col-span-4">
       <div>
-        <label><input type="radio" bind:group={form.data.manual} value={false} /> Auto</label>
+        <label><input type="radio" bind:group="{form.data.manual}" value="{false}" /> Auto</label>
       </div>
       <div class="flex items-center gap-4">
         <label class="whitespace-nowrap">
-          <input type="radio" bind:group={form.data.manual} value={true} /> Manual
+          <input type="radio" bind:group="{form.data.manual}" value="{true}" /> Manual
         </label>
         <input
           type="number"
           class="input w-fit text-center"
-          bind:value={form.data.no}
-          disabled={!form.data.manual}
+          bind:value="{form.data.no}"
+          disabled="{!form.data.manual}"
         />
       </div>
     </div>
@@ -186,9 +186,9 @@
     </div>
     <div
       class="col-span-4"
-      class:invalid={form.error && getZodErrorMessage(form.error, ['groupId']).length > 0}
+      class:invalid="{form.error && getZodErrorMessage(form.error, ['groupId']).length > 0}"
     >
-      <Select options={groupOptions} bind:value={form.data.groupId} />
+      <Select options="{groupOptions}" bind:value="{form.data.groupId}" />
     </div>
     <div class="col-span-4 col-start-3 text-red-600">
       {form.error ? getZodErrorMessage(form.error, ['groupId']) : ''}
@@ -202,12 +202,12 @@
     </div>
     <div
       class="col-span-4"
-      class:invalid={form.error && getZodErrorMessage(form.error, ['subjectId']).length > 0}
+      class:invalid="{form.error && getZodErrorMessage(form.error, ['subjectId']).length > 0}"
     >
       <Select
-        options={subjectOptions}
-        bind:value={form.data.subjectId}
-        on:change={() => handleChange()}
+        options="{subjectOptions}"
+        bind:value="{form.data.subjectId}"
+        on:change="{() => handleChange()}"
       />
     </div>
     <div class="col-span-4 col-start-3 text-red-600">
@@ -217,7 +217,7 @@
   {#if form.data.subjectId != ''}
     {#each form.data.section as _, sectionIdx}
       <div class="relative space-y-4 rounded border p-3">
-        <button class="absolute right-0 top-0 p-3" on:click={() => removeSection(sectionIdx)}>
+        <button class="absolute right-0 top-0 p-3" on:click="{() => removeSection(sectionIdx)}">
           <CrossIcon />
         </button>
         <h2 class="font-2xl text-center font-semibold capitalize">
@@ -231,17 +231,17 @@
           </div>
           <div
             class="col-span-4"
-            class:invalid={form.error &&
-              getZodErrorMessage(form.error, ['section', sectionIdx, 'roomId']).length > 0}
+            class:invalid="{form.error &&
+              getZodErrorMessage(form.error, ['section', sectionIdx, 'roomId']).length > 0}"
           >
             <Select
-              options={roomOptions.filter(
+              options="{roomOptions.filter(
                 (opt) =>
                   opt.detail.type == 'both' ||
                   (sectionIdx == 0 && form.data.type == opt.detail.type) ||
                   (sectionIdx != 0 && opt.detail.type == 'lab'),
-              )}
-              bind:value={form.data.section[sectionIdx].roomId}
+              )}"
+              bind:value="{form.data.section[sectionIdx].roomId}"
             />
           </div>
           <div class="col-span-4 col-start-3 text-red-600">
@@ -256,12 +256,12 @@
           </div>
           <div
             class="col-span-4"
-            class:invalid={form.error &&
-              getZodErrorMessage(form.error, ['section', sectionIdx, 'instructor']).length > 0}
+            class:invalid="{form.error &&
+              getZodErrorMessage(form.error, ['section', sectionIdx, 'instructor']).length > 0}"
           >
             <Select
-              options={instructorOptions}
-              bind:value={form.data.section[sectionIdx].instructor}
+              options="{instructorOptions}"
+              bind:value="{form.data.section[sectionIdx].instructor}"
               multiple
             />
           </div>
@@ -273,7 +273,7 @@
         </section>
       </div>
     {/each}
-    <button type="button" class="button w-full" on:click={() => addSection()}>Add section</button>
+    <button type="button" class="button w-full" on:click="{() => addSection()}">Add section</button>
   {/if}
   <button type="submit" class="button w-full">Save</button>
 </form>

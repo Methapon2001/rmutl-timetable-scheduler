@@ -104,7 +104,7 @@
   });
 </script>
 
-<form on:submit|preventDefault={() => handleSubmit()} class="space-y-4">
+<form on:submit|preventDefault="{() => handleSubmit()}" class="space-y-4">
   <h1 class="text-xl font-bold">
     {showData.subject.name} Sec {showData.no}
     <span class="capitalize">({showData.type}{showData.lab ?? ''})</span>
@@ -117,9 +117,9 @@
     </div>
     <div
       class="col-span-4"
-      class:invalid={form.error && getZodErrorMessage(form.error, ['groupId']).length > 0}
+      class:invalid="{form.error && getZodErrorMessage(form.error, ['groupId']).length > 0}"
     >
-      <Select options={groupOptions} bind:value={form.data.groupId} />
+      <Select options="{groupOptions}" bind:value="{form.data.groupId}" />
     </div>
     <div class="col-span-4 col-start-3 text-red-600">
       {form.error ? getZodErrorMessage(form.error, ['groupId']) : ''}
@@ -133,13 +133,13 @@
     </div>
     <div
       class="col-span-4"
-      class:invalid={form.error && getZodErrorMessage(form.error, ['roomId']).length > 0}
+      class:invalid="{form.error && getZodErrorMessage(form.error, ['roomId']).length > 0}"
     >
       <Select
-        options={roomOptions.filter(
+        options="{roomOptions.filter(
           (opt) => opt.detail.type == 'both' || showData.type == opt.detail.type,
-        )}
-        bind:value={form.data.roomId}
+        )}"
+        bind:value="{form.data.roomId}"
       />
     </div>
     <div class="col-span-4 col-start-3 text-red-600">
@@ -154,9 +154,9 @@
     </div>
     <div
       class="col-span-4"
-      class:invalid={form.error && getZodErrorMessage(form.error, ['instructor']).length > 0}
+      class:invalid="{form.error && getZodErrorMessage(form.error, ['instructor']).length > 0}"
     >
-      <Select options={instructorOptions} bind:value={form.data.instructor} multiple />
+      <Select options="{instructorOptions}" bind:value="{form.data.instructor}" multiple />
     </div>
     <div class="col-span-4 col-start-3 text-red-600">
       {form.error ? getZodErrorMessage(form.error, ['instructor']) : ''}

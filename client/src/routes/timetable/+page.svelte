@@ -58,11 +58,11 @@
             <div>
               <h6 class="text-center font-semibold">Instructor - {i.name}</h6>
               <Table
-                bind:data={scheduler}
-                small={true}
-                bind:state
-                selectable={true}
-                instructor={i}
+                bind:data="{scheduler}"
+                small="{true}"
+                bind:state="{state}"
+                selectable="{true}"
+                instructor="{i}"
               />
             </div>
           {/each}
@@ -70,11 +70,11 @@
             <div>
               <h6 class="text-center font-semibold">Instructor - {i.name}</h6>
               <Table
-                bind:data={scheduler}
-                small={true}
-                bind:state
-                selectable={true}
-                instructor={i}
+                bind:data="{scheduler}"
+                small="{true}"
+                bind:state="{state}"
+                selectable="{true}"
+                instructor="{i}"
               />
             </div>
           {/each}
@@ -83,7 +83,13 @@
           {#each room as r (r.id)}
             <div>
               <h6 class="text-center font-semibold">Room - {r.building.code}-{r.name}</h6>
-              <Table bind:data={scheduler} small={true} bind:state selectable={true} room={r} />
+              <Table
+                bind:data="{scheduler}"
+                small="{true}"
+                bind:state="{state}"
+                selectable="{true}"
+                room="{r}"
+              />
             </div>
           {/each}
         </div>
@@ -92,7 +98,7 @@
         {#each group as g (g.id)}
           <div class="p-4">
             <h6 class="text-center font-semibold">Group - {g.name}</h6>
-            <Table bind:data={scheduler} bind:state selectable={true} group={g} />
+            <Table bind:data="{scheduler}" bind:state="{state}" selectable="{true}" group="{g}" />
           </div>
         {/each}
       </div>

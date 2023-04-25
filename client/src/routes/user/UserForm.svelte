@@ -137,7 +137,7 @@
   });
 </script>
 
-<form on:submit|preventDefault={() => handleSubmit()} class="space-y-4">
+<form on:submit|preventDefault="{() => handleSubmit()}" class="space-y-4">
   <section id="input-role" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
       <label for="" class="font-semibold">
@@ -146,9 +146,9 @@
     </div>
     <div
       class="col-span-4"
-      class:invalid={form.error && getZodErrorMessage(form.error, ['role']).length > 0}
+      class:invalid="{form.error && getZodErrorMessage(form.error, ['role']).length > 0}"
     >
-      <Select options={roleOptions} bind:value={form.data.role} placeholder="Select Role" />
+      <Select options="{roleOptions}" bind:value="{form.data.role}" placeholder="Select Role" />
     </div>
     <div class="col-span-4 col-start-3 text-red-600">
       {form.error ? getZodErrorMessage(form.error, ['role']) : ''}
@@ -167,7 +167,7 @@
             {form.error && getZodErrorMessage(form.error, ['username']).length > 0
           ? 'border border-red-600'
           : ''}"
-        bind:value={form.data.username}
+        bind:value="{form.data.username}"
         use:blurOnEscape
       />
     </div>
@@ -189,7 +189,7 @@
             {form.error && getZodErrorMessage(form.error, ['password']).length > 0
           ? 'border border-red-600'
           : ''}"
-        bind:value={form.data.password}
+        bind:value="{form.data.password}"
         use:blurOnEscape
       />
     </div>
