@@ -2,10 +2,14 @@
   import type { ComponentProps } from 'svelte';
   import type { PageData } from './$types';
   import Table from './Table.svelte';
+  import { createScheduler } from '$lib/api/scheduler';
+  import { invalidate } from '$app/navigation';
 
   export let data: PageData;
 
-  let scheduler: ComponentProps<Table>['data'] = data.scheduler.data.map((obj) => {
+  let scheduler: ComponentProps<Table>['data'];
+
+  $: scheduler = data.scheduler.data.map((obj) => {
     return {
       id: obj.id,
       weekday: obj.weekday,
@@ -15,27 +19,27 @@
     };
   });
 
-  let instructor = scheduler.reduce<
+  let instructor = data.section.data.reduce<
     Omit<API.Instructor, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>[] // eslint-disable-line no-undef
   >((acc, curr) => {
     return acc
-      .concat(curr.section.instructor)
+      .concat(curr.instructor)
       .filter((a, idx, arr) => arr.findIndex((b) => b.id === a.id) === idx);
   }, []);
 
-  let room = scheduler.reduce<
+  let room = data.section.data.reduce<
     Omit<API.Room, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>[] // eslint-disable-line no-undef
   >((acc, curr) => {
     return acc
-      .concat(curr.section.room ?? [])
+      .concat(curr.room ?? [])
       .filter((a, idx, arr) => arr.findIndex((b) => b.id === a.id) === idx);
   }, []);
 
-  let group = scheduler.reduce<
+  let group = data.section.data.reduce<
     Omit<API.Group, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>[] // eslint-disable-line no-undef
   >((acc, curr) => {
     return acc
-      .concat(curr.section.group ?? [])
+      .concat(curr.group ?? [])
       .filter((a, idx, arr) => arr.findIndex((b) => b.id === a.id) === idx);
   }, []);
 
@@ -43,11 +47,53 @@
     period: 0,
     size: 0,
     weekday: 'sun',
-    section: data.section.data[0],
+    section: data.section.data[4],
     selected: false,
     status: true,
   };
+
+  async function handleKeydown(e: KeyboardEvent) {
+    let confirmOverlap = false;
+
+    switch (e.key) {
+      case 'Enter':
+        if (!state.section) return;
+
+        if (!state.status && state.period + state.size - 1 > 25)
+          return alert('Overflowed!!! Not Allowed.');
+
+        if (!state.status && !state.allowOverlap) return alert('Overlap Detected!!! Not Allowed.');
+
+        if (!state.status) confirmOverlap = confirm('Overlap Detected!!! Do you want to continue?');
+
+        if (!state.status && !confirmOverlap) return;
+
+        await createScheduler({
+          weekday: state.weekday,
+          start: state.period,
+          end: state.period + state.size - 1,
+          sectionId: state.section.id,
+        });
+
+        await invalidate('data:scheduler');
+
+        state = {
+          period: 0,
+          size: 0,
+          weekday: 'sun',
+          section: null,
+          selected: false,
+          status: true,
+        };
+        break;
+      case 'Escape':
+        state.section = null;
+        break;
+    }
+  }
 </script>
+
+<svelte:window on:keydown="{handleKeydown}" />
 
 <div class="flex">
   <div class="flex-grow">
@@ -55,24 +101,12 @@
       <div class="z-20 grid grid-cols-2 shadow">
         <div class="table-small-container border-b border-r">
           {#each instructor as i (i.id)}
-            <div>
+            <div id="inst-{i.id}" class="p-4">
               <h6 class="text-center font-semibold">Instructor - {i.name}</h6>
               <Table
                 bind:data="{scheduler}"
-                small="{true}"
                 bind:state="{state}"
-                selectable="{true}"
-                instructor="{i}"
-              />
-            </div>
-          {/each}
-          {#each instructor as i (i.id)}
-            <div>
-              <h6 class="text-center font-semibold">Instructor - {i.name}</h6>
-              <Table
-                bind:data="{scheduler}"
                 small="{true}"
-                bind:state="{state}"
                 selectable="{true}"
                 instructor="{i}"
               />
@@ -81,12 +115,12 @@
         </div>
         <div class="table-small-container border-b">
           {#each room as r (r.id)}
-            <div>
+            <div id="room-{r.id}" class="p-4">
               <h6 class="text-center font-semibold">Room - {r.building.code}-{r.name}</h6>
               <Table
                 bind:data="{scheduler}"
-                small="{true}"
                 bind:state="{state}"
+                small="{true}"
                 selectable="{true}"
                 room="{r}"
               />
@@ -96,7 +130,7 @@
       </div>
       <div class="main-table-container">
         {#each group as g (g.id)}
-          <div class="p-4">
+          <div id="group-{g.id}" class="p-4">
             <h6 class="text-center font-semibold">Group - {g.name}</h6>
             <Table bind:data="{scheduler}" bind:state="{state}" selectable="{true}" group="{g}" />
           </div>
@@ -107,8 +141,18 @@
   <div>
     <div class="section-selector">
       {#each data.section.data as section}
+        {@const used = scheduler.findIndex((sched) => sched.section.id === section.id) !== -1}
         <div>
-          <h6 class="font-bold">{section.no} | {section.subject.code} {section.subject.name}</h6>
+          <button
+            class="section-button"
+            class:text-red-500="{used}"
+            on:click="{() => {
+              if (!used) state.section = section;
+            }}"
+          >
+            {section.no} | {section.subject.code}
+            {section.subject.name}
+          </button>
         </div>
       {/each}
     </div>
@@ -118,7 +162,6 @@
 <style lang="postcss">
   .table-small-container {
     height: calc(169px + 1rem + 1.5rem + 1rem);
-    padding: 1rem;
     overflow-y: auto;
   }
 
