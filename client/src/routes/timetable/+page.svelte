@@ -4,6 +4,7 @@
   import Table from './Table.svelte';
   import { createScheduler } from '$lib/api/scheduler';
   import { invalidate } from '$app/navigation';
+  import { generate } from './Generate';
 
   export let data: PageData;
 
@@ -129,6 +130,15 @@
         </div>
       </div>
       <div class="main-table-container">
+        <button
+          class="button"
+          on:click="{async () => {
+            await generate(data.section.data, scheduler);
+
+            await invalidate('data:scheduler');
+          }}">Generate</button
+        >
+
         {#each group as g (g.id)}
           <div id="group-{g.id}" class="p-4">
             <h6 class="text-center font-semibold">Group - {g.name}</h6>

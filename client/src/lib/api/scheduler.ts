@@ -42,7 +42,7 @@ export const deleteScheduler = async (data: Pick<API.Scheduler, 'id'>): Promise<
 };
 
 export const editScheduler = async (
-  data: Omit<API.Scheduler, 'section'  | 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'> & {
+  data: Omit<API.Scheduler, 'section' | 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'> & {
     sectionId: string;
   },
 ): Promise<API.Scheduler> => {

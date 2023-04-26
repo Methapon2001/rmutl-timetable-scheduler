@@ -26,7 +26,7 @@
   export let state: {
     status: boolean;
     selected: boolean;
-    section: API.Section | null; // eslint-disable-line no-undef
+    section: API.Scheduler['section'] | null; // eslint-disable-line no-undef
     weekday: WeekdayShort;
     period: number;
     size: number;
@@ -118,7 +118,7 @@
     state.weekday = weekday as WeekdayShort;
     state.period = period;
 
-    if (overlap) {
+    if (overlap.length > 0) {
       state.allowOverlap = !overlap.some((obj) => {
         return (
           obj.section.subject.id == state.section?.subject.id ||
@@ -191,6 +191,15 @@
             on:click="{async () => {
               await deleteScheduler({ id: item.id });
               await invalidate('data:scheduler');
+
+              state = {
+                period: item.period,
+                size: item.size,
+                weekday: item.weekday,
+                section: item.section,
+                selected: false,
+                status: true,
+              };
             }}"
           >
             delete
