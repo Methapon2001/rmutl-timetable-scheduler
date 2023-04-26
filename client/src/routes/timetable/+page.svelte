@@ -134,8 +134,16 @@
           class="button"
           on:click="{async () => {
             await generate(data.section.data, scheduler);
-
             await invalidate('data:scheduler');
+
+            state = {
+              period: 0,
+              size: 0,
+              weekday: 'sun',
+              section: null,
+              selected: false,
+              status: true,
+            };
           }}">Generate</button
         >
 
