@@ -3,6 +3,45 @@ import { checkOverlap } from './utils';
 
 type WeekdayShort = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
+function isCurrentRegGood(
+  current: API.Section,
+  weekday: WeekdayShort,
+  period: number,
+  gap: number,
+  schedule: {
+    id: string;
+    section: API.Scheduler['section'];
+    weekday: WeekdayShort;
+    period: number;
+    size: number;
+  }[],
+) {
+  const entries = schedule.filter(
+    (sched) =>
+      sched.weekday === weekday &&
+      sched.period < period &&
+      (sched.section.group?.id == current.group?.id ||
+        sched.section.instructor.findIndex(
+          (inst) => current.instructor.findIndex((ins) => ins.id === inst.id) !== -1,
+        ) !== -1),
+  );
+
+  if (entries.length <= 1) return true;
+  if (entries.length > 2) return false;
+
+  for (let i = 0; i < entries.length; i++) {
+    if (i === entries.length - 1) return true;
+
+    const current = entries[i];
+    const next = entries[i + 1];
+    const last = entries[entries.length - 1];
+
+    if (current.period + current.size - 1 + gap >= next.period) {
+      if (last.period + last.size - 1 + gap >= period) return false;
+    }
+  }
+}
+
 export async function generate(
   section: API.Section[],
   schedule: {
@@ -39,7 +78,7 @@ export async function generate(
     const size = (sec.type === 'lecture' ? sec.subject.lecture : sec.subject.lab) * 2;
 
     for (const weekday of option.weekday!) {
-      for (let i = option.period![0]; i < option.period![1] - size; i++) {
+      for (let i = option.period![0]; i <= option.period![1] - size + 1; i++) {
         const { isOverlap } = checkOverlap(
           {
             period: i,
@@ -51,6 +90,8 @@ export async function generate(
         );
 
         if (isOverlap) continue;
+
+        if (!isCurrentRegGood(sec, weekday, i, 2, schedule)) continue;
 
         schedule = [
           ...schedule,
