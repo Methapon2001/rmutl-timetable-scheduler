@@ -1,17 +1,32 @@
 <script lang="ts">
   import { invalidate } from '$app/navigation';
   import { deleteScheduler } from '$lib/api/scheduler';
+  import { createEventDispatcher } from 'svelte';
 
   type WeekdayShort = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
+  type ScheduleData = {
+    section: API.Scheduler['section'] | null; // eslint-disable-line no-undef
+    weekday: WeekdayShort;
+    period: number;
+    size: number;
+  };
+
+  const dispatch = createEventDispatcher<{
+    select: {
+      weekday: WeekdayShort;
+      period: number;
+    };
+  }>();
+
   const weekdayMapRow: Record<WeekdayShort, string> = {
-    mon: '1/2',
-    tue: '2/3',
-    wed: '3/4',
-    thu: '4/5',
-    fri: '5/6',
-    sat: '6/7',
-    sun: '7/8',
+    mon: '2/3',
+    tue: '3/4',
+    wed: '4/5',
+    thu: '5/6',
+    fri: '6/7',
+    sat: '7/8',
+    sun: '8/9',
   };
 
   export let selectable = false;
@@ -24,13 +39,18 @@
     size: number;
   }[];
   export let state: {
-    status: boolean;
     selected: boolean;
     section: API.Scheduler['section'] | null; // eslint-disable-line no-undef
     weekday: WeekdayShort;
     period: number;
     size: number;
+    isOverflow?: boolean;
+    isOverlap?: boolean;
     allowOverlap?: boolean;
+    overlapInstructor?: ScheduleData[];
+    overlapRoom?: ScheduleData[];
+    overlapSubject?: ScheduleData[];
+    overlapGroup?: ScheduleData[];
   };
 
   export let group: API.Scheduler['section']['group'] | undefined = undefined; // eslint-disable-line no-undef
@@ -41,16 +61,6 @@
     room?.id == state.section?.room?.id ||
     group?.id == state.section?.group?.id ||
     state.section?.instructor.findIndex((inst) => inst.id == instructor?.id) != -1;
-
-  $: shareSelectedData = data.filter((obj) => {
-    return (
-      obj.section.room?.id == state.section?.room?.id ||
-      obj.section.group?.id == state.section?.group?.id ||
-      obj.section.instructor.findIndex(
-        (inst) => state.section?.instructor.findIndex((ins) => ins.id === inst.id) !== -1,
-      ) !== -1
-    );
-  });
 
   $: localData =
     room || group || instructor
@@ -105,41 +115,27 @@
     return processed;
   }
 
-  function handleClick(weekday: string, period: number, size: number) {
+  function handleClick(weekday: string, period: number) {
     if (!selectable || !visualize) return;
 
-    const overlap = shareSelectedData.filter(
-      (item) =>
-        item.weekday == weekday && item.period + item.size > period && item.period < period + size,
-    );
-
-    state.selected = Boolean(state.section);
-    state.status = !overlap.length && period + size - 1 <= 25;
-    state.weekday = weekday as WeekdayShort;
-    state.period = period;
-
-    if (overlap.length > 0) {
-      state.allowOverlap = !overlap.some((obj) => {
-        return (
-          obj.section.subject.id == state.section?.subject.id ||
-          obj.section.room?.id == state.section?.room?.id ||
-          obj.section.instructor.findIndex(
-            (inst) => state.section?.instructor.findIndex((ins) => ins.id === inst.id) !== -1,
-          ) !== -1
-        );
-      });
-    }
+    dispatch('select', {
+      weekday: weekday as WeekdayShort,
+      period: period,
+    });
   }
-
-  $: state.size =
-    (!state.section
-      ? 0
-      : state.section.type === 'lecture'
-      ? state.section.subject.lecture
-      : state.section.subject.lab) * 2;
 </script>
 
 <div class="relative grid w-full bg-white" class:small="{small}" class:disabled="{!visualize}">
+  <div class="col-span-3 select-none bg-slate-100 font-semibold capitalize"><!--Period--></div>
+  {#each { length: 25 } as _, period}
+    <div class="flex flex-col items-center bg-slate-100 font-semibold">
+      <small>{period + 1}</small>
+      <small class="text-secondary" hidden="{small}"
+        >{8 + Math.floor(period / 2)}:{period % 2 === 0 ? '0' : '3'}0</small
+      >
+    </div>
+  {/each}
+
   {#each Object.keys(weekdayMapRow) as weekday}
     <div
       class="col-span-3 select-none bg-slate-100 font-semibold capitalize"
@@ -147,18 +143,18 @@
     >
       {weekday}
     </div>
-    {#each Array(25) as _, period}
+    {#each { length: 25 } as _, period}
       <button
         class="transition-none hover:bg-slate-100"
-        on:click="{() => handleClick(weekday, period + 1, state.size)}"></button>
+        on:click="{() => handleClick(weekday, period + 1)}"></button>
     {/each}
   {/each}
 
   {#if selectable && state.selected && visualize}
     <div
-      class="pointer-events-none absolute z-30 w-full {state.status
-        ? 'bg-green-600/70'
-        : 'bg-red-600/70'}"
+      class="pointer-events-none absolute z-30 w-full {state.isOverlap || state.isOverflow
+        ? 'bg-red-600/70'
+        : 'bg-green-600/70'}"
       style:grid-row="{weekdayMapRow[state.weekday]}"
       style:grid-column="{`${state.period + 3}/${state.period + state.size + 3}`}"
     >
@@ -198,7 +194,7 @@
                 weekday: item.weekday,
                 section: item.section,
                 selected: false,
-                status: true,
+                isOverlap: true,
               };
             }}"
           >
@@ -214,7 +210,7 @@
   .grid {
     border-width: 1px 0 0 1px;
     grid-template-columns: repeat(28, minmax(0, 1fr));
-    height: 420px;
+    height: 480px;
   }
 
   .grid > * {
@@ -234,7 +230,7 @@
   }
 
   .grid.small {
-    height: 168px;
+    height: 192px;
   }
 
   .grid.small > * {

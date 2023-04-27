@@ -4,7 +4,8 @@
   import Table from './Table.svelte';
   import { createScheduler } from '$lib/api/scheduler';
   import { invalidate } from '$app/navigation';
-  import { generate } from './Generate';
+  import { generate } from './generate';
+  import { checkOverlap } from './utils';
 
   export let data: PageData;
 
@@ -45,29 +46,67 @@
   }, []);
 
   let state: ComponentProps<Table>['state'] = {
-    period: 0,
-    size: 0,
-    weekday: 'sun',
-    section: data.section.data[4],
+    period: 1,
+    size: 1,
+    weekday: 'mon',
+    section: null,
     selected: false,
-    status: true,
+    isOverlap: true,
   };
 
+  let allocInput: HTMLInputElement;
+  let leftOverHours: number = 0;
+
+  function resetState() {
+    state = {
+      period: 1,
+      size: 1,
+      weekday: 'mon',
+      section: null,
+      selected: false,
+    };
+  }
+
+  function handleSelect(weekday: ComponentProps<Table>['state']['weekday'], period: number) {
+    state.selected = Boolean(state.section);
+    state.weekday = weekday;
+    state.period = period;
+
+    handleDataChange();
+  }
+
+  function handleDataChange() {
+    state.isOverflow = state.period + state.size - 1 > 25;
+
+    const {
+      isOverlap,
+      allowOverlap,
+      overlapGroup,
+      overlapInstructor,
+      overlapRoom,
+      overlapSubject,
+    } = checkOverlap(state, scheduler);
+
+    state.isOverlap = isOverlap;
+    state.allowOverlap = allowOverlap;
+    state.overlapGroup = overlapGroup;
+    state.overlapInstructor = overlapInstructor;
+    state.overlapRoom = overlapRoom;
+    state.overlapSubject = overlapSubject;
+  }
+  
   async function handleKeydown(e: KeyboardEvent) {
     let confirmOverlap = false;
 
     switch (e.key) {
       case 'Enter':
         if (!state.section) return;
-
-        if (!state.status && state.period + state.size - 1 > 25)
-          return alert('Overflowed!!! Not Allowed.');
-
-        if (!state.status && !state.allowOverlap) return alert('Overlap Detected!!! Not Allowed.');
-
-        if (!state.status) confirmOverlap = confirm('Overlap Detected!!! Do you want to continue?');
-
-        if (!state.status && !confirmOverlap) return;
+        if (state.isOverflow) return alert('Overflowed!!! Not Allowed.');
+        if (state.isOverlap && !state.allowOverlap)
+          return alert('Overlap Detected!!! Not Allowed.');
+        if (state.isOverlap)
+          confirmOverlap = confirm('Overlap Detected!!! Do you want to continue?');
+        if (state.isOverlap && !confirmOverlap) return;
 
         await createScheduler({
           weekday: state.weekday,
@@ -78,17 +117,10 @@
 
         await invalidate('data:scheduler');
 
-        state = {
-          period: 0,
-          size: 0,
-          weekday: 'sun',
-          section: null,
-          selected: false,
-          status: true,
-        };
+        resetState();
         break;
       case 'Escape':
-        state.section = null;
+        resetState();
         break;
     }
   }
@@ -107,6 +139,7 @@
               <Table
                 bind:data="{scheduler}"
                 bind:state="{state}"
+                on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
                 small="{true}"
                 selectable="{true}"
                 instructor="{i}"
@@ -121,6 +154,7 @@
               <Table
                 bind:data="{scheduler}"
                 bind:state="{state}"
+                on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
                 small="{true}"
                 selectable="{true}"
                 room="{r}"
@@ -130,56 +164,91 @@
         </div>
       </div>
       <div class="main-table-container">
-        <button
+        <!-- <button
           class="button"
           on:click="{async () => {
-            await generate(data.section.data, scheduler);
-            await invalidate('data:scheduler');
+            scheduler = await generate(data.section.data, scheduler);
 
             state = {
-              period: 0,
-              size: 0,
-              weekday: 'sun',
-              section: null,
               selected: false,
-              status: true,
+              section: null,
+              weekday: 'mon',
+              period: 1,
+              size: 1,
             };
           }}">Generate</button
-        >
+        > -->
 
         {#each group as g (g.id)}
           <div id="group-{g.id}" class="p-4">
             <h6 class="text-center font-semibold">Group - {g.name}</h6>
-            <Table bind:data="{scheduler}" bind:state="{state}" selectable="{true}" group="{g}" />
+            <Table
+              bind:data="{scheduler}"
+              bind:state="{state}"
+              on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
+              selectable="{true}"
+              group="{g}"
+            />
           </div>
         {/each}
       </div>
     </div>
   </div>
   <div>
-    <div class="section-selector">
+    <div class="section-selector space-y-2">
       {#each data.section.data as section}
-        {@const used = scheduler.findIndex((sched) => sched.section.id === section.id) !== -1}
-        <div>
-          <button
-            class="section-button"
-            class:text-red-500="{used}"
-            on:click="{() => {
-              if (!used) state.section = section;
-            }}"
-          >
-            {section.no} | {section.subject.code}
-            {section.subject.name}
-          </button>
-        </div>
+        {@const requiredHour =
+          section.type === 'lecture' ? section.subject.lecture : section.subject.lab}
+        {@const usedHour = scheduler
+          .filter((sched) => sched.section.id === section.id)
+          .reduce((acc, curr) => acc + curr.size / 2, 0)}
+        <button
+          class="bg-light block rounded p-2 capitalize shadow"
+          class:text-green-600="{state.section?.id === section.id}"
+          class:text-red-600="{requiredHour - usedHour === 0}"
+          class:text-indigo-800="{usedHour > 0 && usedHour < requiredHour}"
+          on:click="{() => {
+            leftOverHours = requiredHour - usedHour;
+
+            if (leftOverHours > 0) {
+              state.selected = true;
+              state.section = section;
+              state.size = leftOverHours * 2;
+
+              handleDataChange();
+
+              allocInput.focus();
+            }
+          }}"
+        >
+          {section.no}
+          {section.type}
+          {section.lab ?? ''}<br />
+          {section.subject.code}
+          {section.subject.name}
+        </button>
       {/each}
+
+      <div class="mt-4">
+        Allocate Size:
+        <input
+          class="input"
+          type="number"
+          min="1"
+          max="{leftOverHours * 2}"
+          disabled="{state.section === null}"
+          bind:this="{allocInput}"
+          on:change="{() => handleDataChange()}"
+          bind:value="{state.size}"
+        />
+      </div>
     </div>
   </div>
 </div>
 
 <style lang="postcss">
   .table-small-container {
-    height: calc(169px + 1rem + 1.5rem + 1rem);
+    height: calc(193px + 1rem + 1.5rem + 1rem);
     overflow-y: auto;
   }
 
@@ -188,14 +257,17 @@
   }
 
   .main-table-container {
-    height: calc(100vh - 4rem - (169px + 1rem + 1.5rem + 1rem));
+    height: calc(100vh - 4rem - (193px + 1rem + 1.5rem + 1rem));
     overflow-y: auto;
   }
 
   .section-selector {
     padding: 1rem;
-    width: 24rem;
     height: calc(100vh - 4rem);
     overflow-y: auto;
+  }
+
+  .section-selector > * {
+    width: 22rem;
   }
 </style>
