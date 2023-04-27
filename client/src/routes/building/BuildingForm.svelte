@@ -5,6 +5,7 @@
   import { getZodErrorMessage } from '$lib/utils/zod';
   import { createBuilding, editBuilding } from '$lib/api/building';
   import { onMount } from 'svelte';
+  import toast from 'svelte-french-toast';
 
   const schema = z.object({
     id: z.string().nonempty(),
@@ -65,6 +66,10 @@
       await invalidate('data:building');
 
       callback();
+
+      toast.success('Building Created!');
+    } else {
+      toast.error('Fail to create building!');
     }
   }
 
@@ -90,6 +95,10 @@
       await invalidate('data:building');
 
       callback();
+
+      toast.success('Edit Complete!');
+    } else {
+      toast.error('Fail to Edit building!');
     }
   }
 

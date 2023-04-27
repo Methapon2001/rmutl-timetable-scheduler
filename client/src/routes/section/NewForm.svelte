@@ -6,6 +6,7 @@
   import { tick } from 'svelte';
   import Select from '$lib/components/Select.svelte';
   import CrossIcon from '$lib/icons/CrossIcon.svelte';
+  import toast from 'svelte-french-toast';
 
   const schema = z.object({
     type: z.string(),
@@ -150,6 +151,10 @@
       await invalidate('data:section');
 
       callback();
+
+      toast.success('Section Created!');
+    } else {
+      toast.error('Fail to create Section!');
     }
   }
 </script>

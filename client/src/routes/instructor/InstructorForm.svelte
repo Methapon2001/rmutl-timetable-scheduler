@@ -5,6 +5,7 @@
   import { getZodErrorMessage } from '$lib/utils/zod';
   import { createInstructor, editInstructor } from '$lib/api/instructor';
   import { onMount } from 'svelte';
+  import toast from 'svelte-french-toast';
 
   const schema = z.object({
     id: z.string().nonempty(),
@@ -61,6 +62,10 @@
       await invalidate('data:instructor');
 
       callback();
+
+      toast.success('Instructor Created!');
+    } else {
+      toast.error('Fail to create Instructor!');
     }
   }
 
@@ -85,6 +90,10 @@
       await invalidate('data:instructor');
 
       callback();
+
+      toast.success('Edit Complete!');
+    } else {
+      toast.error('Fail to Edit Instructor!');
     }
   }
 

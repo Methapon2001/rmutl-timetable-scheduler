@@ -6,6 +6,7 @@
   import { createRoom, editRoom } from '$lib/api/room';
   import { onMount } from 'svelte';
   import Select from '$lib/components/Select.svelte';
+  import toast from 'svelte-french-toast';
 
   const typeOptions: {
     label: string;
@@ -13,12 +14,12 @@
     disabled?: boolean;
   }[] = [
     {
-      label: 'Lab',
-      value: 'lab',
-    },
-    {
       label: 'Lecture',
       value: 'lecture',
+    },
+    {
+      label: 'Lab',
+      value: 'lab',
     },
     {
       label: 'Both',
@@ -96,6 +97,10 @@
       await invalidate('data:room');
 
       callback();
+
+      toast.success('Room Created!');
+    } else {
+      toast.error('Fail to create Room!');
     }
   }
 
@@ -122,6 +127,10 @@
       await invalidate('data:room');
 
       callback();
+
+      toast.success('Edit Complete');
+    } else {
+      toast.error('Fail to Edit Room!');
     }
   }
 

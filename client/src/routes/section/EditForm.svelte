@@ -5,6 +5,7 @@
   import { editSection } from '$lib/api/section';
   import { onMount } from 'svelte';
   import Select from '$lib/components/Select.svelte';
+  import toast from 'svelte-french-toast';
 
   const schema = z.object({
     id: z.string(),
@@ -94,6 +95,10 @@
       await invalidate('data:section');
 
       callback();
+
+      toast.success('Edit Complete!');
+    } else {
+      toast.error('Fail to Edit Section!');
     }
   }
 

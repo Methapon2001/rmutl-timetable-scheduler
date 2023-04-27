@@ -8,6 +8,7 @@
   import Modal from '$lib/components/Modal.svelte';
   import Pagination from '$lib/components/Pagination.svelte';
   import RoomForm from './RoomForm.svelte';
+  import toast from 'svelte-french-toast';
 
   const handleSearch = debounce(async (text: string) => {
     const url = new URL(window.location.toString());
@@ -43,6 +44,7 @@
     if (confirm('Are you sure?')) {
       await deleteRoom(room).catch((e: Response) => console.error(e));
       await invalidate('data:room');
+      toast.success('Delete Complete');
     }
   }
 </script>

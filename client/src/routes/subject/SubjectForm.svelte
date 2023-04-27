@@ -5,6 +5,7 @@
   import { getZodErrorMessage } from '$lib/utils/zod';
   import { createSubject, editSubject } from '$lib/api/subject';
   import { onMount } from 'svelte';
+  import toast from 'svelte-french-toast';
 
   const schema = z.object({
     id: z.string().nonempty(),
@@ -81,6 +82,10 @@
       await invalidate('data:subject');
 
       callback();
+
+      toast.success('Subject Created!');
+    } else {
+      toast.error('Fail to create subject!');
     }
   }
 
@@ -110,6 +115,10 @@
       await invalidate('data:subject');
 
       callback();
+
+      toast.success('Edit Complete!');
+    } else {
+      toast.error('Fail to Edit subject!');
     }
   }
 

@@ -4,7 +4,6 @@
   import Table from './Table.svelte';
   import { createScheduler } from '$lib/api/scheduler';
   import { invalidate } from '$app/navigation';
-  import { generate } from './generate';
   import { checkOverlap } from './utils';
 
   export let data: PageData;
@@ -46,16 +45,16 @@
   }, []);
 
   let state: ComponentProps<Table>['state'] = {
+    selected: false,
+    section: null,
+    weekday: 'mon',
     period: 1,
     size: 1,
-    weekday: 'mon',
-    section: null,
-    selected: false,
-    isOverlap: true,
   };
 
+  let pov: 'instructor' | 'group' = 'group';
   let allocInput: HTMLInputElement;
-  let leftOverHours: number = 0;
+  let leftOverHours = 0;
 
   function resetState() {
     state = {
@@ -68,6 +67,8 @@
   }
 
   function handleSelect(weekday: ComponentProps<Table>['state']['weekday'], period: number) {
+    if (!state.section) return;
+
     state.selected = Boolean(state.section);
     state.weekday = weekday;
     state.period = period;
@@ -94,7 +95,7 @@
     state.overlapRoom = overlapRoom;
     state.overlapSubject = overlapSubject;
   }
-  
+
   async function handleKeydown(e: KeyboardEvent) {
     let confirmOverlap = false;
 

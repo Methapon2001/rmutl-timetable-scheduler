@@ -8,6 +8,7 @@
   import Modal from '$lib/components/Modal.svelte';
   import Pagination from '$lib/components/Pagination.svelte';
   import Building from './BuildingForm.svelte';
+  import toast from 'svelte-french-toast';
 
   const handleSearch = debounce(async (text: string) => {
     const url = new URL(window.location.toString());
@@ -35,6 +36,7 @@
     if (confirm('Are you sure?')) {
       await deleteBuilding(building).catch((e: Response) => console.error(e));
       await invalidate('data:building');
+      toast.success('Delete Complete!');
     }
   }
 </script>

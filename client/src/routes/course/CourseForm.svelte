@@ -6,6 +6,7 @@
   import { createCourse, editCourse } from '$lib/api/course';
   import { onMount } from 'svelte';
   import Select from '$lib/components/Select.svelte';
+  import toast from 'svelte-french-toast';
 
   const schema = z.object({
     id: z.string().nonempty(),
@@ -93,6 +94,10 @@
       await invalidate('data:course');
 
       callback();
+
+      toast.success('Course Created!');
+    } else {
+      toast.error('Fail to create Course!');
     }
   }
 
@@ -129,6 +134,10 @@
       await invalidate('data:course');
 
       callback();
+
+      toast.success('Edit Complete!');
+    } else {
+      toast.error('Fail to Edit course!');
     }
   }
 

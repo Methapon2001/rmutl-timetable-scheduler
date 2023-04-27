@@ -8,6 +8,7 @@
   import Modal from '$lib/components/Modal.svelte';
   import Pagination from '$lib/components/Pagination.svelte';
   import Instructor from './InstructorForm.svelte';
+  import toast from 'svelte-french-toast';
 
   const handleSearch = debounce(async (text: string) => {
     const url = new URL(window.location.toString());
@@ -34,6 +35,7 @@
     if (confirm('Are you sure?')) {
       await deleteInstructor(instructor).catch((e: Response) => console.error(e));
       await invalidate('data:instructor');
+      toast.success('Delete Complete!');
     }
   }
 </script>

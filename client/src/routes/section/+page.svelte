@@ -8,7 +8,8 @@
   import Modal from '$lib/components/Modal.svelte';
   import Pagination from '$lib/components/Pagination.svelte';
   import SectionNewForm from './NewForm.svelte';
-  import EditForm from './EditForm.svelte';
+  import SectionEditForm from './EditForm.svelte';
+  import toast from 'svelte-french-toast';
 
   const handleSearch = debounce(async (text: string) => {
     const url = new URL(window.location.toString());
@@ -104,6 +105,7 @@
     if (confirm('Are you sure?')) {
       await deleteSection(section).catch((e: Response) => console.error(e));
       await invalidate('data:section');
+      toast.success('Delete Complete!');
     }
   }
 </script>
@@ -161,7 +163,7 @@
     {#await formOptions()}
       Loading...
     {:then options}
-      <EditForm
+      <SectionEditForm
         groupOptions="{options.group}"
         roomOptions="{options.room}"
         instructorOptions="{options.instructor}"

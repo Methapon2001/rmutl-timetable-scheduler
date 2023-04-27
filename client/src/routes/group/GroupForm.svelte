@@ -6,6 +6,7 @@
   import { createGroup, editGroup } from '$lib/api/group';
   import { onMount } from 'svelte';
   import Select from '$lib/components/Select.svelte';
+  import toast from 'svelte-french-toast';
 
   const schema = z.object({
     id: z.string().nonempty(),
@@ -73,6 +74,10 @@
       await invalidate('data:group');
 
       callback();
+
+      toast.success('Group Created!');
+    } else {
+      toast.error('Fail to create Group!');
     }
   }
 
@@ -98,6 +103,10 @@
       await invalidate('data:group');
 
       callback();
+
+      toast.success('Edit Complete!');
+    } else {
+      toast.error('Fail to Edit group!');
     }
   }
 

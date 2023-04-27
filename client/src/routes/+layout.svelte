@@ -4,6 +4,7 @@
   import { page } from '$app/stores';
   import { clickOutside } from '$lib/utils/directives';
   import MenuIcon from '$lib/icons/MenuIcon.svelte';
+  import { Toaster } from 'svelte-french-toast';
 
   export let data: LayoutData;
 
@@ -53,6 +54,8 @@
 </script>
 
 <svelte:window bind:innerWidth="{innerWidth}" />
+
+<Toaster />
 
 <nav style:width="{menu ? '16rem' : '0'}">
   <ul>

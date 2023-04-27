@@ -8,6 +8,7 @@
   import Modal from '$lib/components/Modal.svelte';
   import Pagination from '$lib/components/Pagination.svelte';
   import SubjectForm from './SubjectForm.svelte';
+  import toast from 'svelte-french-toast';
 
   const handleSearch = debounce(async (text: string) => {
     const url = new URL(window.location.toString());
@@ -47,6 +48,7 @@
     if (confirm('Are you sure?')) {
       await deleteSubject(subject).catch((e: Response) => console.error(e));
       await invalidate('data:subject');
+      toast.success('Delete Complete!');
     }
   }
 </script>
