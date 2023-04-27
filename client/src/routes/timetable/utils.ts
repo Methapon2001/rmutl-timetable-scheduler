@@ -2,7 +2,7 @@ type WeekdayShort = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
 export function checkOverlap(
   current: {
-    section: API.Scheduler['section'] | null;
+    section: API.Scheduler['section'] | API.Section['child'][number] | null;
     weekday: WeekdayShort;
     period: number;
     size: number;

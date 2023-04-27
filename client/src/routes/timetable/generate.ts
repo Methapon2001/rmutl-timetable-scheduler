@@ -13,15 +13,17 @@ export async function generate(
     size: number;
   }[] = [],
   option: {
-    weekday: WeekdayShort[];
-    period: number[];
-    target: 'compulsory' | 'elective' | '*';
-  } = {
-    weekday: ['mon', 'tue', 'wed', 'thu', 'fri'],
-    period: [1, 18],
-    target: '*',
-  },
+    weekday?: WeekdayShort[];
+    period?: number[];
+    target?: 'compulsory' | 'elective' | '*';
+  } = {},
 ) {
+  option = {
+    weekday: option.weekday ?? ['mon', 'tue', 'wed', 'thu', 'fri'],
+    period: option.period ?? [1, 18],
+    target: option.target ?? '*',
+  };
+
   section = section
     .filter((sec) => {
       return schedule.findIndex((sched) => sched.section.id === sec.id) === -1;
@@ -36,8 +38,8 @@ export async function generate(
   section.forEach((sec) => {
     const size = (sec.type === 'lecture' ? sec.subject.lecture : sec.subject.lab) * 2;
 
-    for (const weekday of option.weekday) {
-      for (let i = option.period[0]; i < option.period[1] - size; i++) {
+    for (const weekday of option.weekday!) {
+      for (let i = option.period![0]; i < option.period![1] - size; i++) {
         const { isOverlap } = checkOverlap(
           {
             period: i,

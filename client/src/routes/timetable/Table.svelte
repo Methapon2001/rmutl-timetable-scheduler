@@ -4,9 +4,13 @@
   import { createEventDispatcher } from 'svelte';
 
   type WeekdayShort = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
+  type SectionData = Omit<
+    API.Section, // eslint-disable-line no-undefi
+    'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'
+  >;
 
   type ScheduleData = {
-    section: API.Scheduler['section'] | null; // eslint-disable-line no-undef
+    section: SectionData | null;
     weekday: WeekdayShort;
     period: number;
     size: number;
@@ -33,14 +37,14 @@
   export let small = false;
   export let data: {
     id: string;
-    section: API.Scheduler['section']; // eslint-disable-line no-undef
+    section: SectionData;
     weekday: WeekdayShort;
     period: number;
     size: number;
   }[];
   export let state: {
     selected: boolean;
-    section: API.Scheduler['section'] | null; // eslint-disable-line no-undef
+    section: SectionData | null;
     weekday: WeekdayShort;
     period: number;
     size: number;
@@ -194,7 +198,6 @@
                 weekday: item.weekday,
                 section: item.section,
                 selected: false,
-                isOverlap: true,
               };
             }}"
           >
