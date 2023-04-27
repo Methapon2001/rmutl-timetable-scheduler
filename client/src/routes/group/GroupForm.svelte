@@ -48,6 +48,8 @@
     error: undefined,
   };
 
+  let firstInput: HTMLInputElement;
+
   async function handleSubmit() {
     return edit ? await handleEdit() : await handleCreate();
   }
@@ -74,6 +76,8 @@
       await invalidate('data:group');
 
       callback();
+
+      firstInput.focus();
 
       toast.success('Group Created!');
     } else {
@@ -132,6 +136,7 @@
           ? 'border border-red-600'
           : ''}"
         bind:value="{form.data.name}"
+        bind:this="{firstInput}"
         use:blurOnEscape
       />
     </div>

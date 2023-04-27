@@ -57,6 +57,8 @@
     error: undefined,
   };
 
+  let firstInput: HTMLInputElement;
+
   async function handleSubmit() {
     return edit ? await handleEdit() : await handleCreate();
   }
@@ -94,6 +96,8 @@
       await invalidate('data:course');
 
       callback();
+
+      firstInput.focus();
 
       toast.success('Course Created!');
     } else {
@@ -163,6 +167,7 @@
           ? 'border border-red-600'
           : ''}"
         bind:value="{form.data.name}"
+        bind:this="{firstInput}"
         use:blurOnEscape
       />
     </div>

@@ -70,6 +70,8 @@
     error: undefined,
   };
 
+  let firstInput: HTMLInputElement;
+
   async function handleSubmit() {
     return edit ? await handleEdit() : await handleCreate();
   }
@@ -97,6 +99,8 @@
       await invalidate('data:room');
 
       callback();
+
+      firstInput.focus();
 
       toast.success('Room Created!');
     } else {
@@ -196,6 +200,7 @@
           ? 'border border-red-600'
           : ''}"
         bind:value="{form.data.name}"
+        bind:this="{firstInput}"
         use:blurOnEscape
       />
     </div>
