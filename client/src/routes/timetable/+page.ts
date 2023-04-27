@@ -10,14 +10,12 @@ export const load = (async ({ fetch, parent, depends }) => {
   if (!session) throw error(401, { message: 'Unauthorized' });
 
   const schedulerData = async () => {
-    return await fetch(
-      `${PUBLIC_API_HOST}/api/scheduler?limit=999&createdByUserId=${session.user.id}`,
-    ).then((res) => res.json());
+    return await fetch(`${PUBLIC_API_HOST}/api/scheduler?limit=9999`).then((res) => res.json());
   };
 
   const sectionData = async () => {
     return await fetch(
-      `${PUBLIC_API_HOST}/api/section?limit=999&createdByUserId=${session.user.id}`,
+      `${PUBLIC_API_HOST}/api/section?limit=9999&createdByUserId=${session.user.id}`,
     ).then((res) => res.json());
   };
 
