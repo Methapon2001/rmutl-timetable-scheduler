@@ -86,6 +86,9 @@ const childSectionSelect: Prisma.SectionSelect = {
 
 const sectionSelect: Prisma.SectionSelect = {
   ...childSectionSelect,
+  parent: {
+    select: childSectionSelect,
+  },
   child: {
     select: childSectionSelect,
   },
@@ -111,7 +114,7 @@ const schedulerSelect: Prisma.SchedulerSelect = {
 
 export async function createScheduler(
   request: FastifyRequest<{ Body: Scheduler }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const scheduler = await prisma.scheduler.create({
     data: {
@@ -136,7 +139,7 @@ export async function requestScheduler(
       groupId: string;
     } & Pick<Scheduler, "createdByUserId" | "updatedByUserId">;
   }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const { id } = request.params;
   const { limit, offset, groupId, ...where } = request.query;
@@ -184,7 +187,7 @@ export async function updateScheduler(
     Params: Pick<Scheduler, "id">;
     Body: Omit<Scheduler, "id">;
   }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const { id } = request.params;
 
@@ -208,7 +211,7 @@ export async function deleteScheduler(
   request: FastifyRequest<{
     Params: Pick<Scheduler, "id">;
   }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const { id } = request.params;
 

@@ -86,6 +86,9 @@ const childSectionSelect: Prisma.SectionSelect = {
 
 const sectionSelect: Prisma.SectionSelect = {
   ...childSectionSelect,
+  parent: {
+    select: childSectionSelect,
+  },
   child: {
     select: childSectionSelect,
   },
@@ -147,7 +150,7 @@ export async function createSection(
   request: FastifyRequest<{
     Body: CreateBody;
   }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const sectionNo =
     request.body.manual && request.body.no
@@ -232,7 +235,7 @@ export async function requestSection(
       | "updatedByUserId"
     >;
   }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const { id } = request.params;
   const { limit, offset, search, ...where } = request.query;
@@ -291,7 +294,7 @@ export async function updateSection(
       instructor?: Instructor[];
     };
   }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const { id } = request.params;
 
@@ -336,7 +339,7 @@ export async function deleteSection(
   request: FastifyRequest<{
     Params: Pick<Section, "id">;
   }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const { id } = request.params;
 
@@ -431,7 +434,7 @@ export async function searchSection(
   request: FastifyRequest<{
     Querystring: { search: string; limit: number; offset: number };
   }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const { limit, offset, search } = request.query;
 

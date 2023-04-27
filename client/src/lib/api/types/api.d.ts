@@ -98,6 +98,7 @@ declare namespace API {
     room: Omit<API.Room, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'> | null;
     subject: Omit<API.Subject, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>;
     instructor: Omit<API.Instructor, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>[];
+    parent: Omit<API.Section, 'child' | 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>[];
     child: Omit<API.Section, 'child' | 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>[];
     createdAt: string;
     createdBy: Omit<API.User, 'createdAt' | 'updatedAt'>;
