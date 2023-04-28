@@ -5,6 +5,7 @@
   import { createScheduler } from '$lib/api/scheduler';
   import { invalidate } from '$app/navigation';
   import { checkOverlap } from './utils';
+  import { generate } from './generate';
 
   export let data: PageData;
 
@@ -53,7 +54,6 @@
   };
 
   let pov: 'instructor' | 'group' = 'group';
-  let allocInput: HTMLInputElement;
   let leftOverHours = 0;
 
   function resetState() {
@@ -123,7 +123,29 @@
       case 'Escape':
         resetState();
         break;
+      case 'ArrowDown':
+        if (state.selected) e.preventDefault();
+        if (state.size > 1) state.size = state.size - 1;
+        break;
+      case 'ArrowUp':
+        if (state.selected) e.preventDefault();
+        if (state.size < leftOverHours * 2) state.size = state.size + 1;
+        break;
     }
+  }
+
+  function getRequiredHour(section: API.Section | API.Section['child'][number]) {
+    return section.type === 'lecture' ? section.subject.lecture : section.subject.lab;
+  }
+
+  function getUsedHour(section: API.Section | API.Section['child'][number]) {
+    return scheduler
+      .filter((sched) => sched.section.id === section.id)
+      .reduce((acc, curr) => acc + curr.size / 2, 0);
+  }
+
+  function getLeftOverHours(section: API.Section | API.Section['child'][number]) {
+    return getRequiredHour(section) - getUsedHour(section);
   }
 </script>
 
@@ -134,23 +156,39 @@
     <div>
       <div class="z-20 grid grid-cols-2 shadow">
         <div class="table-small-container border-b border-r">
-          {#each instructor as i (i.id)}
-            <div id="inst-{i.id}" class="p-4">
-              <h6 class="text-center font-semibold">Instructor - {i.name}</h6>
-              <Table
-                bind:data="{scheduler}"
-                bind:state="{state}"
-                on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
-                small="{true}"
-                selectable="{true}"
-                instructor="{i}"
-              />
-            </div>
-          {/each}
+          {#if pov === 'group'}
+            {#each instructor as i (i.id)}
+              <div id="inst-{i.id}" class="p-4 pr-2" style:scroll-gutter="stable">
+                <h6 class="text-center font-semibold">Instructor - {i.name}</h6>
+                <Table
+                  bind:data="{scheduler}"
+                  bind:state="{state}"
+                  on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
+                  small="{true}"
+                  selectable="{true}"
+                  instructor="{i}"
+                />
+              </div>
+            {/each}
+          {:else}
+            {#each group as g (g.id)}
+              <div id="group-{g.id}" class="p-4 pr-2" style:scroll-gutter="stable">
+                <h6 class="text-center font-semibold">Group - {g.name}</h6>
+                <Table
+                  bind:data="{scheduler}"
+                  bind:state="{state}"
+                  on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
+                  small="{true}"
+                  selectable="{true}"
+                  group="{g}"
+                />
+              </div>
+            {/each}
+          {/if}
         </div>
         <div class="table-small-container border-b">
           {#each room as r (r.id)}
-            <div id="room-{r.id}" class="p-4">
+            <div id="room-{r.id}" class="p-4 pr-2" style:scroll-gutter="stable">
               <h6 class="text-center font-semibold">Room - {r.building.code}-{r.name}</h6>
               <Table
                 bind:data="{scheduler}"
@@ -165,83 +203,190 @@
         </div>
       </div>
       <div class="main-table-container">
-        <!-- <button
-          class="button"
-          on:click="{async () => {
-            scheduler = await generate(data.section.data, scheduler);
-
-            state = {
-              selected: false,
-              section: null,
-              weekday: 'mon',
-              period: 1,
-              size: 1,
-            };
-          }}">Generate</button
-        > -->
-
-        {#each group as g (g.id)}
-          <div id="group-{g.id}" class="p-4">
-            <h6 class="text-center font-semibold">Group - {g.name}</h6>
-            <Table
-              bind:data="{scheduler}"
-              bind:state="{state}"
-              on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
-              selectable="{true}"
-              group="{g}"
-            />
+        {#if data.section.total === 0}
+          <div class="p-8 text-center">
+            <h1 class="text-5xl font-extrabold mb-4">No Data</h1>
+            <h2 class="text-secondary text-3xl">
+              No section created.<br />Must have section data in order for timetable to show.
+            </h2>
           </div>
-        {/each}
+        {/if}
+
+        {#if pov === 'group'}
+          {#each group as g (g.id)}
+            <div id="group-{g.id}" class="p-4 pr-2" style:scroll-gutter="stable">
+              <h6 class="text-center font-semibold">Group - {g.name}</h6>
+              <Table
+                bind:data="{scheduler}"
+                bind:state="{state}"
+                on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
+                selectable="{true}"
+                group="{g}"
+              />
+            </div>
+            <div class="mb-3 flex w-full justify-end">
+              <button
+                class="button mx-2 flex h-12 w-48 items-center justify-center rounded"
+                on:click="{async () => {
+                  await generate(data.section.data, scheduler);
+                  await invalidate('data:scheduler');
+                  resetState();
+                }}">Generate</button
+              >
+            </div>
+          {/each}
+        {:else}
+          {#each instructor as i (i.id)}
+            <div id="inst-{i.id}" class="p-4 pr-2" style:scroll-gutter="stable">
+              <h6 class="text-center font-semibold">Instructor - {i.name}</h6>
+              <Table
+                bind:data="{scheduler}"
+                bind:state="{state}"
+                on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
+                selectable="{true}"
+                instructor="{i}"
+              />
+            </div>
+          {/each}
+        {/if}
       </div>
     </div>
   </div>
   <div>
-    <div class="section-selector space-y-2">
+    <div class="section-selector bg-light border-l">
       {#each data.section.data as section}
-        {@const requiredHour =
-          section.type === 'lecture' ? section.subject.lecture : section.subject.lab}
-        {@const usedHour = scheduler
-          .filter((sched) => sched.section.id === section.id)
-          .reduce((acc, curr) => acc + curr.size / 2, 0)}
-        <button
-          class="bg-light block rounded p-2 capitalize shadow"
-          class:text-green-600="{state.section?.id === section.id}"
-          class:text-red-600="{requiredHour - usedHour === 0}"
-          class:text-indigo-800="{usedHour > 0 && usedHour < requiredHour}"
-          on:click="{() => {
-            leftOverHours = requiredHour - usedHour;
+        {#if section.parent === null}
+          <div class="w-full space-y-2 border-b p-4">
+            <div class="mb-2 space-y-2 text-sm">
+              <div class="flex gap-2">
+                <span
+                  class="bg-primary inline-block rounded px-2 py-1 font-semibold text-white shadow"
+                >
+                  {section.subject.code}
+                </span>
+                <span
+                  class="bg-primary inline-block rounded px-2 py-1 font-semibold text-white shadow"
+                >
+                  {section.subject.name}
+                </span>
+              </div>
 
-            if (leftOverHours > 0) {
-              state.selected = true;
-              state.section = section;
-              state.size = leftOverHours * 2;
+              <div class="flex gap-2">
+                <span
+                  class="bg-primary inline-block rounded px-2 py-1 font-semibold text-white shadow"
+                >
+                  SEC {section.no}
+                </span>
+                <span
+                  class="bg-primary inline-block rounded px-2 py-1 font-semibold text-white shadow"
+                >
+                  {section.group?.name}
+                </span>
+              </div>
+            </div>
+            <button
+              class="block grid w-full grid-cols-4 flex-row rounded bg-white capitalize shadow"
+              class:text-green-600="{state.section?.id === section.id}"
+              class:text-red-600="{getLeftOverHours(section) == 0}"
+              class:text-indigo-700="{getUsedHour(section) > 0 &&
+                getUsedHour(section) < getRequiredHour(section)}"
+              on:click="{() => {
+                leftOverHours = getLeftOverHours(section);
 
-              handleDataChange();
+                if (leftOverHours > 0) {
+                  state.selected = true;
+                  state.section = section;
+                  state.size = leftOverHours * 2;
 
-              allocInput.focus();
-            }
-          }}"
-        >
-          {section.no}
-          {section.type}
-          {section.lab ?? ''}<br />
-          {section.subject.code}
-          {section.subject.name}
-        </button>
+                  handleDataChange();
+                }
+              }}"
+            >
+              <div
+                class="flex h-full w-full items-center justify-center rounded-l border-r font-semibold"
+              >
+                <small>
+                  {section.type}
+                  {section.lab ?? ''}
+                </small>
+              </div>
+              <div class="col-span-3 w-full pl-3 text-left font-semibold">
+                {#each section.instructor as instructor}
+                  <small>{instructor.name}</small><br />
+                {/each}
+              </div>
+            </button>
+
+            {#each section.child as child}
+              <button
+                class="block grid w-full grid-cols-4 flex-row rounded bg-white capitalize shadow"
+                class:text-green-600="{state.section?.id === child.id}"
+                class:text-red-600="{getLeftOverHours(child) == 0}"
+                class:text-indigo-700="{getUsedHour(child) > 0 &&
+                  getUsedHour(child) < getRequiredHour(child)}"
+                on:click="{() => {
+                  leftOverHours = getLeftOverHours(child);
+
+                  if (leftOverHours > 0) {
+                    state.selected = true;
+                    state.section = { ...child, child: [] };
+                    state.size = leftOverHours * 2;
+
+                    handleDataChange();
+                  }
+                }}"
+              >
+                <div
+                  class="flex h-full w-full items-center justify-center rounded-l border-r font-semibold"
+                >
+                  <small>
+                    {child.type}
+                    {child.lab ?? ''}
+                  </small>
+                </div>
+                <div class="col-span-3 w-full pl-3 text-left font-semibold">
+                  {#each child.instructor as instructor}
+                    <small>{instructor.name}</small><br />
+                  {/each}
+                </div>
+              </button>
+            {/each}
+          </div>
+        {/if}
       {/each}
+    </div>
+  </div>
+</div>
+<div class="flex h-16 items-center justify-between border p-3">
+  <div class="pov-switch">
+    <select
+      id="view"
+      name="view"
+      class="w-48 rounded border bg-slate-900 px-3 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
+      bind:value="{pov}"
+    >
+      <option class="bg-white text-black" value="group">Groups View</option>
+      <option class="bg-white text-black" value="instructor">Instructors View</option>
+    </select>
+  </div>
 
-      <div class="mt-4">
-        Allocate Size:
+  <div class="alloc-control">
+    <div class="bg-primary grid grid-cols-6 rounded font-semibold text-white">
+      <div class="col-span-5 flex items-center px-4 py-2">
         <input
-          class="input"
-          type="number"
+          class="w-full"
+          type="range"
           min="1"
           max="{leftOverHours * 2}"
           disabled="{state.section === null}"
-          bind:this="{allocInput}"
           on:change="{() => handleDataChange()}"
           bind:value="{state.size}"
         />
+      </div>
+      <div class="col-span-1 px-4">
+        <span class="block py-2 text-center">
+          {state.size}
+        </span>
       </div>
     </div>
   </div>
@@ -253,22 +398,28 @@
     overflow-y: auto;
   }
 
-  .table-small-container > *:not(:last-child) {
-    margin-bottom: 1rem;
-  }
-
   .main-table-container {
-    height: calc(100vh - 4rem - (193px + 1rem + 1.5rem + 1rem));
+    height: calc(100vh - 4rem - 4rem - (193px + 1rem + 1.5rem + 1rem));
     overflow-y: auto;
   }
 
   .section-selector {
-    padding: 1rem;
-    height: calc(100vh - 4rem);
+    height: calc(100vh - 4rem - 4rem);
+    overflow-x: hidden;
     overflow-y: auto;
+    scrollbar-gutter: stable;
   }
 
-  .section-selector > * {
+  .section-selector {
+    width: 24rem;
+  }
+
+  .alloc-control {
+    padding-left: 1rem;
+    padding-right: 0.75rem;
+  }
+
+  .alloc-control > .grid {
     width: 22rem;
   }
 </style>
