@@ -147,6 +147,18 @@
   function getLeftOverHours(section: API.Section | API.Section['child'][number]) {
     return getRequiredHour(section) - getUsedHour(section);
   }
+
+  function handleSelectSection(section: API.Scheduler['section']) {
+    leftOverHours = getLeftOverHours(section);
+
+    if (leftOverHours > 0) {
+      state.selected = true;
+      state.section = section;
+      state.size = leftOverHours * 2;
+
+      handleDataChange();
+    }
+  }
 </script>
 
 <svelte:window on:keydown="{handleKeydown}" />
@@ -205,7 +217,7 @@
       <div class="main-table-container">
         {#if data.section.total === 0}
           <div class="p-8 text-center">
-            <h1 class="text-5xl font-extrabold mb-4">No Data</h1>
+            <h1 class="mb-4 text-5xl font-extrabold">No Data</h1>
             <h2 class="text-secondary text-3xl">
               No section created.<br />Must have section data in order for timetable to show.
             </h2>
@@ -290,17 +302,7 @@
               class:text-red-600="{getLeftOverHours(section) == 0}"
               class:text-indigo-700="{getUsedHour(section) > 0 &&
                 getUsedHour(section) < getRequiredHour(section)}"
-              on:click="{() => {
-                leftOverHours = getLeftOverHours(section);
-
-                if (leftOverHours > 0) {
-                  state.selected = true;
-                  state.section = section;
-                  state.size = leftOverHours * 2;
-
-                  handleDataChange();
-                }
-              }}"
+              on:click="{() => handleSelectSection(section)}"
             >
               <div
                 class="flex h-full w-full items-center justify-center rounded-l border-r font-semibold"
@@ -324,17 +326,7 @@
                 class:text-red-600="{getLeftOverHours(child) == 0}"
                 class:text-indigo-700="{getUsedHour(child) > 0 &&
                   getUsedHour(child) < getRequiredHour(child)}"
-                on:click="{() => {
-                  leftOverHours = getLeftOverHours(child);
-
-                  if (leftOverHours > 0) {
-                    state.selected = true;
-                    state.section = { ...child, child: [] };
-                    state.size = leftOverHours * 2;
-
-                    handleDataChange();
-                  }
-                }}"
+                on:click="{() => handleSelectSection({ ...child, child: [] })}"
               >
                 <div
                   class="flex h-full w-full items-center justify-center rounded-l border-r font-semibold"
