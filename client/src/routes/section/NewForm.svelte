@@ -222,7 +222,11 @@
   {#if form.data.subjectId != ''}
     {#each form.data.section as _, sectionIdx}
       <div class="relative space-y-4 rounded border p-3">
-        <button class="absolute right-0 top-0 p-3" on:click="{() => removeSection(sectionIdx)}">
+        <button
+          type="button"
+          class="absolute right-0 top-0 p-3"
+          on:click="{() => removeSection(sectionIdx)}"
+        >
           <CrossIcon />
         </button>
         <h2 class="font-2xl text-center font-semibold capitalize">
