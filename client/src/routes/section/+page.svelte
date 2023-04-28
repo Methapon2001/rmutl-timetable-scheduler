@@ -195,7 +195,7 @@
     <tbody>
       {#if data.section.total == 0}
         <tr>
-          <td class="text-center text-secondary" colspan="10">No records found.</td>
+          <td class="text-secondary text-center" colspan="10">No records found.</td>
         </tr>
       {/if}
       {#each data.section.data as section (section.id)}
@@ -214,7 +214,7 @@
             {section.instructor.length ? '' : '-'}
             {#each section.instructor as instructor (instructor.id)}
               <p>
-                <span class="whitespace-nowrap rounded bg-light-hover px-2"
+                <span class="bg-light-hover whitespace-nowrap rounded px-2"
                   >{instructor.name ?? '-'}</span
                 >
               </p>
@@ -223,41 +223,43 @@
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(section.createdAt).toLocaleDateString()}</p>
             <p class="text-dark">{new Date(section.createdAt).toLocaleTimeString()}</p>
-            <p class="capitalize text-secondary">{section.createdBy.username}</p>
+            <p class="text-secondary capitalize">{section.createdBy.username}</p>
           </td>
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(section.updatedAt).toLocaleDateString()}</p>
             <p class="text-dark">{new Date(section.updatedAt).toLocaleTimeString()}</p>
-            <p class="capitalize text-secondary">{section.updatedBy.username}</p>
+            <p class="text-secondary capitalize">{section.updatedBy.username}</p>
           </td>
           <td class="fit-width text-center">
             <div class="space-x-4 whitespace-nowrap">
-              <button
-                class="action-button text-blue-600"
-                on:click="{() =>
-                  showEdit(
-                    {
-                      id: section.id,
-                      groupId: section.group?.id ?? '',
-                      roomId: section.room?.id ?? '',
-                      instructor: section.instructor,
-                    },
-                    {
-                      no: section.no,
-                      type: section.type,
-                      lab: section.lab,
-                      subject: section.subject,
-                    },
-                  )}"
-              >
-                Edit
-              </button>
-              <button
-                class="action-button text-red-600"
-                on:click="{() => handleDelete({ id: section.id })}"
-              >
-                Delete
-              </button>
+                <button
+                  class="action-button text-blue-600"
+                  disabled="{data.session?.user.id == section.createdBy.id && data.session.user.role != 'admin'}"
+                  on:click="{() =>
+                    showEdit(
+                      {
+                        id: section.id,
+                        groupId: section.group?.id ?? '',
+                        roomId: section.room?.id ?? '',
+                        instructor: section.instructor,
+                      },
+                      {
+                        no: section.no,
+                        type: section.type,
+                        lab: section.lab,
+                        subject: section.subject,
+                      },
+                    )}"
+                >
+                  Edit
+                </button>
+                <button
+                  class="action-button text-red-600"
+                  disabled="{data.session?.user.id == section.createdBy.id && data.session.user.role != 'admin'}"
+                  on:click="{() => handleDelete({ id: section.id })}"
+                >
+                  Delete
+                </button>
             </div>
           </td>
         </tr>
