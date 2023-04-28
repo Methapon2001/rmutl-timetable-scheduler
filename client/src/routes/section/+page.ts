@@ -2,11 +2,7 @@ import type { PageLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import { PUBLIC_API_HOST } from '$env/static/public';
 
-const apiSection = new URL(`${PUBLIC_API_HOST}/api/section`);
-const apiGroup = new URL(`${PUBLIC_API_HOST}/api/group`);
-const apiRoom = new URL(`${PUBLIC_API_HOST}/api/room`);
-const apiSubject = new URL(`${PUBLIC_API_HOST}/api/subject`);
-const apiInstructor = new URL(`${PUBLIC_API_HOST}/api/instructor`);
+const api = new URL(`${PUBLIC_API_HOST}/api/section`);
 
 export const load = (async ({ fetch, parent, depends, url }) => {
   const { session } = await parent();
@@ -19,16 +15,16 @@ export const load = (async ({ fetch, parent, depends, url }) => {
   const search = url.searchParams.get('search');
 
   if (search && search.length > 0) {
-    apiSection.searchParams.set('search', search);
+    api.searchParams.set('search', search);
   } else {
-    apiSection.searchParams.delete('search');
+    api.searchParams.delete('search');
   }
 
-  apiSection.searchParams.set('limit', String(20));
-  apiSection.searchParams.set('offset', String((+(page ?? 1) - 1) * 20));
+  api.searchParams.set('limit', String(20));
+  api.searchParams.set('offset', String((+(page ?? 1) - 1) * 20));
 
   const requestSection = async () => {
-    const res = await fetch(apiSection);
+    const res = await fetch(api);
     const body = await res.json();
     return body as {
       data: API.Section[];
@@ -39,7 +35,7 @@ export const load = (async ({ fetch, parent, depends, url }) => {
   };
 
   const requestGroup = async () => {
-    const res = await fetch(apiGroup);
+    const res = await fetch(`${PUBLIC_API_HOST}/api/group?limit=9999&createdByUserId=${session.user.id}`);
     const body = await res.json();
     return body as {
       data: API.Group[];
@@ -50,7 +46,7 @@ export const load = (async ({ fetch, parent, depends, url }) => {
   };
 
   const requestRoom = async () => {
-    const res = await fetch(apiRoom);
+    const res = await fetch(`${PUBLIC_API_HOST}/api/room?limit=9999`);
     const body = await res.json();
     return body as {
       data: API.Room[];
@@ -61,7 +57,7 @@ export const load = (async ({ fetch, parent, depends, url }) => {
   };
 
   const requestSubject = async () => {
-    const res = await fetch(apiSubject);
+    const res = await fetch(`${PUBLIC_API_HOST}/api/subject?limit=9999`);
     const body = await res.json();
     return body as {
       data: API.Subject[];
@@ -72,7 +68,7 @@ export const load = (async ({ fetch, parent, depends, url }) => {
   };
 
   const requestInstructor = async () => {
-    const res = await fetch(apiInstructor);
+    const res = await fetch(`${PUBLIC_API_HOST}/api/instructor?limit=9999`);
     const body = await res.json();
     return body as {
       data: API.Instructor[];

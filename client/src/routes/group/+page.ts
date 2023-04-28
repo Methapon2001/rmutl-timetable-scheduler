@@ -2,8 +2,7 @@ import type { PageLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import { PUBLIC_API_HOST } from '$env/static/public';
 
-const apiGroup = new URL(`${PUBLIC_API_HOST}/api/group`);
-const apiCourse = new URL(`${PUBLIC_API_HOST}/api/course`);
+const api = new URL(`${PUBLIC_API_HOST}/api/group`);
 
 export const load = (async ({ fetch, parent, depends, url }) => {
   const { session } = await parent();
@@ -16,16 +15,16 @@ export const load = (async ({ fetch, parent, depends, url }) => {
   const search = url.searchParams.get('search');
 
   if (search && search.length > 0) {
-    apiGroup.searchParams.set('search', search);
+    api.searchParams.set('search', search);
   } else {
-    apiGroup.searchParams.delete('search');
+    api.searchParams.delete('search');
   }
 
-  apiGroup.searchParams.set('limit', String(20));
-  apiGroup.searchParams.set('offset', String((+(page ?? 1) - 1) * 20));
+  api.searchParams.set('limit', String(20));
+  api.searchParams.set('offset', String((+(page ?? 1) - 1) * 20));
 
   const requestGroup = async () => {
-    const res = await fetch(apiGroup);
+    const res = await fetch(api);
     const body = await res.json();
     return body as {
       data: API.Group[];
@@ -36,7 +35,7 @@ export const load = (async ({ fetch, parent, depends, url }) => {
   };
 
   const requestCourse = async () => {
-    const res = await fetch(apiCourse);
+    const res = await fetch(`${PUBLIC_API_HOST}/api/course?limit=9999`);
     const body = await res.json();
     return body as {
       data: API.Course[];
