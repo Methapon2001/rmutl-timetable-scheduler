@@ -91,6 +91,19 @@ const sectionSelect: Prisma.SectionSelect = {
   },
   child: {
     select: childSectionSelect,
+    orderBy: [
+      {
+        subject: {
+          name: "asc",
+        },
+      },
+      {
+        no: "asc",
+      },
+      {
+        lab: "asc",
+      },
+    ],
   },
   createdAt: true,
   createdBy: {
