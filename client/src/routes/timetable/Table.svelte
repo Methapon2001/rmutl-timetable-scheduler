@@ -178,31 +178,35 @@
         : '0%'}"
     >
       {#if !small}
-        <div class="text-center">
-          <h6 class="block font-bold">
-            {item.section.subject.code}_SEC_{item.section.no}{item.section.type === 'lab'
-              ? `_L${item.section.lab}`
-              : ''}
-          </h6>
-          <p class="block whitespace-nowrap">{item.section.subject.name}</p>
+        <div class="flex w-full text-center">
+          <div class="flex-grow">
+            <h6 class="block font-bold">
+              {item.section.subject.code}_SEC_{item.section.no}{item.section.type === 'lab'
+                ? `_L${item.section.lab}`
+                : ''}
+            </h6>
+            <p class="block">{item.section.subject.name}</p>
+          </div>
 
-          <button
-            class="rounded bg-red-600 p-1 text-white"
-            on:click="{async () => {
-              await deleteScheduler({ id: item.id });
-              await invalidate('data:scheduler');
+          <div class="flex items-center justify-center p-1">
+            <button
+              class="rounded bg-red-600 p-1 text-white"
+              on:click="{async () => {
+                await deleteScheduler({ id: item.id });
+                await invalidate('data:scheduler');
 
-              state = {
-                period: item.period,
-                size: item.size,
-                weekday: item.weekday,
-                section: item.section,
-                selected: false,
-              };
-            }}"
-          >
-            delete
-          </button>
+                state = {
+                  period: item.period,
+                  size: item.size,
+                  weekday: item.weekday,
+                  section: item.section,
+                  selected: false,
+                };
+              }}"
+            >
+              D
+            </button>
+          </div>
         </div>
       {/if}
     </div>
