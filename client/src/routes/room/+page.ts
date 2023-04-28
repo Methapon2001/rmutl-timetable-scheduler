@@ -2,8 +2,7 @@ import type { PageLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import { PUBLIC_API_HOST } from '$env/static/public';
 
-const apiRoom = new URL(`${PUBLIC_API_HOST}/api/room`);
-const apiBuilding = new URL(`${PUBLIC_API_HOST}/api/building`);
+const api = new URL(`${PUBLIC_API_HOST}/api/room`);
 
 export const load = (async ({ fetch, parent, depends, url }) => {
   const { session } = await parent();
@@ -16,16 +15,16 @@ export const load = (async ({ fetch, parent, depends, url }) => {
   const search = url.searchParams.get('search');
 
   if (search && search.length > 0) {
-    apiRoom.searchParams.set('search', search);
+    api.searchParams.set('search', search);
   } else {
-    apiRoom.searchParams.delete('search');
+    api.searchParams.delete('search');
   }
 
-  apiRoom.searchParams.set('limit', String(20));
-  apiRoom.searchParams.set('offset', String((+(page ?? 1) - 1) * 20));
+  api.searchParams.set('limit', String(20));
+  api.searchParams.set('offset', String((+(page ?? 1) - 1) * 20));
 
   const requestRoom = async () => {
-    const res = await fetch(apiRoom);
+    const res = await fetch(api);
     const body = await res.json();
     return body as {
       data: API.Room[];
@@ -36,7 +35,7 @@ export const load = (async ({ fetch, parent, depends, url }) => {
   };
 
   const requestBuilding = async () => {
-    const res = await fetch(apiBuilding);
+    const res = await fetch(`${PUBLIC_API_HOST}/api/building?limit=9999`);
     const body = await res.json();
     return body as {
       data: API.Building[];
