@@ -142,14 +142,14 @@
               <button
                 class="action-button disabled:text-secondary text-blue-600"
                 on:click="{() => showEdit({ ...group, courseId: group.course.id })}"
-                disabled="{data.session?.user.id == group.createdBy.id && data.session.user.role != 'admin'}"
+                disabled="{data.session?.user.id != group.createdBy.id && data.session?.user.role != 'admin'}"
               >
                 Edit
               </button>
               <button
                 class="action-button disabled:text-secondary text-red-600"
                 on:click="{() => handleDelete({ id: group.id })}"
-                disabled="{data.session?.user.id == group.createdBy.id && data.session.user.role != 'admin'}"
+                disabled="{data.session?.user.id != group.createdBy.id && data.session?.user.role != 'admin'}"
               >
                 Delete
               </button>

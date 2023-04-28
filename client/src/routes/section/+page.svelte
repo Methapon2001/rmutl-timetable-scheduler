@@ -232,34 +232,36 @@
           </td>
           <td class="fit-width text-center">
             <div class="space-x-4 whitespace-nowrap">
-                <button
-                  class="action-button text-blue-600"
-                  disabled="{data.session?.user.id == section.createdBy.id && data.session.user.role != 'admin'}"
-                  on:click="{() =>
-                    showEdit(
-                      {
-                        id: section.id,
-                        groupId: section.group?.id ?? '',
-                        roomId: section.room?.id ?? '',
-                        instructor: section.instructor,
-                      },
-                      {
-                        no: section.no,
-                        type: section.type,
-                        lab: section.lab,
-                        subject: section.subject,
-                      },
-                    )}"
-                >
-                  Edit
-                </button>
-                <button
-                  class="action-button text-red-600"
-                  disabled="{data.session?.user.id == section.createdBy.id && data.session.user.role != 'admin'}"
-                  on:click="{() => handleDelete({ id: section.id })}"
-                >
-                  Delete
-                </button>
+              <button
+                class="action-button disabled:text-secondary text-blue-600 text-blue-600"
+                disabled="{data.session?.user.id != section.createdBy.id &&
+                  data.session?.user.role != 'admin'}"
+                on:click="{() =>
+                  showEdit(
+                    {
+                      id: section.id,
+                      groupId: section.group?.id ?? '',
+                      roomId: section.room?.id ?? '',
+                      instructor: section.instructor,
+                    },
+                    {
+                      no: section.no,
+                      type: section.type,
+                      lab: section.lab,
+                      subject: section.subject,
+                    },
+                  )}"
+              >
+                Edit
+              </button>
+              <button
+                class="action-button disabled:text-secondary text-red-600 text-blue-600"
+                disabled="{data.session?.user.id != section.createdBy.id &&
+                  data.session?.user.role != 'admin'}"
+                on:click="{() => handleDelete({ id: section.id })}"
+              >
+                Delete
+              </button>
             </div>
           </td>
         </tr>
@@ -293,7 +295,7 @@
     @apply font-semibold outline-none;
   }
 
-  .action-button:hover {
+  .action-button:hover:not(:disabled) {
     @apply underline;
   }
 
