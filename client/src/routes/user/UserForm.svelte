@@ -28,16 +28,37 @@
     role: z.string().nonempty({ message: 'Must select one of the options.' }),
   });
 
-  const editSchema = schema.extend({
-    password: z.string().min(4, 'Password must be longer than 4 characters.').optional(),
-  });
+  const editSchema = schema
+    .extend({
+      password: z.string().min(4, 'Password must be longer than 4 characters.').optional(),
+      confirmPassword: z.string().min(4, 'Password must be longer than 4 characters.').optional(),
+    })
+    .superRefine(({ confirmPassword, password }, ctx) => {
+      if (confirmPassword !== password) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'The passwords did not match.',
+          path: ['confirmPassword'],
+        });
+      }
+    });
 
   const newSchema = schema
     .omit({
       id: true,
     })
     .extend({
-      password: z.string(),
+      password: z.string().min(4, 'Password must be longer than 4 characters.'),
+      confirmPassword: z.string().min(4, 'Password must be longer than 4 characters.'),
+    })
+    .superRefine(({ confirmPassword, password }, ctx) => {
+      if (confirmPassword !== password) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'The passwords did not match.',
+          path: ['confirmPassword'],
+        });
+      }
     });
 
   export let edit = false;
@@ -59,6 +80,7 @@
       id: '',
       username: '',
       password: '',
+      confirmPassword: '',
       role: 'user',
     },
     error: undefined,
@@ -103,6 +125,7 @@
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: 'Password must be longer than 4 characters.',
+            path: ['password'],
           });
         }
       })
@@ -195,6 +218,28 @@
     </div>
     <div class="col-span-4 col-start-3 text-red-600">
       {form.error ? getZodErrorMessage(form.error, ['password']) : ''}
+    </div>
+  </section>
+
+  <section id="input-confirm-password" class="grid grid-cols-6">
+    <div class="col-span-2 flex items-center">
+      <label for="confirm-password" class="font-semibold">
+        Confirm Password {#if !edit}<span class="text-red-600">*</span>{/if}
+      </label>
+    </div>
+    <div class="col-span-4">
+      <input
+        type="password"
+        class="input
+            {form.error && getZodErrorMessage(form.error, ['confirmPassword']).length > 0
+          ? 'border border-red-600'
+          : ''}"
+        bind:value="{form.data.confirmPassword}"
+        use:blurOnEscape
+      />
+    </div>
+    <div class="col-span-4 col-start-3 text-red-600">
+      {form.error ? getZodErrorMessage(form.error, ['confirmPassword']) : ''}
     </div>
   </section>
 

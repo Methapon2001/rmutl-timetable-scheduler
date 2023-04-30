@@ -44,6 +44,10 @@
       path: '/section',
       text: 'Section',
     },
+    {
+      path: '/timetable',
+      text: 'Timetable (Study)',
+    },
   ];
 
   $: if (innerWidth && innerWidth < 768) {

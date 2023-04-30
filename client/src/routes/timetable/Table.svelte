@@ -5,7 +5,7 @@
 
   type WeekdayShort = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
   type SectionData = Omit<
-    API.Section, // eslint-disable-line no-undefi
+    API.Section, // eslint-disable-line no-undef
     'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'
   >;
 

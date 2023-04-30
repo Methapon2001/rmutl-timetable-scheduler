@@ -35,7 +35,9 @@ export const load = (async ({ fetch, parent, depends, url }) => {
   };
 
   const requestGroup = async () => {
-    const res = await fetch(`${PUBLIC_API_HOST}/api/group?limit=9999&createdByUserId=${session.user.id}`);
+    const res = await fetch(
+      `${PUBLIC_API_HOST}/api/group?limit=9999&createdByUserId=${session.user.id}`,
+    );
     const body = await res.json();
     return body as {
       data: API.Group[];

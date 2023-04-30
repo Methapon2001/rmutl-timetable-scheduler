@@ -6,6 +6,7 @@
   import { invalidate } from '$app/navigation';
   import { checkOverlap } from './utils';
   import { generate } from './generate';
+  import toast from 'svelte-french-toast';
 
   export let data: PageData;
 
@@ -94,6 +95,20 @@
     state.overlapInstructor = overlapInstructor;
     state.overlapRoom = overlapRoom;
     state.overlapSubject = overlapSubject;
+
+    // if (state.isOverlap) {
+    //   if (state.overlapRoom.length > 0)
+    //     toast.error('Overlap Room: ' + state.overlapRoom[0].section?.room?.name ?? '');
+    //   if (state.overlapInstructor.length > 0)
+    //     toast.error(
+    //       'Overlap Instructor: ' +
+    //         state.overlapInstructor[0].section?.instructor.map((inst) => inst.name).toString()!,
+    //     );
+    //   if (state.overlapGroup.length > 0)
+    //     toast.error('Overlap Group: ' + state.overlapGroup[0].section?.group?.name ?? '');
+    //   if (state.overlapSubject.length > 0)
+    //     toast.error('Overlap Subject: ' + state.overlapSubject[0].section?.subject.name ?? '');
+    // }
   }
 
   async function handleKeydown(e: KeyboardEvent) {
@@ -134,27 +149,33 @@
     }
   }
 
+  // eslint-disable-next-line no-undef
   function getRequiredHour(section: API.Section | API.Section['child'][number]) {
     return section.type === 'lecture' ? section.subject.lecture : section.subject.lab;
   }
 
+  // eslint-disable-next-line no-undef
   function getUsedHour(section: API.Section | API.Section['child'][number]) {
     return scheduler
       .filter((sched) => sched.section.id === section.id)
       .reduce((acc, curr) => acc + curr.size / 2, 0);
   }
 
+  // eslint-disable-next-line no-undef
   function getLeftOverHours(section: API.Section | API.Section['child'][number]) {
     return getRequiredHour(section) - getUsedHour(section);
   }
 
+  // eslint-disable-next-line no-undef
   function handleSelectSection(section: API.Scheduler['section']) {
-    leftOverHours = getLeftOverHours(section);
+    let left = getLeftOverHours(section);
 
-    if (leftOverHours > 0) {
+    if (left > 0) {
       state.selected = true;
       state.section = section;
-      state.size = leftOverHours * 2;
+      state.size = left * 2;
+
+      leftOverHours = left;
 
       handleDataChange();
     }
@@ -166,7 +187,7 @@
 <div class="flex">
   <div class="flex-grow">
     <div>
-      <div class="z-20 grid grid-cols-2 shadow">
+      <div class="z-20 grid grid-cols-2">
         <div class="table-small-container border-b border-r">
           {#if pov === 'group'}
             {#each instructor as i (i.id)}
@@ -218,7 +239,7 @@
         {#if data.section.total === 0}
           <div class="p-8 text-center">
             <h1 class="mb-4 text-5xl font-extrabold">No Data</h1>
-            <h2 class="text-secondary text-3xl">
+            <h2 class="text-3xl text-secondary">
               No section created.<br />Must have section data in order for timetable to show.
             </h2>
           </div>
@@ -265,43 +286,38 @@
     </div>
   </div>
   <div>
-    <div class="section-selector bg-light border-l">
+    <div class="section-selector border-l bg-light">
       {#each data.section.data as section}
         {#if section.parent === null}
           <div class="w-full space-y-2 border-b p-4">
             <div class="mb-2 space-y-2 text-sm">
               <div class="flex gap-2">
-                <span
-                  class="bg-primary inline-block rounded px-2 py-1 font-semibold text-white shadow"
-                >
+                <span class="inline-block rounded bg-primary px-2 py-1 font-semibold text-white">
                   {section.subject.code}
                 </span>
-                <span
-                  class="bg-primary inline-block rounded px-2 py-1 font-semibold text-white shadow"
-                >
+                <span class="inline-block rounded bg-primary px-2 py-1 font-semibold text-white">
                   {section.subject.name}
                 </span>
               </div>
 
               <div class="flex gap-2">
-                <span
-                  class="bg-primary inline-block rounded px-2 py-1 font-semibold text-white shadow"
-                >
+                <span class="inline-block rounded bg-primary px-2 py-1 font-semibold text-white">
                   SEC {section.no}
                 </span>
-                <span
-                  class="bg-primary inline-block rounded px-2 py-1 font-semibold text-white shadow"
-                >
+                <span class="inline-block rounded bg-primary px-2 py-1 font-semibold text-white">
                   {section.group?.name}
                 </span>
               </div>
             </div>
             <button
-              class="block grid w-full grid-cols-4 flex-row rounded bg-white capitalize shadow"
-              class:text-green-600="{state.section?.id === section.id}"
+              class="block grid w-full grid-cols-4 flex-row rounded border capitalize outline-none"
+              class:bg-white="{state.section?.id !== section.id}"
+              class:bg-green-600="{state.section?.id === section.id}"
+              class:text-white="{state.section?.id === section.id}"
               class:text-red-600="{getLeftOverHours(section) == 0}"
-              class:text-indigo-700="{getUsedHour(section) > 0 &&
-                getUsedHour(section) < getRequiredHour(section)}"
+              class:text-indigo-600="{getUsedHour(section) > 0 &&
+                getUsedHour(section) < getRequiredHour(section) &&
+                state.section?.id != section.id}"
               on:click="{() => handleSelectSection(section)}"
             >
               <div
@@ -321,11 +337,14 @@
 
             {#each section.child as child}
               <button
-                class="block grid w-full grid-cols-4 flex-row rounded bg-white capitalize shadow"
-                class:text-green-600="{state.section?.id === child.id}"
+                class="block grid w-full grid-cols-4 flex-row rounded border capitalize outline-none"
+                class:bg-white="{state.section?.id !== child.id}"
+                class:bg-green-600="{state.section?.id === child.id}"
+                class:text-white="{state.section?.id === child.id}"
                 class:text-red-600="{getLeftOverHours(child) == 0}"
                 class:text-indigo-700="{getUsedHour(child) > 0 &&
-                  getUsedHour(child) < getRequiredHour(child)}"
+                  getUsedHour(child) < getRequiredHour(child) &&
+                  state.section?.id != child.id}"
                 on:click="{() => handleSelectSection({ ...child, child: [] })}"
               >
                 <div
@@ -349,21 +368,32 @@
     </div>
   </div>
 </div>
-<div class="flex h-16 items-center justify-between border p-3">
+<div class="flex h-16 items-center justify-between border p-4">
   <div class="pov-switch">
-    <select
-      id="view"
-      name="view"
-      class="w-48 rounded border bg-slate-900 px-3 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
-      bind:value="{pov}"
+    <button
+      on:click="{() => (pov = pov === 'group' ? 'instructor' : 'group')}"
+      class="w-48 rounded border bg-slate-900 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
     >
-      <option class="bg-white text-black" value="group">Groups View</option>
-      <option class="bg-white text-black" value="instructor">Instructors View</option>
-    </select>
+      View: <span class="capitalize">{pov}</span>
+    </button>
   </div>
+  {#if state.section}
+    <div
+      class="flex flex justify-between gap-2 overflow-hidden rounded border border-primary bg-light font-semibold shadow"
+    >
+      <span class="bg-primary px-3 py-2 font-semibold text-white">Selected</span>
+      <span class="px-4 py-2">
+        {state.section?.subject.code ?? ''}
+        {state.section?.subject.name ?? ''}
+      </span>
+      <span class="px-4 py-2">{state.section?.group?.name ?? ''}</span>
+      <span class="px-4 py-2">SEC {state.section?.no ?? ''}</span>
+      <span class="px-4 py-2 capitalize">{state.section?.type} {state.section?.lab ?? ''}</span>
+    </div>
+  {/if}
 
   <div class="alloc-control">
-    <div class="bg-primary grid grid-cols-6 rounded font-semibold text-white">
+    <div class="grid grid-cols-6 rounded bg-primary font-semibold text-white">
       <div class="col-span-5 flex items-center px-4 py-2">
         <input
           class="w-full"
@@ -400,18 +430,20 @@
     overflow-x: hidden;
     overflow-y: auto;
     scrollbar-gutter: stable;
+    width: 22.5rem;
   }
 
-  .section-selector {
-    width: 24rem;
+  .section-selector button {
+    width: 20rem;
+    user-select: none;
   }
 
   .alloc-control {
     padding-left: 1rem;
-    padding-right: 0.75rem;
+    padding-right: 0.5rem;
   }
 
   .alloc-control > .grid {
-    width: 22rem;
+    width: 20rem;
   }
 </style>

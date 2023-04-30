@@ -57,32 +57,31 @@ export async function generate(
     target?: 'compulsory' | 'elective' | '*';
   } = {},
 ) {
-  option = {
-    weekday: option.weekday ?? ['mon', 'tue', 'wed', 'thu', 'fri'],
-    period: option.period ?? [1, 18],
-    target: option.target ?? '*',
-  };
+  const subjectTarget = option.target ?? '*';
+  const weekday = option.weekday ?? ['mon', 'tue', 'wed', 'thu', 'fri'];
+  const rangeStart = option.period && option.period.length === 2 ? option.period[0] : 1;
+  const rangeEnd = option.period && option.period.length === 2 ? option.period[1] : 18;
 
   section = section
     .filter((sec) => {
       return schedule.findIndex((sched) => sched.section.id === sec.id) === -1;
     })
     .filter((sec) => {
-      return option.target !== '*'
+      return subjectTarget !== '*'
         ? sec.group?.course.detail.find((c) => c.subject.id === sec.subject.id)?.type ===
-            option.target
+            subjectTarget
         : true;
     });
 
   section.forEach((sec) => {
     const size = (sec.type === 'lecture' ? sec.subject.lecture : sec.subject.lab) * 2;
 
-    for (const weekday of option.weekday!) {
-      for (let i = option.period![0]; i <= option.period![1] - size + 1; i++) {
+    for (const day of weekday) {
+      for (let i = rangeStart; i <= rangeEnd - size + 1; i++) {
         const { isOverlap } = checkOverlap(
           {
             period: i,
-            weekday: weekday,
+            weekday: day,
             section: sec,
             size: size,
           },
@@ -91,7 +90,7 @@ export async function generate(
 
         if (isOverlap) continue;
 
-        if (!isCurrentRegGood(sec, weekday, i, 2, schedule)) continue;
+        if (!isCurrentRegGood(sec, day, i, 2, schedule)) continue;
 
         schedule = [
           ...schedule,
@@ -100,7 +99,7 @@ export async function generate(
             section: sec,
             period: i,
             size: size,
-            weekday: weekday as WeekdayShort,
+            weekday: day as WeekdayShort,
           },
         ];
 

@@ -37,7 +37,8 @@ export const deleteUser = async (data: Pick<API.User, 'id'>): Promise<API.User> 
 };
 
 export const editUser = async (
-  data: Omit<API.User, 'createdAt' | 'updatedAt'> & { password?: string },
+  data: Pick<API.User, 'id'> &
+    Partial<Omit<API.User, 'createdAt' | 'updatedAt'>> & { password?: string },
 ): Promise<API.User> => {
   const userSession = await refresh();
 
