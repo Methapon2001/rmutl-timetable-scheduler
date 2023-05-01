@@ -99,6 +99,7 @@ const schedulerSelect: Prisma.SchedulerSelect = {
   weekday: true,
   start: true,
   end: true,
+  publish: true,
   section: {
     select: sectionSelect,
   },
@@ -137,7 +138,7 @@ export async function requestScheduler(
       limit: number;
       offset: number;
       groupId: string;
-    } & Pick<Scheduler, "createdByUserId" | "updatedByUserId">;
+    } & Pick<Scheduler, "publish" | "createdByUserId" | "updatedByUserId">;
   }>,
   reply: FastifyReply
 ) {

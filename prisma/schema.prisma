@@ -230,6 +230,7 @@ model Scheduler {
   weekday Weekday
   start   Int
   end     Int
+  publish Boolean @default(false)
 
   sectionId String
   section   Section @relation(fields: [sectionId], references: [id])
