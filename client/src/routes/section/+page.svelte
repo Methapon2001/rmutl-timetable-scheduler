@@ -37,7 +37,7 @@
 
   const subjectOptions = async () => {
     return (await data.lazy.subject).data.map((subject) => ({
-      label: subject.name,
+      label: `${subject.code} ${subject.name}`,
       value: subject.id,
       detail: subject,
     }));
@@ -103,9 +103,15 @@
 
   async function handleDelete(section: { id: string }) {
     if (confirm('Are you sure?')) {
-      await deleteSection(section).catch((e: Response) => console.error(e));
-      await invalidate('data:section');
-      toast.success('Delete Complete!');
+      const ret = await deleteSection(section).catch((e: Response) => console.error(e));
+      
+      if (ret) {
+        await invalidate('data:section');
+
+        toast.success('Delete Complete!');
+      } else {
+        toast.error('Fail to delete section!\nThis record is currenly in use.');
+      }
     }
   }
 </script>
@@ -200,7 +206,7 @@
       {/if}
       {#each data.section.data as section (section.id)}
         <tr class="hover:bg-light">
-          <td class="whitespace-nowrap text-center"
+          <td class="whitespace-nowrap"
             >{section.subject.code} {section.subject.name}</td
           >
           <td class="text-center">{section.no}</td>
