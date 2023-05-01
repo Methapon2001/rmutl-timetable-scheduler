@@ -41,6 +41,12 @@ model User {
 
   createdScheduler Scheduler[] @relation("SchedulerCreatedBy")
   updatedScheduler Scheduler[] @relation("SchedulerUpdatedBy")
+
+  createdExam Exam[] @relation("ExamCreatedBy")
+  updatedExam Exam[] @relation("ExamUpdatedBy")
+
+  createdSchedulerExam SchedulerExam[] @relation("SchedulerExamCreatedBy")
+  updatedSchedulerExam SchedulerExam[] @relation("SchedulerExamUpdatedBy")
 }
 
 enum Role {
@@ -95,6 +101,7 @@ model Instructor {
   updatedAt       DateTime @updatedAt
 
   section Section[]
+  exam    Exam[]
 }
 
 model Building {
@@ -218,6 +225,7 @@ model Section {
 
   instructor Instructor[]
   scheduler  Scheduler[]
+  exam       Exam[]
 }
 
 enum SectionType {
@@ -252,4 +260,43 @@ enum Weekday {
   fri
   sat
   sun
+}
+
+model Exam {
+  id      String  @id @default(nanoid(16))
+  weekday Weekday
+  start   Int
+  end     Int
+  publish Boolean @default(false)
+
+  createdByUserId String
+  createdBy       User     @relation("ExamCreatedBy", fields: [createdByUserId], references: [id])
+  createdAt       DateTime @default(now())
+
+  updatedByUserId String
+  updatedBy       User     @relation("ExamUpdatedBy", fields: [updatedByUserId], references: [id])
+  updatedAt       DateTime @updatedAt
+
+  section       Section[]
+  instructor    Instructor[]
+  schedulerExam SchedulerExam[]
+}
+
+model SchedulerExam {
+  id      String  @id @default(nanoid(16))
+  weekday Weekday
+  start   Int
+  end     Int
+  publish Boolean @default(false)
+
+  examId String
+  exam   Exam   @relation(fields: [examId], references: [id])
+
+  createdByUserId String
+  createdBy       User     @relation("SchedulerExamCreatedBy", fields: [createdByUserId], references: [id])
+  createdAt       DateTime @default(now())
+
+  updatedByUserId String
+  updatedBy       User     @relation("SchedulerExamUpdatedBy", fields: [updatedByUserId], references: [id])
+  updatedAt       DateTime @updatedAt
 }
