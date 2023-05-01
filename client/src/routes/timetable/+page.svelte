@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ComponentProps } from 'svelte';
+  import { onMount, type ComponentProps, onDestroy } from 'svelte';
   import type { PageData } from './$types';
   import Table from './Table.svelte';
   import { createScheduler } from '$lib/api/scheduler';
@@ -7,8 +7,27 @@
   import { checkOverlap } from './utils';
   import { generate } from './generate';
   import toast from 'svelte-french-toast';
+  import { PUBLIC_API_WS } from '$env/static/public';
 
   export let data: PageData;
+
+  let ws: WebSocket;
+
+  onMount(() => {
+    ws = new WebSocket(PUBLIC_API_WS);
+
+    ws.onopen = () => console.log('WebSocket Connected.');
+
+    ws.onmessage = (event) => {
+      if (event.data === 'Schedule updated.') invalidate('data:scheduler');
+    };
+
+    ws.onclose = () => console.log('WebSocket Closed');
+  });
+
+  onDestroy(() => {
+    ws.close();
+  });
 
   let scheduler: ComponentProps<Table>['data'];
 
@@ -131,7 +150,7 @@
           sectionId: state.section.id,
         });
 
-        await invalidate('data:scheduler');
+        // await invalidate('data:scheduler');
 
         resetState();
         break;
@@ -239,7 +258,7 @@
         {#if data.section.total === 0}
           <div class="p-8 text-center">
             <h1 class="mb-4 text-5xl font-extrabold">No Data</h1>
-            <h2 class="text-3xl text-secondary">
+            <h2 class="text-secondary text-3xl">
               No section created.<br />Must have section data in order for timetable to show.
             </h2>
           </div>
@@ -262,7 +281,7 @@
                 class="button mx-2 flex h-12 w-48 items-center justify-center rounded"
                 on:click="{async () => {
                   await generate(data.section.data, scheduler);
-                  await invalidate('data:scheduler');
+                  // await invalidate('data:scheduler');
                   resetState();
                 }}">Generate</button
               >
@@ -286,25 +305,25 @@
     </div>
   </div>
   <div>
-    <div class="section-selector border-l bg-light">
+    <div class="section-selector bg-light border-l">
       {#each data.section.data as section}
         {#if section.parent === null}
           <div class="w-full space-y-2 border-b p-4">
             <div class="mb-2 space-y-2 text-sm">
               <div class="flex gap-2">
-                <span class="inline-block rounded bg-primary px-2 py-1 font-semibold text-white">
+                <span class="bg-primary inline-block rounded px-2 py-1 font-semibold text-white">
                   {section.subject.code}
                 </span>
-                <span class="inline-block rounded bg-primary px-2 py-1 font-semibold text-white">
+                <span class="bg-primary inline-block rounded px-2 py-1 font-semibold text-white">
                   {section.subject.name}
                 </span>
               </div>
 
               <div class="flex gap-2">
-                <span class="inline-block rounded bg-primary px-2 py-1 font-semibold text-white">
+                <span class="bg-primary inline-block rounded px-2 py-1 font-semibold text-white">
                   SEC {section.no}
                 </span>
-                <span class="inline-block rounded bg-primary px-2 py-1 font-semibold text-white">
+                <span class="bg-primary inline-block rounded px-2 py-1 font-semibold text-white">
                   {section.group?.name}
                 </span>
               </div>
@@ -379,7 +398,7 @@
   </div>
   {#if state.section}
     <div
-      class="flex flex justify-between gap-2 overflow-hidden rounded border border-primary bg-light font-semibold shadow"
+      class="border-primary bg-light flex flex justify-between gap-2 overflow-hidden rounded border font-semibold shadow"
     >
       <span class="bg-primary px-3 py-2 font-semibold text-white">Selected</span>
       <span class="px-4 py-2">
@@ -393,7 +412,7 @@
   {/if}
 
   <div class="alloc-control">
-    <div class="grid grid-cols-6 rounded bg-primary font-semibold text-white">
+    <div class="bg-primary grid grid-cols-6 rounded font-semibold text-white">
       <div class="col-span-5 flex items-center px-4 py-2">
         <input
           class="w-full"
