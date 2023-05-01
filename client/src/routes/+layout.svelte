@@ -126,6 +126,8 @@
     overflow: hidden;
     top: 0;
     bottom: 0;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
   }
 
   nav ul {
