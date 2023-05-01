@@ -19,7 +19,7 @@
 
   const subjectOptions = async () => {
     return (await data.lazy.subject).data.map((subject) => ({
-      label: subject.name,
+      label: `${subject.code} ${subject.name}`,
       value: subject.id,
     }));
   };
