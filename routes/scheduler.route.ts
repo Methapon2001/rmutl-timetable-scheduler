@@ -45,6 +45,9 @@ export default async (server: FastifyInstance) => {
 
   server.put("/api/scheduler/:id", {
     onRequest: auth(),
+    onResponse: (_request, _reply) => {
+      broadcast("Schedule updated.");
+    },
     handler: updateScheduler,
     schema: {
       params: schedulerSchema.params,
@@ -54,6 +57,9 @@ export default async (server: FastifyInstance) => {
 
   server.delete("/api/scheduler/:id", {
     onRequest: auth(),
+    onResponse: (_request, _reply) => {
+      broadcast("Schedule updated.");
+    },
     handler: deleteScheduler,
     schema: {
       params: schedulerSchema.params,
