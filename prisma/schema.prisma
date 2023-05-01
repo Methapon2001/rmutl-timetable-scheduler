@@ -263,11 +263,7 @@ enum Weekday {
 }
 
 model Exam {
-  id      String  @id @default(nanoid(16))
-  weekday Weekday
-  start   Int
-  end     Int
-  publish Boolean @default(false)
+  id String @id @default(nanoid(16))
 
   createdByUserId String
   createdBy       User     @relation("ExamCreatedBy", fields: [createdByUserId], references: [id])
