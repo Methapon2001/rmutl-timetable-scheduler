@@ -98,7 +98,7 @@
 
       toast.success('Edit Complete!');
     } else {
-      toast.error('Fail to Edit Section!');
+      toast.error('Fail to delete section!\nThis record may currenly in use in schedule.');
     }
   }
 

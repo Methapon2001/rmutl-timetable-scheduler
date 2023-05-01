@@ -42,9 +42,15 @@
 
   async function handleDelete(room: { id: string }) {
     if (confirm('Are you sure?')) {
-      await deleteRoom(room).catch((e: Response) => console.error(e));
-      await invalidate('data:room');
-      toast.success('Delete Complete');
+      const ret = await deleteRoom(room).catch((e: Response) => console.error(e));
+      
+      if (ret) {
+        await invalidate('data:room');
+
+        toast.success('Delete Complete!');
+      } else {
+        toast.error('Fail to delete room!\nThis record is currenly in use.');
+      }
     }
   }
 </script>

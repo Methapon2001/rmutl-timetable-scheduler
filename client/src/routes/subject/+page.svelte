@@ -48,9 +48,15 @@
 
   async function handleDelete(subject: { id: string }) {
     if (confirm('Are you sure?')) {
-      await deleteSubject(subject).catch((e: Response) => console.error(e));
-      await invalidate('data:subject');
-      toast.success('Delete Complete!');
+      const ret = await deleteSubject(subject).catch((e: Response) => console.error(e));
+      
+      if (ret) {
+        await invalidate('data:subject');
+
+        toast.success('Delete Complete!');
+      } else {
+        toast.error('Fail to delete subject!\nThis record is currenly in use.');
+      }
     }
   }
 </script>

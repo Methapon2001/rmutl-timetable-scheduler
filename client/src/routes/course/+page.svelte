@@ -61,9 +61,15 @@
 
   async function handleDelete(course: { id: string }) {
     if (confirm('Are you sure?')) {
-      await deleteCourse(course).catch((e: Response) => console.error(e));
-      await invalidate('data:course');
-      toast.success('Delete Complete!');
+      const ret = await deleteCourse(course).catch((e: Response) => console.error(e));
+
+      if (ret) {
+        await invalidate('data:course');
+
+        toast.success('Delete Complete!');
+      } else {
+        toast.error('Failed to delete course!\nThis record is currenly in use.');
+      }
     }
   }
 </script>

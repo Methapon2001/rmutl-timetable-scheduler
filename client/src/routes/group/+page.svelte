@@ -41,9 +41,15 @@
 
   async function handleDelete(group: { id: string }) {
     if (confirm('Are you sure?')) {
-      await deleteGroup(group).catch((e: Response) => console.error(e));
-      await invalidate('data:group');
-      toast.success('Delete Complete!');
+      const ret = await deleteGroup(group).catch((e: Response) => console.error(e));
+      
+      if (ret) {
+        await invalidate('data:group');
+
+        toast.success('Delete Complete!');
+      } else {
+        toast.error('Failed to delete group!\nThis record is currenly in use.');
+      }
     }
   }
 </script>
