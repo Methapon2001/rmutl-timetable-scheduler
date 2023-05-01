@@ -69,6 +69,7 @@ const instructorSelect: Prisma.InstructorSelect = {
 const childSectionSelect: Prisma.SectionSelect = {
   id: true,
   no: true,
+  alt: true,
   lab: true,
   type: true,
   group: {

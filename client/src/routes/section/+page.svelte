@@ -65,6 +65,7 @@
   let editState = false;
   let editData: {
     id: string;
+    alt: string;
     groupId: string;
     roomId: string;
     instructor: string[];
@@ -80,6 +81,7 @@
   function showEdit(
     editSectionData: {
       id: string;
+      alt: string;
       groupId: string;
       roomId: string;
       instructor: {
@@ -188,6 +190,7 @@
       <tr>
         <th>Subject</th>
         <th>No.</th>
+        <th>Alternate Section No.</th>
         <th>Type</th>
         <th>Lab No.</th>
         <th>Group</th>
@@ -201,7 +204,7 @@
     <tbody>
       {#if data.section.total == 0}
         <tr>
-          <td class="text-center text-secondary" colspan="10">No records found.</td>
+          <td class="text-center text-secondary" colspan="11">No records found.</td>
         </tr>
       {/if}
       {#each data.section.data as section (section.id)}
@@ -210,6 +213,7 @@
             >{section.subject.code} {section.subject.name}</td
           >
           <td class="text-center">{section.no}</td>
+          <td class="text-center">{section.alt ?? '-'}</td>
           <td class="text-center capitalize">{section.type}</td>
           <td class="text-center">{section.lab ?? '-'}</td>
           <td class="text-center">{section.group?.name ?? ''}</td>
@@ -246,6 +250,7 @@
                   showEdit(
                     {
                       id: section.id,
+                      alt: section.alt,
                       groupId: section.group?.id ?? '',
                       roomId: section.room?.id ?? '',
                       instructor: section.instructor,

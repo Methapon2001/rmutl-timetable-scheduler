@@ -27,6 +27,7 @@ export default {
       manual: { type: "boolean", default: false },
       type: { type: "string", enum: ["lecture", "lab"] },
       no: { type: "number" },
+      alt: { type: ["string", "null"] },
       section: {
         type: "array",
         minItems: 1,
@@ -52,6 +53,7 @@ export default {
   bodyUpdate: {
     type: "object",
     properties: {
+      alt: { type: ["string", "null"] },
       groupId: { type: ["string", "null"] },
       roomId: { type: ["string", "null"] },
       instructor: {

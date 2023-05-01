@@ -9,6 +9,13 @@
 
   const schema = z.object({
     id: z.string(),
+    alt: z.string().transform((v) => {
+      if (!v.trim()) return null;
+
+      const listNo = v.split(/[,\s]+/).map(Number);
+      const sortedNo = [...new Set(listNo)].sort((a, b) => +a - +b);
+      return sortedNo.join(', ');
+    }),
     groupId: z.string().transform((v) => v.trim() || null),
     roomId: z.string().transform((v) => v.trim() || null),
     instructor: z.string().array(),
@@ -43,6 +50,7 @@
   } = {
     data: {
       id: '',
+      alt: '',
       groupId: '',
       roomId: '',
       instructor: [],
@@ -53,6 +61,7 @@
   export let edit = false;
   export let editData: typeof form.data = {
     id: '',
+    alt: '',
     groupId: '',
     roomId: '',
     instructor: [],
@@ -87,6 +96,7 @@
     if (ret) {
       form.data = {
         id: '',
+        alt: '',
         groupId: '',
         roomId: '',
         instructor: [],
@@ -98,7 +108,7 @@
 
       toast.success('Edit Complete!');
     } else {
-      toast.error('Fail to delete section!\nThis record may currenly in use in schedule.');
+      toast.error('Fail to edit section!\nThis record may currenly in use in schedule.');
     }
   }
 
@@ -114,6 +124,26 @@
     {showData.subject.name} Sec {showData.no}
     <span class="capitalize">({showData.type}{showData.lab ?? ''})</span>
   </h1>
+  <section id="input-alt" class="grid grid-cols-6">
+    <div class="col-span-2 flex items-center">
+      <label for="" class="font-semibold">
+        Alternate Section No. <span class="text-red-600">*</span>
+      </label>
+    </div>
+    <div class="col-span-4">
+      <input
+        type="text"
+        class="input
+          {form.error && getZodErrorMessage(form.error, ['alt']).length > 0
+          ? 'border border-red-600'
+          : ''}"
+        bind:value="{form.data.alt}"
+      />
+    </div>
+    <div class="col-span-4 col-start-3 text-red-600">
+      {form.error ? getZodErrorMessage(form.error, ['alt']) : ''}
+    </div>
+  </section>
   <section id="input-group" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
       <label for="group" class="font-semibold">

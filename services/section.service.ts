@@ -69,6 +69,7 @@ const instructorSelect: Prisma.InstructorSelect = {
 const childSectionSelect: Prisma.SectionSelect = {
   id: true,
   no: true,
+  alt: true,
   lab: true,
   type: true,
   group: {
@@ -153,7 +154,7 @@ async function nextSectionNo(subjectId: string) {
 }
 
 type CreateBody = Pick<Section, "type" | "subjectId"> &
-  Partial<Pick<Section, "no" | "manual" | "groupId">> & {
+  Partial<Pick<Section, "no" | "alt" | "manual" | "groupId">> & {
     section: {
       roomId: string | null;
       instructor?: Instructor[];
@@ -175,6 +176,7 @@ export async function createSection(
     return {
       type: idx == 0 ? request.body.type : "lab",
       no: sectionNo,
+      alt: request.body.alt,
       lab:
         idx != 0 && request.body.type == "lecture"
           ? idx
@@ -304,7 +306,7 @@ export async function requestSection(
 export async function updateSection(
   request: FastifyRequest<{
     Params: Pick<Section, "id">;
-    Body: Partial<Pick<Section, "roomId" | "groupId">> & {
+    Body: Partial<Pick<Section, "alt" | "roomId" | "groupId">> & {
       instructor?: Instructor[];
     };
   }>,
@@ -324,6 +326,21 @@ export async function updateSection(
   if (rec?.createdByUserId != request.user.id) {
     return reply.code(403).send({
       message: "Forbidden.",
+    });
+  }
+
+  const used = await prisma.scheduler.findFirst({
+    select: {
+      id: true,
+    },
+    where: {
+      sectionId: id,
+    },
+  });
+
+  if (used) {
+    return reply.code(403).send({
+      message: "Cannot edit when this is used in schedule.",
     });
   }
 

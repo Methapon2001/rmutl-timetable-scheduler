@@ -93,6 +93,7 @@ declare namespace API {
   type Section = {
     id: string;
     no: number;
+    alt: string;
     lab: number;
     type: string;
     group: Omit<API.Group, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'> | null;
