@@ -15,7 +15,7 @@ export default async (server: FastifyInstance) => {
     schema: {
       body: {
         ...subjectSchema.body,
-        required: ["code", "name", "credit", "lecture", "lab", "exam"],
+        required: ["code", "name", "credit", "lecture", "lab", "learn", "exam"],
       },
     },
   });

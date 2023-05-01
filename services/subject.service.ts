@@ -19,6 +19,7 @@ const subjectSelect: Prisma.SubjectSelect = {
   lecture: true,
   lab: true,
   exam: true,
+  learn: true,
   createdAt: true,
   createdBy: {
     select: userSelect,
@@ -31,7 +32,7 @@ const subjectSelect: Prisma.SubjectSelect = {
 
 export async function createSubject(
   request: FastifyRequest<{ Body: Subject }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const subject = await prisma.subject.create({
     data: {
@@ -61,12 +62,13 @@ export async function requestSubject(
       | "credit"
       | "lecture"
       | "lab"
+      | "learn"
       | "exam"
       | "createdByUserId"
       | "updatedByUserId"
     >;
   }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const { id } = request.params;
   const { limit, offset, search, ...where } = request.query;
@@ -113,7 +115,7 @@ export async function updateSubject(
     Params: Pick<Subject, "id">;
     Body: Omit<Subject, "id">;
   }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const { id } = request.params;
 
@@ -137,7 +139,7 @@ export async function deleteSubject(
   request: FastifyRequest<{
     Params: Pick<Subject, "id">;
   }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const { id } = request.params;
 
@@ -157,7 +159,7 @@ export async function searchSubject(
   request: FastifyRequest<{
     Querystring: { search: string; limit: number; offset: number };
   }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const { limit, offset, search } = request.query;
 

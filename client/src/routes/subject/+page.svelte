@@ -28,6 +28,7 @@
     credit: number;
     lecture: number;
     lab: number;
+    learn: number;
     exam: number;
   };
 
@@ -38,6 +39,7 @@
     credit: number;
     lecture: number;
     lab: number;
+    learn: number;
     exam: number;
   }) {
     editState = true;
@@ -107,6 +109,7 @@
         <th>Credit</th>
         <th>Lecture</th>
         <th>Lab</th>
+        <th>Learn</th>
         <th>Exam</th>
         <th>Created</th>
         <th>Updated</th>
@@ -116,7 +119,7 @@
     <tbody>
       {#if data.subject.total == 0}
         <tr>
-          <td class="text-center text-secondary" colspan="9">No records found.</td>
+          <td class="text-center text-secondary" colspan="10">No records found.</td>
         </tr>
       {/if}
       {#each data.subject.data as subject (subject.id)}
@@ -126,6 +129,7 @@
           <td class="text-center">{subject.credit}</td>
           <td class="text-center">{subject.lecture}</td>
           <td class="text-center">{subject.lab}</td>
+          <td class="text-center">{subject.learn}</td>
           <td class="text-center">{subject.exam}</td>
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(subject.createdAt).toLocaleDateString()}</p>

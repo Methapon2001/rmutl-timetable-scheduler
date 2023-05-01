@@ -75,6 +75,7 @@ model Subject {
   lecture Int
   lab     Int
   exam    Int
+  learn   Int
 
   createdByUserId String
   createdBy       User     @relation("SubjectCreatedBy", fields: [createdByUserId], references: [id])
@@ -137,6 +138,7 @@ model Room {
   updatedAt       DateTime @updatedAt
 
   section Section[]
+  Exam    Exam[]
 }
 
 enum RoomType {
@@ -260,39 +262,4 @@ enum Weekday {
   fri
   sat
   sun
-}
-
-model Exam {
-  id String @id @default(nanoid(16))
-
-  createdByUserId String
-  createdBy       User     @relation("ExamCreatedBy", fields: [createdByUserId], references: [id])
-  createdAt       DateTime @default(now())
-
-  updatedByUserId String
-  updatedBy       User     @relation("ExamUpdatedBy", fields: [updatedByUserId], references: [id])
-  updatedAt       DateTime @updatedAt
-
-  section       Section[]
-  instructor    Instructor[]
-  schedulerExam SchedulerExam[]
-}
-
-model SchedulerExam {
-  id      String  @id @default(nanoid(16))
-  weekday Weekday
-  start   Int
-  end     Int
-  publish Boolean @default(false)
-
-  examId String
-  exam   Exam   @relation(fields: [examId], references: [id])
-
-  createdByUserId String
-  createdBy       User     @relation("SchedulerExamCreatedBy", fields: [createdByUserId], references: [id])
-  createdAt       DateTime @default(now())
-
-  updatedByUserId String
-  updatedBy       User     @relation("SchedulerExamUpdatedBy", fields: [updatedByUserId], references: [id])
-  updatedAt       DateTime @updatedAt
 }

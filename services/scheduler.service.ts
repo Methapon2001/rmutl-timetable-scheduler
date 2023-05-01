@@ -1,4 +1,4 @@
-import { Group, Prisma, PrismaClient, Scheduler } from "@prisma/client";
+import { Prisma, PrismaClient, Scheduler } from "@prisma/client";
 import { FastifyReply, FastifyRequest } from "fastify";
 
 const prisma = new PrismaClient({
@@ -18,6 +18,7 @@ const subjectSelect: Prisma.SubjectSelect = {
   credit: true,
   lecture: true,
   lab: true,
+  learn: true,
   exam: true,
 };
 
