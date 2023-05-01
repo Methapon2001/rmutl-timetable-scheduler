@@ -178,19 +178,23 @@
         : '0%'}"
     >
       {#if !small}
-        <div class="flex w-full text-center">
+        <div class="group relative flex h-full w-full items-center text-center">
           <div class="flex-grow">
-            <h6 class="block font-bold">
-              {item.section.subject.code}_SEC_{item.section.no}{item.section.type === 'lab'
-                ? `_L${item.section.lab}`
-                : ''}
-            </h6>
+            {#if !item._overlap}
+              <h6 class="block font-bold">
+                {item.section.subject.code}_SEC_{item.section.no}{item.section.type === 'lab'
+                  ? `_L${item.section.lab}`
+                  : ''}
+              </h6>
+            {/if}
             <p class="block">{item.section.subject.name}</p>
           </div>
 
-          <div class="flex items-center justify-center p-1">
+          <div
+            class="absolute hidden h-full w-full items-center justify-center bg-black/30 group-hover:flex"
+          >
             <button
-              class="rounded bg-red-600 p-1 text-white"
+              class="h-8 rounded bg-red-600 px-2 py-1 text-white hover:bg-red-500"
               on:click="{async () => {
                 await deleteScheduler({ id: item.id });
                 await invalidate('data:scheduler');
@@ -204,7 +208,7 @@
                 };
               }}"
             >
-              D
+              Delete
             </button>
           </div>
         </div>
