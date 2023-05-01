@@ -234,7 +234,9 @@
   <ul class="selected">
     {#each selectedOptions as option, idx (option.value)}
       <li>
-        {option.label}
+        <span>
+          {option.label}
+        </span>
         <button
           on:mouseup|stopPropagation="{() => remove(idx)}"
           on:keydown="{(e) => {
@@ -452,7 +454,6 @@
   }
 
   .svs > .selected > li {
-    flex: 1 auto content;
     display: flex;
     align-items: center;
     border-width: 1px;
@@ -460,6 +461,11 @@
     border-radius: var(--svs-border-radius);
     color: var(--svs-selected-color);
     background-color: var(--svs-selected-background-color);
+  }
+  
+  .svs > .selected > li > span {
+    white-space: normal;
+    word-wrap: break-word;
   }
 
   .svs > .selected > :where(input, li) {
