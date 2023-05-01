@@ -311,20 +311,20 @@
           <div class="w-full space-y-2 border-b p-4">
             <div class="mb-2 space-y-2 text-sm">
               <div class="flex gap-2">
-                <span class="bg-primary inline-block rounded px-2 py-1 font-semibold text-white">
+                <span class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white">
                   {section.subject.code}
                 </span>
-                <span class="bg-primary inline-block rounded px-2 py-1 font-semibold text-white">
+                <span class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white">
                   {section.subject.name}
                 </span>
               </div>
 
               <div class="flex gap-2">
-                <span class="bg-primary inline-block rounded px-2 py-1 font-semibold text-white">
+                <span class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white">
                   SEC {section.no}
                 </span>
-                <span class="bg-primary inline-block rounded px-2 py-1 font-semibold text-white">
-                  {section.group?.name}
+                <span class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white">
+                  {section.group?.name ?? 'Any'}
                 </span>
               </div>
             </div>
