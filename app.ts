@@ -4,6 +4,7 @@ dotenv.config();
 import Ajv from "ajv";
 import fastify from "fastify";
 import fastifyCors from "@fastify/cors";
+import fastifyWebsocket from "@fastify/websocket";
 import * as routes from "./routes";
 
 const server = fastify();
@@ -51,6 +52,7 @@ server.setValidatorCompiler((request) => {
 });
 
 server.register(fastifyCors);
+server.register(fastifyWebsocket);
 
 for (const route of Object.values(routes)) {
   server.register(route);

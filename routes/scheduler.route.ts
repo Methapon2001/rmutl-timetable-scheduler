@@ -9,8 +9,17 @@ import {
 import schedulerSchema from "./validation/scheduler.schema";
 
 export default async (server: FastifyInstance) => {
+  function broadcast(message: string) {
+    server.websocketServer.clients.forEach((client) => {
+      if (client.readyState === 1) client.send(message);
+    });
+  }
+
   server.post("/api/scheduler", {
     onRequest: auth(),
+    onResponse: (_request, _reply) => {
+      broadcast("Schedule updated.");
+    },
     handler: createScheduler,
     schema: {
       body: {

@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@fastify/cors": "^8.2.1",
+    "@fastify/websocket": "^8.0.0",
     "@prisma/client": "^4.13.0",
     "ajv": "^8.12.0",
     "fast-jwt": "^2.2.2",
@@ -24,6 +25,7 @@
   },
   "devDependencies": {
     "@types/node": "^18.16.2",
+    "@types/ws": "^8.5.4",
     "@vitest/ui": "^0.30.1",
     "dotenv": "^16.0.3",
     "prisma": "^4.13.0",
