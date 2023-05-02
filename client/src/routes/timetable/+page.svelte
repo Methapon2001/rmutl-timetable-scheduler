@@ -387,8 +387,8 @@
     </div>
   </div>
 </div>
-<div class="flex h-16 items-center justify-between border p-4">
-  <div class="pov-switch">
+<div class="flex h-16 overflow-hidden items-center justify-between border p-4">
+  <div class="pov-switch pr-4">
     <button
       on:click="{() => (pov = pov === 'group' ? 'instructor' : 'group')}"
       class="w-48 rounded border bg-slate-900 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
@@ -401,13 +401,13 @@
       class="border-primary bg-light flex flex justify-between gap-2 overflow-hidden rounded border font-semibold shadow"
     >
       <span class="bg-primary px-3 py-2 font-semibold text-white">Selected</span>
-      <span class="px-4 py-2">
+      <span class="px-4 py-2 truncate">
         {state.section?.subject.code ?? ''}
         {state.section?.subject.name ?? ''}
       </span>
       <span class="px-4 py-2">{state.section?.group?.name ?? ''}</span>
-      <span class="px-4 py-2">SEC {state.section?.no ?? ''}</span>
-      <span class="px-4 py-2 capitalize">{state.section?.type} {state.section?.lab ?? ''}</span>
+      <span class="px-4 py-2 whitespace-nowrap">SEC {state.section?.no ?? ''}</span>
+      <span class="px-4 py-2 whitespace-nowrap capitalize">{state.section?.type} {state.section?.lab ?? ''}</span>
     </div>
   {/if}
 
