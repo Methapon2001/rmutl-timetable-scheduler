@@ -107,10 +107,10 @@
     <MenuIcon />
   </button>
 
-  <span id="user">
+  <a id="user" href="/profile" role="button">
     {data.session?.user.username ?? 'Guest'}
     {#if data.session}({data.session.user.role}){/if}
-  </span>
+  </a>
 </header>
 
 <main style:margin-left="{menu ? '16rem' : '0'}">
