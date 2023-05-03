@@ -389,6 +389,21 @@ export async function deleteSection(
     });
   }
 
+  const used = await prisma.scheduler.findFirst({
+    select: {
+      id: true,
+    },
+    where: {
+      sectionId: id,
+    },
+  });
+
+  if (used) {
+    return reply.code(403).send({
+      message: "Cannot delete when this is used in schedule.",
+    });
+  }
+
   const section = await prisma.section.delete({
     select: sectionSelect,
     where: {
