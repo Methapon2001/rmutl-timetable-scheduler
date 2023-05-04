@@ -119,4 +119,15 @@ declare namespace API {
     updatedAt: string;
     updatedBy: Omit<API.User, 'createdAt' | 'updatedAt'>;
   };
+
+  type Exam = {
+    id: string;
+    room: Omit<API.Room, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'> | null;
+    instructor: Omit<API.Instructor, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>[];
+    section: Omit<API.Section, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>[];
+    createdAt: string;
+    createdBy: Omit<API.User, 'createdAt' | 'updatedAt'>;
+    updatedAt: string;
+    updatedBy: Omit<API.User, 'createdAt' | 'updatedAt'>;
+  }
 }
