@@ -99,14 +99,14 @@
 
       const offsetList: number[] = [];
 
-      const co = processed.filter(
+      const mutualOverlap = processed.filter(
         (item) =>
           item.weekday == processed[i].weekday &&
           processed[i].period < item.period + item.size &&
           processed[i].period + processed[i].size > item.period,
       );
 
-      co.forEach((item) => {
+      mutualOverlap.forEach((item) => {
         if (item._offset != -1) offsetList.push(item._offset);
       });
 
@@ -115,7 +115,17 @@
       while (offsetList.includes(j)) j++;
 
       processed[i]._offset = j;
+
+      for (let k = 0; k < processed.length; k++) {
+        if (processed[k]._overlap || i == k) continue;
+
+        if (processed[i].section.subject.id == processed[k].section.subject.id) {
+          processed[k]._overlap = true;
+          processed[k]._offset = j;
+        }
+      }
     }
+
     return processed;
   }
 
@@ -169,7 +179,7 @@
   {#each processedData as item}
     {@const overlapMaxOffset = Math.max(...processedData.map((obj) => obj._offset)) + 1}
     <div
-      class="absolute z-10 w-full border bg-blue-600 text-xs font-bold text-white"
+      class="pointer-events-auto absolute z-10 w-full border bg-blue-600 text-xs font-bold text-white"
       style:grid-row="{weekdayMapRow[item.weekday]}"
       style:grid-column="{`${item.period + 3}/${item.period + item.size + 3}`}"
       style:height="{item._overlap ? `${(100 / overlapMaxOffset).toPrecision(6)}%` : '100%'}"
@@ -191,10 +201,10 @@
           </div>
 
           <div
-            class="absolute hidden h-full w-full items-center justify-center bg-black/30 group-hover:flex"
+            class="pointer-events-none absolute hidden h-full w-full items-center justify-center bg-black/30 group-hover:flex"
           >
             <button
-              class="h-8 rounded bg-red-600 px-2 py-1 text-white hover:bg-red-500"
+              class="pointer-events-auto h-8 rounded bg-red-600 px-2 py-1 text-white hover:bg-red-500"
               on:click="{async () => {
                 await deleteScheduler({ id: item.id });
                 await invalidate('data:scheduler');
