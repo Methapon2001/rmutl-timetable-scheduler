@@ -117,7 +117,8 @@
       processed[i]._offset = j;
 
       for (let k = 0; k < processed.length; k++) {
-        if (processed[k]._overlap || i == k) continue;
+        if (processed[k]._overlap || processed[i].weekday != processed[k].weekday || i == k)
+          continue;
 
         if (processed[i].section.subject.id == processed[k].section.subject.id) {
           processed[k]._overlap = true;
