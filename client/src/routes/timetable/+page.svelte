@@ -187,6 +187,27 @@
 
   // eslint-disable-next-line no-undef
   function handleSelectSection(section: API.Scheduler['section']) {
+    if (!section.instructor && !section.group) {
+      toast.error('Section must assign at least one instructor or one group.', {
+        duration: 7500,
+      });
+      return;
+    }
+
+    if (pov === 'group' && !section.group) {
+      toast.error('Selected group pov but section is not assigned to any group.', {
+        duration: 7500,
+      });
+      return;
+    }
+
+    if (pov === 'instructor' && section.instructor.length === 0) {
+      toast.error('Selected instructor pov but no instructor is assigned to section.', {
+        duration: 7500,
+      });
+      return;
+    }
+
     let left = getLeftOverHours(section);
 
     if (left > 0) {
@@ -197,6 +218,16 @@
       leftOverHours = left;
 
       handleDataChange();
+    }
+
+    if (pov === 'group') {
+      document.querySelector(`#group-${state.section?.group?.id}`)?.scrollIntoView({
+        behavior: 'smooth',
+      });
+    } else {
+      document.querySelector(`#inst-${state.section?.instructor[0].id}`)?.scrollIntoView({
+        behavior: 'smooth',
+      });
     }
   }
 </script>
@@ -209,7 +240,7 @@
       <div class="z-20 grid grid-cols-2">
         <div class="table-small-container border-b border-r">
           {#if pov === 'group'}
-            {#each instructor as i (i.id)}
+            {#each instructor.filter((obj) => state.section?.instructor.findIndex((inst) => inst.id == obj.id) !== -1) as i (i.id)}
               <div id="inst-{i.id}" class="p-4 pr-2" style:scroll-gutter="stable">
                 <h6 class="text-center font-semibold">Instructor - {i.name}</h6>
                 <Table
@@ -223,7 +254,7 @@
               </div>
             {/each}
           {:else}
-            {#each group as g (g.id)}
+            {#each group.filter((obj) => !state.selected || state.section?.group?.id === obj.id) as g (g.id)}
               <div id="group-{g.id}" class="p-4 pr-2" style:scroll-gutter="stable">
                 <h6 class="text-center font-semibold">Group - {g.name}</h6>
                 <Table
@@ -239,7 +270,7 @@
           {/if}
         </div>
         <div class="table-small-container border-b">
-          {#each room as r (r.id)}
+          {#each room.filter((obj) => !state.selected || obj.id === state.section?.room?.id) as r (r.id)}
             <div id="room-{r.id}" class="p-4 pr-2" style:scroll-gutter="stable">
               <h6 class="text-center font-semibold">Room - {r.building.code}-{r.name}</h6>
               <Table
@@ -311,19 +342,27 @@
           <div class="w-full space-y-2 border-b p-4">
             <div class="mb-2 space-y-2 text-sm">
               <div class="flex gap-2">
-                <span class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white">
+                <span
+                  class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
+                >
                   {section.subject.code}
                 </span>
-                <span class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white">
+                <span
+                  class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
+                >
                   {section.subject.name}
                 </span>
               </div>
 
               <div class="flex gap-2">
-                <span class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white">
+                <span
+                  class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
+                >
                   SEC {section.no}
                 </span>
-                <span class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white">
+                <span
+                  class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
+                >
                   {section.group?.name ?? 'Any'}
                 </span>
               </div>
@@ -387,10 +426,13 @@
     </div>
   </div>
 </div>
-<div class="flex h-16 overflow-hidden items-center justify-between border p-4">
+<div class="flex h-16 items-center justify-between overflow-hidden border p-4">
   <div class="pov-switch pr-4">
     <button
-      on:click="{() => (pov = pov === 'group' ? 'instructor' : 'group')}"
+      on:click="{() => {
+        pov = pov === 'group' ? 'instructor' : 'group';
+        resetState();
+      }}"
       class="w-48 rounded border bg-slate-900 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
     >
       View: <span class="capitalize">{pov}</span>
@@ -401,13 +443,15 @@
       class="border-primary bg-light flex flex justify-between gap-2 overflow-hidden rounded border font-semibold shadow"
     >
       <span class="bg-primary px-3 py-2 font-semibold text-white">Selected</span>
-      <span class="px-4 py-2 truncate">
+      <span class="truncate px-4 py-2">
         {state.section?.subject.code ?? ''}
         {state.section?.subject.name ?? ''}
       </span>
       <span class="px-4 py-2">{state.section?.group?.name ?? ''}</span>
-      <span class="px-4 py-2 whitespace-nowrap">SEC {state.section?.no ?? ''}</span>
-      <span class="px-4 py-2 whitespace-nowrap capitalize">{state.section?.type} {state.section?.lab ?? ''}</span>
+      <span class="whitespace-nowrap px-4 py-2">SEC {state.section?.no ?? ''}</span>
+      <span class="whitespace-nowrap px-4 py-2 capitalize"
+        >{state.section?.type} {state.section?.lab ?? ''}</span
+      >
     </div>
   {/if}
 
@@ -437,6 +481,7 @@
   .table-small-container {
     height: calc(193px + 1rem + 1.5rem + 1rem);
     overflow-y: auto;
+    scrollbar-gutter: stable;
   }
 
   .main-table-container {
