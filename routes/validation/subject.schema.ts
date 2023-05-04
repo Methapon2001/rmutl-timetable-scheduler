@@ -16,6 +16,8 @@ export default {
       lab: { type: "number", minimum: 0 },
       learn: { type: "number", minimum: 0 },
       exam: { type: "number", minimum: 0 },
+      createdByUserId: { type: "string" },
+      updatedByUserId: { type: "string" },
       limit: { type: "number", default: 20 },
       offset: { type: "number", default: 0 },
     },

@@ -9,3 +9,4 @@ export { default as groupRoute } from "./group.route";
 export { default as sectionRoute } from "./section.route";
 export { default as schedulerRoute } from "./scheduler.route";
 export { default as websocketRoute } from "./websocket.route";
+export { default as examRoute } from "./exam.route";

@@ -144,31 +144,27 @@ export async function requestExam(
       search: string;
       limit: number;
       offset: number;
-    } & Pick<Exam, "roomId" | "createdByUserId" | "updatedByUserId"> & {
-        instructor: Instructor[];
-        section: Section[];
-      };
+    } & Pick<Exam, "roomId" | "createdByUserId" | "updatedByUserId">;
   }>,
   reply: FastifyReply
 ) {
   const { id } = request.params;
-  const { limit, offset, search, instructor, section, ...where } =
-    request.query;
+  const { limit, offset, search, ...where } = request.query;
 
-  // if (search) {
-  //   return await searchGroup(request, reply);
-  // }
+  if (search) {
+    return await searchExam(request, reply);
+  }
 
   const examWhere: Prisma.ExamWhereInput = where;
 
   const exam = id
-    ? await prisma.group.findUnique({
+    ? await prisma.exam.findUnique({
         select: examSelect,
         where: {
           id: id,
         },
       })
-    : await prisma.group.findMany({
+    : await prisma.exam.findMany({
         select: examSelect,
         where: examWhere,
         orderBy: {
@@ -272,7 +268,7 @@ export async function deleteExam(
 ) {
   const { id } = request.params;
 
-  const rec = await prisma.section.findUnique({
+  const rec = await prisma.exam.findUnique({
     select: {
       createdByUserId: true,
     },
