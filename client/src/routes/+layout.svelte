@@ -45,6 +45,10 @@
       text: 'Section',
     },
     {
+      path: '/exam',
+      text: 'Exam',
+    },
+    {
       path: '/timetable',
       text: 'Timetable (Study)',
     },
