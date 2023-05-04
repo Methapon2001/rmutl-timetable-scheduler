@@ -27,28 +27,9 @@ const subjectSelect: Prisma.SubjectSelect = {
   exam: true,
 };
 
-const courseDetailSelect: Prisma.CourseDetailSelect = {
-  id: true,
-  type: true,
-  subject: {
-    select: subjectSelect,
-  },
-};
-
-const courseSelect: Prisma.CourseSelect = {
-  id: true,
-  name: true,
-  detail: {
-    select: courseDetailSelect,
-  },
-};
-
 const groupSelect: Prisma.GroupSelect = {
   id: true,
   name: true,
-  course: {
-    select: courseSelect,
-  },
 };
 
 const buildingSelect: Prisma.BuildingSelect = {
@@ -86,6 +67,9 @@ const sectionSelect: Prisma.SectionSelect = {
   parent: {
     select: childSectionSelect,
   },
+  group: {
+    select: groupSelect,
+  },
   child: {
     select: childSectionSelect,
     orderBy: [
@@ -108,6 +92,9 @@ const examSelect: Prisma.ExamSelect = {
   id: true,
   room: {
     select: roomSelect,
+  },
+  section: {
+    select: sectionSelect,
   },
   instructor: {
     select: instructorSelect,
