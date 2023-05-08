@@ -25,10 +25,12 @@ export const createSchedulerExam = async (
   return (await res.json()).data as API.SchedulerExam;
 };
 
-export const deleteSchedulerExam = async (data: Pick<API.SchedulerExam, 'id'>): Promise<API.SchedulerExam> => {
+export const deleteSchedulerExam = async (
+  data: Pick<API.SchedulerExam, 'id'>,
+): Promise<API.SchedulerExam> => {
   const userSession = await refresh();
 
-  const res = await fetch(`${PUBLIC_API_HOST}/api/scheduleri-exam/${data.id}`, {
+  const res = await fetch(`${PUBLIC_API_HOST}/api/scheduler-exam/${data.id}`, {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
