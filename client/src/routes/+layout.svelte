@@ -52,6 +52,10 @@
       path: '/timetable',
       text: 'Timetable (Study)',
     },
+    {
+      path: '/exam-timetable',
+      text: 'Timetable (Exam)',
+    },
   ];
 
   $: if (innerWidth && innerWidth < 768) {
