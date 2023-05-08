@@ -17,6 +17,12 @@ export function drawDetailTable(
     borderWidth: number;
     rowHeaderHeight: number;
   },
+  schedule: {
+    rowHeaderHeight: number;
+    rowHeight: number;
+    colHeaderWidth: number;
+    colWidth: number;
+  },
 ) {
   const sourceSetting = {
     fontSize: doc.getFontSize(),
@@ -27,18 +33,37 @@ export function drawDetailTable(
   doc.setLineWidth(options.borderWidth);
 
   doc.rect(x, y, w, h);
-  doc.line(x, y + options.rowHeaderHeight, x + w, y + options.rowHeaderHeight);
+  doc.line(
+    x + schedule.colHeaderWidth + schedule.colWidth * 7,
+    y + options.rowHeaderHeight,
+    x + w,
+    y + options.rowHeaderHeight,
+  );
 
   const rowHeight = (h - options.rowHeaderHeight) / 13;
 
   for (let i = 1; i <= 13; i++) {
     doc.line(
-      x,
+      x + schedule.colHeaderWidth + schedule.colWidth * 7,
       y + i * rowHeight + options.rowHeaderHeight,
       x + w,
       y + i * rowHeight + options.rowHeaderHeight,
     );
   }
+
+  doc.line(
+    x + schedule.colHeaderWidth + schedule.colWidth * 7,
+    y,
+    x + schedule.colHeaderWidth + schedule.colWidth * 7,
+    y + h,
+  );
+
+  doc.line(
+    x + schedule.colHeaderWidth + schedule.colWidth * 16,
+    y,
+    x + schedule.colHeaderWidth + schedule.colWidth * 16,
+    y + h,
+  );
 
   doc.setFontSize(sourceSetting.fontSize);
   doc.setLineWidth(sourceSetting.lineWidth);
@@ -136,10 +161,22 @@ export function drawSchedule(
   const scheduleAnchor = [x + options.colHeaderWidth, y + options.rowHeaderHeight];
 
   return {
+    colHeaderWidth: options.colHeaderWidth,
+    rowHeaderHeight: options.rowHeaderHeight,
+    colWidth: colWidth,
+    rowHeight: rowHeight,
     assignSchedule: (
       day: number,
       period: number[],
-      text: string[],
+      subject: {
+        code: string;
+        name: string;
+        section: {
+          type: 'lecture' | 'lab';
+          no: number;
+          lab: number | null;
+        };
+      },
       overlap?: number,
       offset?: number,
     ) => {
@@ -148,28 +185,46 @@ export function drawSchedule(
         lineWidth: doc.getLineWidth(),
       };
 
-      doc.setFontSize(options.fontSize);
+      doc.setFontSize(options.fontSize - 2);
       doc.setLineWidth(options.borderWidth);
 
-      doc.setFillColor(50, 50, 200);
+      doc.setFillColor(200, 200, 255);
 
-      doc.rect(
+      const cords = [
         scheduleAnchor[0] + colWidth * (period[0] - 1),
         scheduleAnchor[1] +
           rowHeight * (day - 1) +
           (overlap && offset ? (rowHeight * offset) / overlap : 0),
         (period[1] - period[0] + 1) * colWidth,
         (day * rowHeight) / (overlap ?? 1),
-        'F',
-      );
+      ];
 
-      doc.rect(
-        scheduleAnchor[0] + colWidth * (period[0] - 1),
-        scheduleAnchor[1] +
-          rowHeight * (day - 1) +
-          (overlap && offset ? (rowHeight * offset) / overlap : 0),
-        (period[1] - period[0] + 1) * colWidth,
-        (day * rowHeight) / (overlap ?? 1),
+      doc.rect(cords[0], cords[1], cords[2], cords[3], 'F');
+      doc.rect(cords[0], cords[1], cords[2], cords[3]);
+
+      if (!overlap) {
+        doc.text(
+          `${subject.code}_SEC${subject.section.no}${
+            subject.section.type === 'lab' ? '_L' + subject.section.lab : ''
+          }`,
+          cords[0] + cords[2] / 2,
+          cords[1] + vAlignTextCenter(cords[3] / 2, doc) + cords[3] / 10,
+          {
+            align: 'center',
+          },
+        );
+      }
+
+      doc.text(
+        subject.name,
+        cords[0] + cords[2] / 2,
+        cords[1] +
+          (overlap ? 0 : cords[3] / 2) +
+          vAlignTextCenter(overlap ? cords[3] : cords[3] / 2, doc) -
+          (overlap ? 0 : cords[3] / 10),
+        {
+          align: 'center',
+        },
       );
 
       doc.setFontSize(sourceSetting.fontSize);
@@ -200,13 +255,6 @@ export function openTemplate() {
   let schedule: ReturnType<typeof drawSchedule>;
   let detail: ReturnType<typeof drawDetailTable>;
 
-  detail = drawDetailTable(doc, pageGap, pageGap, pageWidth - pageGap * 2, 100 - pageGap, {
-    period: 25,
-    fontSize: 12,
-    borderWidth: 0.3,
-    rowHeaderHeight: 17,
-  });
-
   schedule = drawSchedule(doc, pageGap, 100, pageWidth - pageGap * 2, pageHeight - 100 - pageGap, {
     period: 25,
     fontSize: 12,
@@ -215,18 +263,56 @@ export function openTemplate() {
     rowHeaderHeight: 12,
   });
 
-  schedule.assignSchedule(1, [5, 8], ['Test'], 2, 0);
-  schedule.assignSchedule(1, [3, 6], ['Test'], 2, 1);
+  detail = drawDetailTable(
+    doc,
+    pageGap,
+    pageGap,
+    pageWidth - pageGap * 2,
+    100 - pageGap,
+    {
+      period: 25,
+      fontSize: 12,
+      borderWidth: 0.3,
+      rowHeaderHeight: 9.7,
+    },
+    {
+      ...schedule,
+    },
+  );
+
+  schedule.assignSchedule(
+    1,
+    [5, 8],
+    {
+      code: 'ENGCE101',
+      name: 'Computer Programming',
+      section: {
+        type: 'lecture',
+        no: 1,
+        lab: null,
+      },
+    },
+    2,
+    0,
+  );
+  schedule.assignSchedule(
+    1,
+    [3, 6],
+    {
+      code: 'ENGCE101',
+      name: 'Computer Programming',
+      section: {
+        type: 'lecture',
+        no: 1,
+        lab: null,
+      },
+    },
+    2,
+    1,
+  );
 
   doc.addPage();
 
-  detail = drawDetailTable(doc, pageGap, pageGap, pageWidth - pageGap * 2, 100 - pageGap, {
-    period: 25,
-    fontSize: 12,
-    borderWidth: 0.3,
-    rowHeaderHeight: 9.7,
-  });
-
   schedule = drawSchedule(doc, pageGap, 100, pageWidth - pageGap * 2, pageHeight - 100 - pageGap, {
     period: 25,
     fontSize: 12,
@@ -235,5 +321,31 @@ export function openTemplate() {
     rowHeaderHeight: 12,
   });
 
+  detail = drawDetailTable(
+    doc,
+    pageGap,
+    pageGap,
+    pageWidth - pageGap * 2,
+    100 - pageGap,
+    {
+      period: 25,
+      fontSize: 12,
+      borderWidth: 0.3,
+      rowHeaderHeight: 9.7,
+    },
+    {
+      ...schedule,
+    },
+  );
+
+  schedule.assignSchedule(1, [1, 4], {
+    code: 'ENGCE101',
+    name: 'Computer Programming',
+    section: {
+      type: 'lecture',
+      no: 1,
+      lab: null,
+    },
+  });
   doc.output('dataurlnewwindow');
 }
