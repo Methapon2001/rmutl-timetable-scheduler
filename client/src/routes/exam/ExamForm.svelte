@@ -23,6 +23,7 @@
     label: string;
     value: string;
     disabled?: boolean;
+    detail: API.Section; // eslint-disale-line no-undef
   }[];
 
   export let instructorOptions: {
@@ -165,7 +166,16 @@
       class:invalid="{form.error && getZodErrorMessage(form.error, ['section']).length > 0}"
     >
       <Select
-        options="{sectionOptions}"
+        options="{sectionOptions.filter((option) => {
+          if (form.data.section.length !== 0) {
+            return (
+              sectionOptions.find((opt) => form.data.section[0] == opt.detail.id)?.detail.subject
+                .name == option.detail.subject.name
+            );
+          }
+
+          return true;
+        })}"
         bind:value="{form.data.section}"
         multiple
         placeholder="Select Section"
