@@ -120,6 +120,13 @@ declare namespace API {
     updatedBy: Omit<API.User, 'createdAt' | 'updatedAt'>;
   };
 
+  type ExamSection = Omit<API.Section, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'> & {
+    group: {
+      id: string;
+      name: string;
+    };
+  };
+
   type Exam = {
     id: string;
     room: Omit<API.Room, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'> | null;
