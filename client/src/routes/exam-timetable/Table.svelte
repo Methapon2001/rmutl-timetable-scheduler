@@ -63,19 +63,18 @@
   export let instructor: API.SchedulerExam['exam']['instructor'][number] | undefined = undefined; // eslint-disable-line no-undef
 
   $: visualize =
-    room?.id == state.exam?.room?.id ||
-    state.exam?.section.findIndex((sec) => sec.group && sec.group?.id == group?.id) ||
-    state.exam?.instructor.findIndex((inst) => inst.id == instructor?.id) != -1;
+    (room && room?.id == state.exam?.room?.id) ||
+    state.exam?.section.findIndex((sec) => sec.group && sec.group?.id == group?.id) !== -1 ||
+    state.exam?.instructor.findIndex((inst) => inst.id == instructor?.id) !== -1;
 
   $: localData =
     room || group || instructor
-      ? data.filter((obj) => {
-          return (
-            obj.exam.room?.id == room?.id ||
-            obj.exam.section.findIndex((sec) => sec.group && sec.group?.id == group?.id) ||
-            obj.exam.instructor.findIndex((inst) => inst.id == instructor?.id) != -1
-          );
-        })
+      ? data.filter(
+          (obj) =>
+            (obj.exam.room && obj.exam.room?.id == room?.id) ||
+            obj.exam.section.findIndex((sec) => sec.group && sec.group?.id == group?.id) !== -1 ||
+            obj.exam.instructor.findIndex((inst) => inst.id == instructor?.id) !== -1,
+        )
       : data;
 
   $: processedData = processOverlaps(localData);
