@@ -462,7 +462,7 @@
     color: var(--svs-selected-color);
     background-color: var(--svs-selected-background-color);
   }
-  
+
   .svs > .selected > li > span {
     white-space: normal;
     word-wrap: break-word;
