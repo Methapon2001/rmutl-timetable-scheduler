@@ -80,7 +80,6 @@
   };
 
   let pov: 'instructor' | 'group' = 'group';
-  let leftOverHours = 0;
 
   function resetState() {
     state = {
@@ -163,32 +162,7 @@
       case 'Escape':
         resetState();
         break;
-      case 'ArrowDown':
-        if (state.selected) e.preventDefault();
-        if (state.size > 1) state.size = state.size - 1;
-        break;
-      case 'ArrowUp':
-        if (state.selected) e.preventDefault();
-        if (state.size < leftOverHours * 2) state.size = state.size + 1;
-        break;
     }
-  }
-
-  // eslint-disable-next-line no-undef
-  function getRequiredHour(exam: API.SchedulerExam['exam']) {
-    return exam.section[0].subject.exam;
-  }
-
-  // eslint-disable-next-line no-undef
-  function getUsedHour(exam: API.SchedulerExam['exam']) {
-    return schedulerExam
-      .filter((sched) => sched.exam.id === exam.id)
-      .reduce((acc, curr) => acc + curr.size / 2, 0);
-  }
-
-  // eslint-disable-next-line no-undef
-  function getLeftOverHours(exam: API.SchedulerExam['exam']) {
-    return getRequiredHour(exam) - getUsedHour(exam);
   }
 
   // eslint-disable-next-line no-undef
@@ -214,17 +188,11 @@
       return;
     }
 
-    let left = getLeftOverHours(exam);
+    state.selected = true;
+    state.exam = exam;
+    state.size = exam.section[0].subject.exam * 2;
 
-    if (left > 0) {
-      state.selected = true;
-      state.exam = exam;
-      state.size = left * 2;
-
-      leftOverHours = left;
-
-      handleDataChange();
-    }
+    handleDataChange();
 
     if (pov === 'group') {
       document.querySelector(`#group-${state.exam?.section[0].group?.id}`)?.scrollIntoView({
@@ -350,47 +318,42 @@
               <span
                 class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
               >
-                {exam.section[0].subject.name}
+                {exam.section[0].subject.code}
               </span>
-              {#each exam.section as sec, secIdx}
-                <span
-                  class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
-                >
-                  SEC{sec.no}
-                </span>
-              {/each}
-            </div>
-
-            <div class="flex gap-2">
-              {#each exam.instructor as inst}
-                <span
-                  class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
-                >
-                  {exam.instructor}
-                </span>
-              {/each}
               <span
                 class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
               >
-                {exam.room}
+                {exam.section[0].subject.name}
               </span>
+            </div>
+            <div class="flex gap-2">
+              {#each exam.section as sec}
+                <span
+                  class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
+                >
+                  SEC {sec.no}
+                </span>
+              {/each}
             </div>
           </div>
           <button
-            class="block grid w-full grid-cols-4 flex-row rounded border capitalize outline-none"
+            class="block grid w-full grid-cols-4 flex-row rounded border px-2 py-2 text-left text-sm font-semibold capitalize outline-none"
             class:bg-white="{state.exam?.id !== exam.id}"
             class:bg-green-600="{state.exam?.id === exam.id}"
             class:text-white="{state.exam?.id === exam.id}"
-            class:text-red-600="{getLeftOverHours(exam) == 0}"
-            class:text-indigo-600="{getUsedHour(exam) > 0 &&
-              getUsedHour(exam) < getRequiredHour(exam) &&
-              state.exam?.id != exam.id}"
+            class:text-red-600="{schedulerExam.findIndex((sched) => exam.id == sched.exam.id) !==
+              -1}"
             on:click="{() => handleSelectExam(exam)}"
           >
             <div
               class="flex h-full w-full items-center justify-center rounded-l border-r font-semibold"
             >
-              Hello
+              {exam.room?.building.code ?? ''}-{exam.room?.name ?? ''}
+            </div>
+            <div class="col-span-3 w-full pl-3 text-left font-semibold">
+              {#each exam.instructor as inst}
+                {inst.name}<br />
+              {/each}
             </div>
           </button>
         </div>
@@ -419,34 +382,14 @@
         {state.exam?.section[0].subject.code ?? ''}
         {state.exam?.section[0].subject.name ?? ''}
       </span>
-      {#each state.exam.section as sec}
-        <span class="px-4 py-2">
-          Sec {sec.no ?? ''}
-        </span>
-      {/each}
+      <span class="px-4 py-2">
+        SEC
+        {#each state.exam.section as sec}
+          _{sec.no ?? ''}
+        {/each}
+      </span>
     </div>
   {/if}
-
-  <div class="alloc-control">
-    <div class="bg-primary grid grid-cols-6 rounded font-semibold text-white">
-      <div class="col-span-5 flex items-center px-4 py-2">
-        <input
-          class="w-full"
-          type="range"
-          min="1"
-          max="{leftOverHours * 2}"
-          disabled="{state.exam === null}"
-          on:change="{() => handleDataChange()}"
-          bind:value="{state.size}"
-        />
-      </div>
-      <div class="col-span-1 px-4">
-        <span class="block py-2 text-center">
-          {state.size}
-        </span>
-      </div>
-    </div>
-  </div>
 </div>
 
 <style lang="postcss">
@@ -472,14 +415,5 @@
   .section-selector button {
     width: 20rem;
     user-select: none;
-  }
-
-  .alloc-control {
-    padding-left: 1rem;
-    padding-right: 0.5rem;
-  }
-
-  .alloc-control > .grid {
-    width: 20rem;
   }
 </style>
