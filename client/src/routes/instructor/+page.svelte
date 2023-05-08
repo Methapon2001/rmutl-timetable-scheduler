@@ -34,7 +34,7 @@
   async function handleDelete(instructor: { id: string }) {
     if (confirm('Are you sure?')) {
       const ret = await deleteInstructor(instructor).catch((e: Response) => console.error(e));
-      
+
       if (ret) {
         await invalidate('data:instructor');
 

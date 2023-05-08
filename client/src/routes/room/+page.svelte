@@ -43,7 +43,7 @@
   async function handleDelete(room: { id: string }) {
     if (confirm('Are you sure?')) {
       const ret = await deleteRoom(room).catch((e: Response) => console.error(e));
-      
+
       if (ret) {
         await invalidate('data:room');
 

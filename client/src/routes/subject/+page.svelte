@@ -49,7 +49,7 @@
   async function handleDelete(subject: { id: string }) {
     if (confirm('Are you sure?')) {
       const ret = await deleteSubject(subject).catch((e: Response) => console.error(e));
-      
+
       if (ret) {
         await invalidate('data:subject');
 

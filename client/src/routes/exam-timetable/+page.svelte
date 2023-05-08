@@ -6,7 +6,6 @@
   import { invalidate } from '$app/navigation';
   import toast from 'svelte-french-toast';
   import { checkOverlap } from './utils';
-  import { generate } from './generate';
   import Table from './Table.svelte';
 
   export let data: PageData;
@@ -391,7 +390,7 @@
             <div
               class="flex h-full w-full items-center justify-center rounded-l border-r font-semibold"
             >
-              sdadsadsad
+              Hello
             </div>
           </button>
         </div>

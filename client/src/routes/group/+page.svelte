@@ -42,7 +42,7 @@
   async function handleDelete(group: { id: string }) {
     if (confirm('Are you sure?')) {
       const ret = await deleteGroup(group).catch((e: Response) => console.error(e));
-      
+
       if (ret) {
         await invalidate('data:group');
 
