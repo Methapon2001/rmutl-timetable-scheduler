@@ -23,6 +23,7 @@
     "eslint": "^8.37.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-svelte3": "^4.0.0",
+    "jspdf": "^2.5.1",
     "jwt-decode": "^3.1.2",
     "postcss": "^8.4.21",
     "postcss-load-config": "^4.0.1",
