@@ -223,6 +223,16 @@
             </button>
           </div>
         </div>
+      {:else}
+        <div class="group relative flex h-full w-full items-center text-center text-xs">
+          <div class="flex-grow">
+            {#if !item._overlap}
+              {item.section.subject.code}_SEC_{item.section.no}{item.section.type === 'lab'
+                ? `_L${item.section.lab}`
+                : ''}
+            {/if}
+          </div>
+        </div>
       {/if}
     </div>
   {/each}
