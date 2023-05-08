@@ -124,10 +124,22 @@ declare namespace API {
     id: string;
     room: Omit<API.Room, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'> | null;
     instructor: Omit<API.Instructor, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>[];
-    section: Omit<API.Section, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>[];
+    section: API.ExamSection[];
     createdAt: string;
     createdBy: Omit<API.User, 'createdAt' | 'updatedAt'>;
     updatedAt: string;
     updatedBy: Omit<API.User, 'createdAt' | 'updatedAt'>;
-  }
+  };
+
+  type SchedulerExam = {
+    id: string;
+    weekday: 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
+    start: number;
+    end: number;
+    exam: Omit<API.Exam, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>;
+    createdAt: string;
+    createdBy: Omit<API.User, 'createdAt' | 'updatedAt'>;
+    updatedAt: string;
+    updatedBy: Omit<API.User, 'createdAt' | 'updatedAt'>;
+  };
 }
