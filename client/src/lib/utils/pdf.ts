@@ -59,14 +59,285 @@ export function drawDetailTable(
   );
 
   doc.line(
+    x + schedule.colHeaderWidth + schedule.colWidth * 7 + schedule.colWidth / 2,
+    y,
+    x + schedule.colHeaderWidth + schedule.colWidth * 7 + schedule.colWidth / 2,
+    y + h - rowHeight,
+  );
+  doc.text(
+    'ที่',
+    x + schedule.colHeaderWidth + schedule.colWidth * 7 + schedule.colWidth / 4,
+    y + vAlignTextCenter(options.rowHeaderHeight, doc),
+    {
+      align: 'center',
+    },
+  );
+  doc.line(
+    x + schedule.colHeaderWidth + schedule.colWidth * 10,
+    y,
+    x + schedule.colHeaderWidth + schedule.colWidth * 10,
+    y + h - rowHeight,
+  );
+  doc.text(
+    'รหัสวิชา',
+    x +
+      schedule.colHeaderWidth +
+      schedule.colWidth * 7 +
+      schedule.colWidth / 4 +
+      (schedule.colWidth * 3) / 2,
+    y + vAlignTextCenter(options.rowHeaderHeight, doc),
+    {
+      align: 'center',
+    },
+  );
+  doc.line(
     x + schedule.colHeaderWidth + schedule.colWidth * 16,
     y,
     x + schedule.colHeaderWidth + schedule.colWidth * 16,
     y + h,
   );
+  doc.text(
+    'ชื่อวิชา',
+    x + schedule.colHeaderWidth + schedule.colWidth * 10 + (schedule.colWidth * 6) / 2,
+    y + vAlignTextCenter(options.rowHeaderHeight, doc),
+    {
+      align: 'center',
+    },
+  );
+  doc.line(
+    x + schedule.colHeaderWidth + schedule.colWidth * 18 + schedule.colWidth / 2,
+    y,
+    x + schedule.colHeaderWidth + schedule.colWidth * 18 + schedule.colWidth / 2,
+    y + h,
+  );
+  doc.text(
+    'สภาพวิชา',
+    x +
+      schedule.colHeaderWidth +
+      schedule.colWidth * 16 +
+      (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+    y + vAlignTextCenter(options.rowHeaderHeight, doc),
+    {
+      align: 'center',
+    },
+  );
+  doc.text(
+    'รวม',
+    x +
+      schedule.colHeaderWidth +
+      schedule.colWidth * 16 +
+      (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+    y + vAlignTextCenter(options.rowHeaderHeight, doc) + rowHeight * 13,
+    {
+      align: 'center',
+    },
+  );
+  doc.line(
+    x + schedule.colHeaderWidth + schedule.colWidth * 19 + schedule.colWidth / 2,
+    y,
+    x + schedule.colHeaderWidth + schedule.colWidth * 19 + schedule.colWidth / 2,
+    y + h,
+  );
+  doc.text(
+    'หน่วยกิต',
+    x +
+      schedule.colHeaderWidth +
+      schedule.colWidth * 18 +
+      schedule.colWidth / 4 +
+      (schedule.colWidth * 1 + schedule.colWidth / 2) / 2,
+    y + vAlignTextCenter(options.rowHeaderHeight, doc),
+    {
+      align: 'center',
+    },
+  );
+  doc.line(
+    x + schedule.colHeaderWidth + schedule.colWidth * 21,
+    y,
+    x + schedule.colHeaderWidth + schedule.colWidth * 21,
+    y + h,
+  );
+  doc.line(
+    x + schedule.colHeaderWidth + schedule.colWidth * 19 + schedule.colWidth / 2,
+    y + rowHeight + 1,
+    x + schedule.colHeaderWidth + schedule.colWidth * 25,
+    y + rowHeight + 1,
+  );
+  doc.text(
+    'เวลาเรียน',
+    x +
+      schedule.colHeaderWidth +
+      schedule.colWidth * 19 +
+      (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+    y + vAlignTextCenter(options.rowHeaderHeight, doc) - rowHeight / 2,
+    {
+      align: 'center',
+    },
+  );
+  doc.line(
+    x + schedule.colHeaderWidth + schedule.colWidth * 20,
+    y + rowHeight + 1,
+    x + schedule.colHeaderWidth + schedule.colWidth * 20,
+    y + h,
+  );
+  doc.line(
+    x + schedule.colHeaderWidth + schedule.colWidth * 20 + schedule.colWidth / 2,
+    y + rowHeight + 1,
+    x + schedule.colHeaderWidth + schedule.colWidth * 20 + schedule.colWidth / 2,
+    y + h,
+  );
+  doc.text(
+    'ท',
+    x +
+      schedule.colHeaderWidth +
+      schedule.colWidth * 18 +
+      schedule.colWidth / 2 +
+      (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+    y + vAlignTextCenter(options.rowHeaderHeight, doc) + rowHeight / 2,
+    {
+      align: 'center',
+    },
+  );
+  doc.text(
+    'ป',
+    x +
+      schedule.colHeaderWidth +
+      schedule.colWidth * 19 +
+      (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+    y + vAlignTextCenter(options.rowHeaderHeight, doc) + rowHeight / 2,
+    {
+      align: 'center',
+    },
+  );
+  doc.text(
+    'ร',
+    x +
+      schedule.colHeaderWidth +
+      schedule.colWidth * 19 +
+      schedule.colWidth / 2 +
+      (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+    y + vAlignTextCenter(options.rowHeaderHeight, doc) + rowHeight / 2,
+    {
+      align: 'center',
+    },
+  );
+  doc.text(
+    'จำนวนชั่วโมง/สัปดาห์',
+    x +
+      schedule.colHeaderWidth +
+      schedule.colWidth * 20 +
+      schedule.colWidth / 2 +
+      schedule.colWidth / 4 +
+      (schedule.colWidth * 4 + schedule.colWidth / 2) / 2,
+    y + vAlignTextCenter(options.rowHeaderHeight, doc) - rowHeight / 2,
+    {
+      align: 'center',
+    },
+  );
+  doc.line(
+    x + schedule.colHeaderWidth + schedule.colWidth * 23,
+    y + rowHeight + 1,
+    x + schedule.colHeaderWidth + schedule.colWidth * 23,
+    y + h,
+  );
+  doc.line(
+    x + schedule.colHeaderWidth + schedule.colWidth * 23 + schedule.colWidth / 2,
+    y + rowHeight + 1,
+    x + schedule.colHeaderWidth + schedule.colWidth * 23 + schedule.colWidth / 2,
+    y + h,
+  );
+  doc.line(
+    x + schedule.colHeaderWidth + schedule.colWidth * 24,
+    y + rowHeight + 1,
+    x + schedule.colHeaderWidth + schedule.colWidth * 24,
+    y + h,
+  );
+  doc.line(
+    x + schedule.colHeaderWidth + schedule.colWidth * 24 + schedule.colWidth / 2,
+    y + rowHeight + 1,
+    x + schedule.colHeaderWidth + schedule.colWidth * 24 + schedule.colWidth / 2,
+    y + h,
+  );
+  doc.text(
+    'กลุ่มเรียน',
+    x +
+      schedule.colHeaderWidth +
+      schedule.colWidth * 20 +
+      schedule.colWidth / 2 +
+      schedule.colWidth / 4 +
+      (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+    y + vAlignTextCenter(options.rowHeaderHeight, doc) + rowHeight / 2,
+    {
+      align: 'center',
+    },
+  );
+  doc.text(
+    'เช้า',
+    x +
+      schedule.colHeaderWidth +
+      schedule.colWidth * 22 +
+      (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+    y + vAlignTextCenter(options.rowHeaderHeight, doc) + rowHeight / 2,
+    {
+      align: 'center',
+    },
+  );
+  doc.text(
+    'บ่าย',
+    x +
+      schedule.colHeaderWidth +
+      schedule.colWidth * 22 +
+      schedule.colWidth / 2 +
+      (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+    y + vAlignTextCenter(options.rowHeaderHeight, doc) + rowHeight / 2,
+    {
+      align: 'center',
+    },
+  );
+  doc.text(
+    'สมทบ',
+    x +
+      schedule.colHeaderWidth +
+      schedule.colWidth * 23 +
+      (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+    y + vAlignTextCenter(options.rowHeaderHeight, doc) + rowHeight / 2,
+    {
+      align: 'center',
+    },
+  );
+  doc.text(
+    'รวม',
+    x +
+      schedule.colHeaderWidth +
+      schedule.colWidth * 23 +
+      schedule.colWidth / 2 +
+      (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+    y + vAlignTextCenter(options.rowHeaderHeight, doc) + rowHeight / 2,
+    {
+      align: 'center',
+    },
+  );
 
   doc.setFontSize(sourceSetting.fontSize);
   doc.setLineWidth(sourceSetting.lineWidth);
+
+  const listDetail: {
+    no: number;
+    code: string;
+    name: string;
+  }[] = [];
+
+  return {
+    addDetail: () => {
+      listDetail.push({
+        no: listDetail.length + 1,
+        code: 'ENGCE101',
+        name: 'Computer Programming 1',
+      });
+    },
+    renderDetail: () => {
+      // do nothing
+    },
+  };
 }
 
 export function drawSchedule(
@@ -273,7 +544,7 @@ export function openTemplate() {
       period: 25,
       fontSize: 12,
       borderWidth: 0.3,
-      rowHeaderHeight: 9.7,
+      rowHeaderHeight: 14,
     },
     {
       ...schedule,
@@ -331,7 +602,7 @@ export function openTemplate() {
       period: 25,
       fontSize: 12,
       borderWidth: 0.3,
-      rowHeaderHeight: 9.7,
+      rowHeaderHeight: 14,
     },
     {
       ...schedule,
