@@ -55,6 +55,7 @@ export async function generate(
     weekday?: WeekdayShort[];
     period?: number[];
     target?: 'compulsory' | 'elective' | '*';
+    group?: API.Group;
   } = {},
 ) {
   const subjectTarget = option.target ?? '*';
@@ -64,7 +65,10 @@ export async function generate(
 
   section = section
     .filter((sec) => {
-      return schedule.findIndex((sched) => sched.section.id === sec.id) === -1;
+      return (
+        schedule.findIndex((sched) => sched.section.id === sec.id) === -1 &&
+        sec.group?.id === option.group?.id
+      );
     })
     .filter((sec) => {
       return subjectTarget !== '*'
