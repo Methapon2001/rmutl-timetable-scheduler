@@ -34,8 +34,11 @@
 
   const roomOptions = async () => {
     return (await data.lazy.room).data.map((room) => ({
-      label: `${room.building.code} ${room.name}`,
+      label: `${room.building.code}-${room.name} (${room.type
+        .charAt(0)
+        .toLocaleUpperCase()}${room.type.slice(1)})`,
       value: room.id,
+      detail: room,
     }));
   };
 
