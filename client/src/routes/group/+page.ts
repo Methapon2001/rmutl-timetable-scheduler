@@ -1,5 +1,5 @@
 import type { PageLoad } from './$types';
-import { error } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
 import { PUBLIC_API_HOST } from '$env/static/public';
 
 const api = new URL(`${PUBLIC_API_HOST}/api/group`);
@@ -9,7 +9,7 @@ export const load = (async ({ fetch, parent, depends, url }) => {
 
   depends('data:group');
 
-  if (!session) throw error(401, { message: 'Unauthorized' });
+  if (!session) throw redirect(302, '/login?redirect=/group');
 
   const page = url.searchParams.get('page');
   const search = url.searchParams.get('search');

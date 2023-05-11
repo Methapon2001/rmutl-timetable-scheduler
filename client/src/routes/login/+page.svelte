@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto, invalidateAll } from '$app/navigation';
+  import { page } from '$app/stores';
   import { login } from '$lib/api/auth';
   import { blurOnEscape } from '$lib/utils/directives';
   import { getZodErrorMessage } from '$lib/utils/zod';
@@ -38,7 +39,15 @@
 
     if (ret) {
       await invalidateAll();
-      goto('/');
+
+      const redir = $page.url.searchParams.get('redirect');
+
+      if (redir) {
+        goto(redir);
+      } else {
+        goto('/');
+      }
+
       return;
     }
 

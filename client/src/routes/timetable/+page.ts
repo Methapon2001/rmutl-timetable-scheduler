@@ -1,5 +1,5 @@
 import type { PageLoad } from './$types';
-import { error } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
 import { PUBLIC_API_HOST } from '$env/static/public';
 
 export const load = (async ({ fetch, parent, depends }) => {
@@ -7,7 +7,7 @@ export const load = (async ({ fetch, parent, depends }) => {
 
   depends('data:scheduler');
 
-  if (!session) throw error(401, { message: 'Unauthorized' });
+  if (!session) throw redirect(302, '/login?redirect=/timetable');
 
   const schedulerData = async () => {
     return await fetch(`${PUBLIC_API_HOST}/api/scheduler?limit=9999`).then((res) => res.json());

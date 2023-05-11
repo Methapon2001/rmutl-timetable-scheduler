@@ -1,5 +1,5 @@
 import type { PageLoad } from './$types';
-import { error } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
 import { PUBLIC_API_HOST } from '$env/static/public';
 
 const api = new URL(`${PUBLIC_API_HOST}/api/section`);
@@ -9,7 +9,7 @@ export const load = (async ({ fetch, parent, depends, url }) => {
 
   depends('data:section');
 
-  if (!session) throw error(401, { message: 'Unauthorized' });
+  if (!session) throw redirect(302, '/login?redirect=/section');
 
   const page = url.searchParams.get('page');
   const search = url.searchParams.get('search');
@@ -35,9 +35,7 @@ export const load = (async ({ fetch, parent, depends, url }) => {
   };
 
   const requestGroup = async () => {
-    const res = await fetch(
-      `${PUBLIC_API_HOST}/api/group?limit=9999&createdByUserId=${session.user.id}`,
-    );
+    const res = await fetch(`${PUBLIC_API_HOST}/api/group?limit=9999`);
     const body = await res.json();
     return body as {
       data: API.Group[];
