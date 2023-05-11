@@ -461,6 +461,10 @@ export async function deleteSection(
     await prisma.section.updateMany({
       where: {
         no: section.no,
+        type: "lab",
+        lab: {
+          gt: section.lab!,
+        },
         subjectId: section.subject?.id,
       },
       data: {
