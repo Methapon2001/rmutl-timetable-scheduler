@@ -47,6 +47,9 @@ model User {
 
   createdSchedulerExam SchedulerExam[] @relation("SchedulerExamCreatedBy")
   updatedSchedulerExam SchedulerExam[] @relation("SchedulerExamUpdatedBy")
+
+  createdPlan Plan[] @relation("PlanCreatedBy")
+  updatedPlan Plan[] @relation("PlanUpdatedBy")
 }
 
 enum Role {
@@ -87,6 +90,7 @@ model Subject {
 
   section      Section[]
   courseDetail CourseDetail[]
+  planDetail   PlanDetail[]
 }
 
 model Instructor {
@@ -161,6 +165,7 @@ model Course {
 
   detail CourseDetail[]
   group  Group[]
+  plan   Plan[]
 }
 
 model CourseDetail {
@@ -177,6 +182,36 @@ model CourseDetail {
 enum SubjectType {
   compulsory
   elective
+}
+
+model Plan {
+  id   String @id @default(nanoid(16))
+  name String
+
+  createdByUserId String
+  createdBy       User     @relation("PlanCreatedBy", fields: [createdByUserId], references: [id])
+  createdAt       DateTime @default(now())
+
+  updatedByUserId String
+  updatedBy       User     @relation("PlanUpdatedBy", fields: [updatedByUserId], references: [id])
+  updatedAt       DateTime @updatedAt
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  detail PlanDetail[]
+}
+
+model PlanDetail {
+  id       String @id @default(nanoid(16))
+  semester Int
+  year     Int
+
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id])
+
+  planId String
+  plan   Plan   @relation(fields: [planId], references: [id], onDelete: Cascade)
 }
 
 model Group {
