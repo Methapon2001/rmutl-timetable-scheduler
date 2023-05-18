@@ -127,7 +127,7 @@ export function drawDetailTable(
       schedule.colHeaderWidth +
       schedule.colWidth * 16 +
       (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
-    y + vAlignTextCenter(options.rowHeaderHeight, doc) + rowHeight * 13,
+    y + vAlignTextCenter(rowHeight, doc) + rowHeight * 12 + options.rowHeaderHeight,
     {
       align: 'center',
     },
