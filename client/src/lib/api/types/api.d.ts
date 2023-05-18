@@ -149,4 +149,19 @@ declare namespace API {
     updatedAt: string;
     updatedBy: Omit<API.User, 'createdAt' | 'updatedAt'>;
   };
+
+  type Plan = {
+    id: string;
+    name: string;
+    course: Omit<API.Course, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>;
+    detail: {
+      semester: number;
+      year: number;
+      subject: Omit<API.Subject, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>;
+    }[];
+    createdAt: string;
+    createdBy: Omit<API.User, 'createdAt' | 'updatedAt'>;
+    updatedAt: string;
+    updatedBy: Omit<API.User, 'createdAt' | 'updatedAt'>;
+  };
 }
