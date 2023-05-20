@@ -2,7 +2,7 @@ import { jsPDF } from 'jspdf';
 import THSarabun from '$lib/fonts/th-sarabun';
 
 function vAlignTextCenter(height: number, doc: jsPDF) {
-  return height * 0.5 + (doc.getLineHeight() / doc.internal.scaleFactor) * 0.225;
+  return height * 0.5 + (doc.getLineHeight() / doc.internal.scaleFactor) * 0.275;
 }
 
 export function drawDetailTable(
@@ -321,21 +321,186 @@ export function drawDetailTable(
   doc.setLineWidth(sourceSetting.lineWidth);
 
   const listDetail: {
-    no: number;
     code: string;
     name: string;
+    credit: number;
+    lecture: number;
+    lab: number;
+    learn: number;
+    type: string;
+    sec: number;
+    alt?: string;
   }[] = [];
 
   return {
     addDetail: () => {
-      listDetail.push({
-        no: listDetail.length + 1,
-        code: 'ENGCE101',
-        name: 'Computer Programming 1',
-      });
+      listDetail.push(
+        {
+          code: 'ENGCE101',
+          name: 'Computer Programming 1',
+          credit: 3,
+          lecture: 2,
+          lab: 3,
+          learn: 5,
+          type: 'บังคับ',
+          sec: 1,
+          alt: '2, 3, 4',
+        },
+        {
+          code: 'ENGCE102',
+          name: 'Computer Programming 2',
+          credit: 3,
+          lecture: 2,
+          lab: 3,
+          learn: 5,
+          type: 'บังคับ',
+          sec: 1,
+          alt: '2, 3, 4',
+        },
+      );
     },
     renderDetail: () => {
-      // do nothing
+      doc.setFontSize(options.fontSize - 1);
+      doc.setLineWidth(options.borderWidth);
+
+      listDetail.forEach((detail, idx) => {
+        doc.text(
+          (idx + 1).toString(),
+          x + schedule.colHeaderWidth + schedule.colWidth * 7 + schedule.colWidth / 4,
+          y + options.rowHeaderHeight + rowHeight * idx + vAlignTextCenter(rowHeight, doc),
+          {
+            align: 'center',
+          },
+        );
+        doc.text(
+          detail.code,
+          x +
+            schedule.colHeaderWidth +
+            schedule.colWidth * 7 +
+            schedule.colWidth / 2 +
+            schedule.colWidth / 10,
+          y + options.rowHeaderHeight + rowHeight * idx + vAlignTextCenter(rowHeight, doc),
+        );
+        doc.text(
+          detail.name,
+          x + schedule.colHeaderWidth + schedule.colWidth * 10 + schedule.colWidth / 10,
+          y + options.rowHeaderHeight + rowHeight * idx + vAlignTextCenter(rowHeight, doc),
+        );
+        doc.text(
+          detail.type,
+          x +
+            schedule.colHeaderWidth +
+            schedule.colWidth * 16 +
+            (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+          y + options.rowHeaderHeight + rowHeight * idx + vAlignTextCenter(rowHeight, doc),
+          {
+            align: 'center',
+          },
+        );
+        doc.text(
+          detail.credit.toString(),
+          x +
+            schedule.colHeaderWidth +
+            schedule.colWidth * 18 +
+            schedule.colWidth / 4 +
+            (schedule.colWidth * 1 + schedule.colWidth / 2) / 2,
+          y + options.rowHeaderHeight + rowHeight * idx + vAlignTextCenter(rowHeight, doc),
+          {
+            align: 'center',
+          },
+        );
+        doc.text(
+          detail.lecture.toString(),
+          x +
+            schedule.colHeaderWidth +
+            schedule.colWidth * 18 +
+            schedule.colWidth / 2 +
+            (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+          y + options.rowHeaderHeight + rowHeight * idx + vAlignTextCenter(rowHeight, doc),
+          {
+            align: 'center',
+          },
+        );
+        doc.text(
+          detail.lab.toString(),
+          x +
+            schedule.colHeaderWidth +
+            schedule.colWidth * 19 +
+            (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+          y + options.rowHeaderHeight + rowHeight * idx + vAlignTextCenter(rowHeight, doc),
+          {
+            align: 'center',
+          },
+        );
+        doc.text(
+          detail.learn.toString(),
+          x +
+            schedule.colHeaderWidth +
+            schedule.colWidth * 19 +
+            schedule.colWidth / 2 +
+            (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+          y + options.rowHeaderHeight + rowHeight * idx + vAlignTextCenter(rowHeight, doc),
+          {
+            align: 'center',
+          },
+        );
+      });
+
+      const totalCredit = listDetail.reduce<number>((acc, detail) => (acc += detail.credit), 0);
+      const totalLecture = listDetail.reduce<number>((acc, detail) => (acc += detail.lecture), 0);
+      const totalLab = listDetail.reduce<number>((acc, detail) => (acc += detail.lab), 0);
+      const totalLearn = listDetail.reduce<number>((acc, detail) => (acc += detail.learn), 0);
+
+      doc.text(
+        totalCredit.toString(),
+        x +
+          schedule.colHeaderWidth +
+          schedule.colWidth * 18 +
+          schedule.colWidth / 4 +
+          (schedule.colWidth * 1 + schedule.colWidth / 2) / 2,
+        y + vAlignTextCenter(rowHeight, doc) + rowHeight * 12 + options.rowHeaderHeight,
+        {
+          align: 'center',
+        },
+      );
+      doc.text(
+        totalLecture.toString(),
+        x +
+          schedule.colHeaderWidth +
+          schedule.colWidth * 18 +
+          schedule.colWidth / 2 +
+          (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+        y + vAlignTextCenter(rowHeight, doc) + rowHeight * 12 + options.rowHeaderHeight,
+        {
+          align: 'center',
+        },
+      );
+      doc.text(
+        totalLab.toString(),
+        x +
+          schedule.colHeaderWidth +
+          schedule.colWidth * 19 +
+          (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+        y + vAlignTextCenter(rowHeight, doc) + rowHeight * 12 + options.rowHeaderHeight,
+        {
+          align: 'center',
+        },
+      );
+      doc.text(
+        totalLearn.toString(),
+        x +
+          schedule.colHeaderWidth +
+          schedule.colWidth * 19 +
+          schedule.colWidth / 2 +
+          (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+        y + vAlignTextCenter(rowHeight, doc) + rowHeight * 12 + options.rowHeaderHeight,
+        {
+          align: 'center',
+        },
+      );
+
+      doc.setFontSize(sourceSetting.fontSize);
+      doc.setLineWidth(sourceSetting.lineWidth);
     },
   };
 }
@@ -446,6 +611,7 @@ export function drawSchedule(
           type: 'lecture' | 'lab';
           no: number;
           lab: number | null;
+          alt?: string;
         };
       },
       overlap?: number,
@@ -551,6 +717,9 @@ export function openTemplate() {
     },
   );
 
+  detail.addDetail();
+  detail.renderDetail();
+
   schedule.assignSchedule(
     1,
     [5, 8],
@@ -608,6 +777,9 @@ export function openTemplate() {
       ...schedule,
     },
   );
+
+  detail.addDetail();
+  detail.renderDetail();
 
   schedule.assignSchedule(1, [1, 4], {
     code: 'ENGCE101',
