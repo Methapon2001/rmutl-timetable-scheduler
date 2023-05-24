@@ -37,6 +37,10 @@
       text: 'Course',
     },
     {
+      path: '/plan',
+      text: 'Plan',
+    },
+    {
       path: '/group',
       text: 'Group',
     },
