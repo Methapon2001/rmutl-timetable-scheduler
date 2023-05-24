@@ -200,6 +200,7 @@ model Plan {
   course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   detail PlanDetail[]
+  group  Group[]
 }
 
 model PlanDetail {
@@ -220,6 +221,9 @@ model Group {
 
   courseId String
   course   Course @relation(fields: [courseId], references: [id])
+
+  planId String
+  plan   Plan   @relation(fields: [planId], references: [id])
 
   createdByUserId String
   createdBy       User     @relation("GroupCreatedBy", fields: [createdByUserId], references: [id])

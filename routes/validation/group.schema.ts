@@ -11,6 +11,7 @@ export default {
     properties: {
       name: { type: "string" },
       courseId: { type: "string" },
+      planId: { type: "string" },
       createdByUserId: { type: "string" },
       updatedByUserId: { type: "string" },
       limit: { type: "number", default: 20 },
@@ -22,6 +23,7 @@ export default {
     properties: {
       name: { type: "string" },
       courseId: { type: "string" },
+      planId: { type: "string" },
     },
   },
 };

@@ -37,11 +37,28 @@ const courseSelect: Prisma.CourseSelect = {
   },
 };
 
+const planSelect: Prisma.PlanSelect = {
+  id: true,
+  name: true,
+  detail: {
+    select: {
+      year: true,
+      semester: true,
+      subject: {
+        select: subjectSelect,
+      },
+    },
+  },
+};
+
 const groupSelect: Prisma.GroupSelect = {
   id: true,
   name: true,
   course: {
     select: courseSelect,
+  },
+  plan: {
+    select: planSelect,
   },
   createdAt: true,
   createdBy: {
@@ -55,7 +72,7 @@ const groupSelect: Prisma.GroupSelect = {
 
 export async function createGroup(
   request: FastifyRequest<{ Body: Group }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const group = await prisma.group.create({
     data: {
@@ -83,7 +100,7 @@ export async function requestGroup(
       "name" | "courseId" | "createdByUserId" | "updatedByUserId"
     >;
   }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const { id } = request.params;
   const { limit, offset, search, ...where } = request.query;
@@ -130,7 +147,7 @@ export async function updateGroup(
     Params: Pick<Group, "id">;
     Body: Omit<Group, "id">;
   }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const { id } = request.params;
 
@@ -169,7 +186,7 @@ export async function deleteGroup(
   request: FastifyRequest<{
     Params: Pick<Group, "id">;
   }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const { id } = request.params;
 
@@ -204,7 +221,7 @@ export async function searchGroup(
   request: FastifyRequest<{
     Querystring: { search: string; limit: number; offset: number };
   }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const { limit, offset, search } = request.query;
 
