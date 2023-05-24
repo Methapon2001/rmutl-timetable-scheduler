@@ -24,6 +24,19 @@
     }));
   };
 
+  const planOptions = async () => {
+    return (await data.lazy.plan).data.map((plan) => ({
+      label: plan.name,
+      value: plan.id,
+      detail: plan,
+    }));
+  };
+
+  const formOptions = async () => ({
+    course: await courseOptions(),
+    plan: await planOptions(),
+  });
+
   export let data: PageData;
 
   let newState = false;
@@ -32,9 +45,10 @@
     id: string;
     name: string;
     courseId: string;
+    planId: string;
   };
 
-  function showEdit(group: { id: string; name: string; courseId: string }) {
+  function showEdit(group: { id: string; name: string; courseId: string; planId: string }) {
     editState = true;
     editData = group;
   }
@@ -87,10 +101,10 @@
   <div id="new" class="bg-light p-4">
     <h1 class="mb-4 block text-center text-2xl font-bold">New Group</h1>
     <div class="mx-auto max-w-screen-md rounded bg-white p-4 shadow">
-      {#await courseOptions()}
+      {#await formOptions()}
         Loading...
       {:then options}
-        <Group courseOptions="{options}" />
+        <Group courseOptions="{options.course}" planOptions="{options.plan}" />
       {/await}
     </div>
   </div>
@@ -99,11 +113,12 @@
 <Modal bind:open="{editState}">
   <div id="edit" class="p-4">
     <h1 class="mb-4 block text-center text-2xl font-bold">Edit Group</h1>
-    {#await courseOptions()}
+    {#await formOptions()}
       Loading...
     {:then options}
       <Group
-        courseOptions="{options}"
+        courseOptions="{options.course}"
+        planOptions="{options.plan}"
         edit="{true}"
         editData="{editData}"
         callback="{() => (editState = false)}"
@@ -118,6 +133,7 @@
       <tr>
         <th>Name</th>
         <th>Course</th>
+        <th>Plan</th>
         <th>Created</th>
         <th>Updated</th>
         <th>•••</th>
@@ -126,35 +142,37 @@
     <tbody>
       {#if data.group.total == 0}
         <tr>
-          <td class="text-center text-secondary" colspan="6">No records found.</td>
+          <td class="text-secondary text-center" colspan="7">No records found.</td>
         </tr>
       {/if}
       {#each data.group.data as group (group.id)}
         <tr class="hover:bg-light">
           <td class="text-center">{group.name}</td>
           <td class="text-center">{group.course.name}</td>
+          <td class="text-center">{group.plan.name}</td>
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(group.createdAt).toLocaleDateString()}</p>
             <p class="text-dark">{new Date(group.createdAt).toLocaleTimeString()}</p>
-            <p class="capitalize text-secondary">{group.createdBy.username}</p>
+            <p class="text-secondary capitalize">{group.createdBy.username}</p>
           </td>
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(group.updatedAt).toLocaleDateString()}</p>
             <p class="text-dark">{new Date(group.updatedAt).toLocaleTimeString()}</p>
-            <p class="capitalize text-secondary">{group.updatedBy.username}</p>
+            <p class="text-secondary capitalize">{group.updatedBy.username}</p>
           </td>
           <td class="fit-width text-center">
             <div class="space-x-4 whitespace-nowrap">
               <button
-                class="action-button text-blue-600 disabled:text-secondary"
-                on:click="{() => showEdit({ ...group, courseId: group.course.id })}"
+                class="action-button disabled:text-secondary text-blue-600"
+                on:click="{() =>
+                  showEdit({ ...group, courseId: group.course.id, planId: group.plan.id })}"
                 disabled="{data.session?.user.id != group.createdBy.id &&
                   data.session?.user.role != 'admin'}"
               >
                 Edit
               </button>
               <button
-                class="action-button text-red-600 disabled:text-secondary"
+                class="action-button disabled:text-secondary text-red-600"
                 on:click="{() => handleDelete({ id: group.id })}"
                 disabled="{data.session?.user.id != group.createdBy.id &&
                   data.session?.user.role != 'admin'}"

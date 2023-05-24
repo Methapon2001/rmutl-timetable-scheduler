@@ -84,6 +84,7 @@ declare namespace API {
     id: string;
     name: string;
     course: Omit<API.Course, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>;
+    plan: Omit<API.Plan, 'course' | 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>;
     createdAt: string;
     createdBy: Omit<API.User, 'createdAt' | 'updatedAt'>;
     updatedAt: string;

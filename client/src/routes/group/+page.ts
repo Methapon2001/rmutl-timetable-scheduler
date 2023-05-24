@@ -45,10 +45,22 @@ export const load = (async ({ fetch, parent, depends, url }) => {
     };
   };
 
+  const requestPlan = async () => {
+    const res = await fetch(`${PUBLIC_API_HOST}/api/plan?limit=9999`);
+    const body = await res.json();
+    return body as {
+      data: API.Plan[];
+      limit: number;
+      offset: number;
+      total: number;
+    };
+  };
+
   return {
     group: requestGroup(),
     lazy: {
       course: requestCourse(),
+      plan: requestPlan(),
     },
   };
 }) satisfies PageLoad;

@@ -12,6 +12,7 @@
     id: z.string().nonempty(),
     name: z.string().min(3),
     courseId: z.string().nonempty({ message: 'Must select one of the options.' }),
+    planId: z.string().nonempty({ message: 'Must select one of the options.' }),
   });
 
   const newSchema = schema.omit({
@@ -22,7 +23,12 @@
     label: string;
     value: string;
     disabled?: boolean;
-    preselected?: boolean;
+  }[];
+
+  export let planOptions: {
+    label: string;
+    value: string;
+    disabled?: boolean;
   }[];
 
   export let edit = false;
@@ -30,6 +36,7 @@
     id: '',
     name: '',
     courseId: '',
+    planId: '',
   };
 
   export let callback: () => void = function () {
@@ -44,6 +51,7 @@
       id: '',
       name: '',
       courseId: '',
+      planId: '',
     },
     error: undefined,
   };
@@ -71,6 +79,7 @@
         id: '',
         name: '',
         courseId: '',
+        planId: '',
       };
 
       await invalidate('data:group');
@@ -102,6 +111,7 @@
         id: '',
         name: '',
         courseId: '',
+        planId: '',
       };
 
       await invalidate('data:group');
@@ -164,6 +174,21 @@
       {form.error ? getZodErrorMessage(form.error, ['courseId']) : ''}
     </div>
   </section>
-
+  <section id="input-plan" class="grid grid-cols-6">
+    <div class="col-span-2 flex items-center">
+      <label for="" class="font-semibold">
+        Plan <span class="text-red-600">*</span>
+      </label>
+    </div>
+    <div
+      class="col-span-4"
+      class:invalid="{form.error && getZodErrorMessage(form.error, ['planId']).length > 0}"
+    >
+      <Select options="{planOptions}" bind:value="{form.data.planId}" placeholder="Select Plan" />
+    </div>
+    <div class="col-span-4 col-start-3 text-red-600">
+      {form.error ? getZodErrorMessage(form.error, ['planId']) : ''}
+    </div>
+  </section>
   <button type="submit" class="button w-full">Save</button>
 </form>
