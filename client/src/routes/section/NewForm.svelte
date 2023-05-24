@@ -88,6 +88,16 @@
   function removeSection(index: number) {
     if (form.data.section.length == 1) return;
 
+    const subject = subjectOptions.find((opt) => form.data.subjectId === opt.value)?.detail;
+
+    if (subject && subject.lecture !== 0 && form.data.section.length === 1) return;
+
+    if (subject && subject.lab !== 0 && subject.lecture === 0 && form.data.section.length === 1)
+      return;
+
+    if (subject && subject.lab !== 0 && subject.lecture !== 0 && form.data.section.length === 2)
+      return;
+
     form.data.section = form.data.section.filter((_, idx) => idx != index);
   }
 
