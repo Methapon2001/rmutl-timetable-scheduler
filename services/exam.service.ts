@@ -380,7 +380,7 @@ export async function searchExam(
     take: limit,
   });
 
-  const count = await prisma.section.count({
+  const count = await prisma.exam.count({
     where: examWhere,
   });
 
