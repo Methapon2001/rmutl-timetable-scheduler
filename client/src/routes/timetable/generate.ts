@@ -67,7 +67,7 @@ export async function generate(
     .filter((sec) => {
       return (
         schedule.findIndex((sched) => sched.section.id === sec.id) === -1 &&
-        sec.group?.id === option.group?.id
+        (option.group ? option.group.id === sec.group?.id : true)
       );
     })
     .filter((sec) => {

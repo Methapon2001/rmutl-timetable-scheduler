@@ -312,7 +312,7 @@
                 class="button mx-2 flex h-12 w-48 items-center justify-center rounded"
                 on:click="{async () => {
                   await generate(data.section.data, scheduler);
-                  // await invalidate('data:scheduler');
+                  await invalidate('data:scheduler');
                   resetState();
                 }}">Generate</button
               >
