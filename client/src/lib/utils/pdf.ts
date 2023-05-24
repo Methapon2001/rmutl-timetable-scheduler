@@ -444,6 +444,19 @@ export function drawDetailTable(
             align: 'center',
           },
         );
+        doc.text(
+          `${detail.sec.toString()}${detail.alt ? `, ${detail.alt}` : ''}`,
+          x +
+            schedule.colHeaderWidth +
+            schedule.colWidth * 20 +
+            schedule.colWidth / 2 +
+            schedule.colWidth / 4 +
+            (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+          y + options.rowHeaderHeight + rowHeight * idx + vAlignTextCenter(rowHeight, doc),
+          {
+            align: 'center',
+          },
+        );
       });
 
       const totalCredit = listDetail.reduce<number>((acc, detail) => (acc += detail.credit), 0);
