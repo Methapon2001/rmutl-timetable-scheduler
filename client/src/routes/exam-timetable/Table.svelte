@@ -64,7 +64,7 @@
 
   $: visualize =
     (room && room?.id == state.exam?.room?.id) ||
-    state.exam?.section.findIndex((sec) => sec.group && sec.group?.id == group?.id) !== -1 ||
+    state.exam?.section.findIndex((sec) => sec.group && sec.group?.id === group?.id) !== -1 ||
     state.exam?.instructor.findIndex((inst) => inst.id == instructor?.id) !== -1;
 
   $: localData =
@@ -72,7 +72,7 @@
       ? data.filter(
           (obj) =>
             (obj.exam.room && obj.exam.room?.id == room?.id) ||
-            obj.exam.section.findIndex((sec) => sec.group && sec.group?.id == group?.id) !== -1 ||
+            obj.exam.section.findIndex((sec) => sec.group && sec.group.id === group?.id) !== -1 ||
             obj.exam.instructor.findIndex((inst) => inst.id == instructor?.id) !== -1,
         )
       : data;
