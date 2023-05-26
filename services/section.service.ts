@@ -1,4 +1,10 @@
-import { Section, Prisma, PrismaClient, Instructor } from "@prisma/client";
+import {
+  Section,
+  Prisma,
+  PrismaClient,
+  Instructor,
+  Role,
+} from "@prisma/client";
 import { FastifyReply, FastifyRequest } from "fastify";
 
 const prisma = new PrismaClient({
@@ -383,7 +389,10 @@ export async function deleteSection(
     },
   });
 
-  if (rec?.createdByUserId != request.user.id) {
+  if (
+    request.user.role != Role.admin &&
+    rec?.createdByUserId != request.user.id
+  ) {
     return reply.code(403).send({
       message: "Forbidden.",
     });
@@ -403,6 +412,41 @@ export async function deleteSection(
       message: "Cannot delete when this is used in schedule.",
     });
   }
+
+  const exam = await prisma.exam.findMany({
+    select: {
+      id: true,
+      section: true,
+    },
+    where: {
+      section: {
+        some: {
+          id: id,
+        },
+      },
+    },
+  });
+
+  exam.forEach(async (ex) => {
+    ex.section.length === 1
+      ? await prisma.exam.delete({
+          where: {
+            id: ex.id,
+          },
+        })
+      : await prisma.exam.update({
+          where: {
+            id: ex.id,
+          },
+          data: {
+            section: {
+              disconnect: {
+                id: id,
+              },
+            },
+          },
+        });
+  });
 
   const section = await prisma.section.delete({
     select: sectionSelect,

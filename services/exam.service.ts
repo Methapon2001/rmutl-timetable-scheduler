@@ -4,6 +4,7 @@ import {
   PrismaClient,
   Instructor,
   Exam,
+  Role,
 } from "@prisma/client";
 import { FastifyReply, FastifyRequest } from "fastify";
 
@@ -176,7 +177,7 @@ export async function requestExam(
 
   const count = id
     ? undefined
-    : await prisma.group.count({
+    : await prisma.exam.count({
         where: examWhere,
       });
 
@@ -277,7 +278,10 @@ export async function deleteExam(
     },
   });
 
-  if (rec?.createdByUserId != request.user.id) {
+  if (
+    request.user.role != Role.admin &&
+    rec?.createdByUserId != request.user.id
+  ) {
     return reply.code(403).send({
       message: "Forbidden.",
     });
