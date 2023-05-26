@@ -190,16 +190,16 @@
 
     state.selected = true;
     state.exam = exam;
-    state.size = exam.section[0].subject.exam * 2;
+    state.size = exam.section[0]?.subject.exam * 2;
 
     handleDataChange();
 
     if (pov === 'group') {
-      document.querySelector(`#group-${state.exam?.section[0].group?.id}`)?.scrollIntoView({
+      document.querySelector(`#group-${state.exam?.section[0]?.group?.id}`)?.scrollIntoView({
         behavior: 'smooth',
       });
     } else {
-      document.querySelector(`#inst-${state.exam?.instructor[0].id}`)?.scrollIntoView({
+      document.querySelector(`#inst-${state.exam?.instructor[0]?.id}`)?.scrollIntoView({
         behavior: 'smooth',
       });
     }
@@ -285,7 +285,7 @@
               <button
                 class="button mx-2 flex h-12 w-48 items-center justify-center rounded"
                 on:click="{async () => {
-                  //   await generate(data.section.data, scheduler);
+                  // await generate(data.section.data, scheduler);
                   // await invalidate('data:scheduler');
                   resetState();
                 }}">Generate</button
@@ -318,12 +318,12 @@
               <span
                 class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
               >
-                {exam.section[0].subject.code}
+                {exam.section[0]?.subject.code ?? ''}
               </span>
               <span
                 class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
               >
-                {exam.section[0].subject.name}
+                {exam.section[0]?.subject.name ?? ''}
               </span>
             </div>
             <div class="flex gap-2">
@@ -379,8 +379,8 @@
     >
       <span class="bg-primary px-3 py-2 font-semibold text-white">Selected</span>
       <span class="truncate px-4 py-2">
-        {state.exam?.section[0].subject.code ?? ''}
-        {state.exam?.section[0].subject.name ?? ''}
+        {state.exam?.section[0]?.subject.code ?? ''}
+        {state.exam?.section[0]?.subject.name ?? ''}
       </span>
       <span class="px-4 py-2">
         SEC
