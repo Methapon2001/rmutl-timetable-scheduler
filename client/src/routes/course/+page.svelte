@@ -8,6 +8,7 @@
   import Modal from '$lib/components/Modal.svelte';
   import Pagination from '$lib/components/Pagination.svelte';
   import Course from './CourseForm.svelte';
+  import CourseDetail from './CourseDetail.svelte';
   import toast from 'svelte-french-toast';
 
   const handleSearch = debounce(async (text: string) => {
@@ -72,6 +73,16 @@
       }
     }
   }
+
+  let showState = false;
+  let showData: API.Course;
+
+  function showCourseDetail(course: API.Course) {
+    showState = true;
+    showData = {
+      ...course,
+    };
+  }
 </script>
 
 <svelte:head>
@@ -132,6 +143,13 @@
   </div>
 </Modal>
 
+<Modal bind:open="{showState}">
+  <div id="edit" class="p-4">
+    <h1 class="mb-4 block text-center text-2xl font-bold">Detail Course</h1>
+    <CourseDetail courseData="{showData}" />
+  </div>
+</Modal>
+
 <div id="records" class="overflow-x-auto">
   <table class="w-full">
     <thead>
@@ -145,30 +163,36 @@
     <tbody>
       {#if data.course.total == 0}
         <tr>
-          <td class="text-center text-secondary" colspan="4">No records found.</td>
+          <td class="text-secondary text-center" colspan="4">No records found.</td>
         </tr>
       {/if}
       {#each data.course.data as course (course.id)}
-        <tr class="hover:bg-light">
+        <tr
+          on:click|stopPropagation="{() => {
+            showState = true;
+            showData = course;
+          }}"
+          class="hover:bg-light cursor-pointer"
+        >
           <td class="text-center">{course.name}</td>
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(course.createdAt).toLocaleDateString()}</p>
             <p class="text-dark">{new Date(course.createdAt).toLocaleTimeString()}</p>
-            <p class="capitalize text-secondary">{course.createdBy.username}</p>
+            <p class="text-secondary capitalize">{course.createdBy.username}</p>
           </td>
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(course.updatedAt).toLocaleDateString()}</p>
             <p class="text-dark">{new Date(course.updatedAt).toLocaleTimeString()}</p>
-            <p class="capitalize text-secondary">{course.updatedBy.username}</p>
+            <p class="text-secondary capitalize">{course.updatedBy.username}</p>
           </td>
           <td class="fit-width text-center">
             <div class="space-x-4 whitespace-nowrap">
-              <button class="action-button text-blue-600" on:click="{() => showEdit(course)}">
+              <button class="action-button text-blue-600" on:click|stopPropagation="{() => showEdit(course)}">
                 Edit
               </button>
               <button
                 class="action-button text-red-600"
-                on:click="{() => handleDelete({ id: course.id })}"
+                on:click|stopPropagation="{() => handleDelete({ id: course.id })}"
               >
                 Delete
               </button>
