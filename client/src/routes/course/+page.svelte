@@ -144,8 +144,8 @@
 </Modal>
 
 <Modal bind:open="{showState}">
-  <div id="edit" class="p-4">
-    <h1 class="mb-4 block text-center text-2xl font-bold">Detail Course</h1>
+  <div id="show-modal" class="p-4">
+    <h1 class="mb-4 block text-center text-2xl font-bold">Course Detail</h1>
     <CourseDetail courseData="{showData}" />
   </div>
 </Modal>
@@ -168,10 +168,7 @@
       {/if}
       {#each data.course.data as course (course.id)}
         <tr
-          on:click|stopPropagation="{() => {
-            showState = true;
-            showData = course;
-          }}"
+          on:click|stopPropagation="{() => showCourseDetail(course)}"
           class="hover:bg-light cursor-pointer"
         >
           <td class="text-center">{course.name}</td>
@@ -187,7 +184,10 @@
           </td>
           <td class="fit-width text-center">
             <div class="space-x-4 whitespace-nowrap">
-              <button class="action-button text-blue-600" on:click|stopPropagation="{() => showEdit(course)}">
+              <button
+                class="action-button text-blue-600"
+                on:click|stopPropagation="{() => showEdit(course)}"
+              >
                 Edit
               </button>
               <button
