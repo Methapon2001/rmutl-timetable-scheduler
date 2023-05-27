@@ -8,7 +8,9 @@
   import Modal from '$lib/components/Modal.svelte';
   import Pagination from '$lib/components/Pagination.svelte';
   import Plan from './PlanForm.svelte';
+  import PlanDetail from './PlanDetail.svelte';
   import toast from 'svelte-french-toast';
+  import type { ComponentProps } from 'svelte';
 
   const handleSearch = debounce(async (text: string) => {
     const url = new URL(window.location.toString());
@@ -68,19 +70,23 @@
     editState = true;
     editData = {
       ...plan,
-      detail: Object.values(
-        plan.detail.reduce<{
-          [key: string]: { year: number; semester: number; subjectId: string[] };
-        }>((acc, obj) => {
-          const key = `${obj.year}-${obj.semester}`;
-
-          if (!acc[key]) acc[key] = { year: obj.year, semester: obj.semester, subjectId: [] };
-
-          acc[key].subjectId.push(obj.subjectId);
-          return acc;
-        }, {}),
-      ),
+      detail: groupDetailData(plan.detail),
     };
+  }
+
+  function groupDetailData(detail: { semester: number; year: number; subjectId: string }[]) {
+    return Object.values(
+      detail.reduce<{
+        [key: string]: { year: number; semester: number; subjectId: string[] };
+      }>((acc, obj) => {
+        const key = `${obj.year}-${obj.semester}`;
+
+        if (!acc[key]) acc[key] = { year: obj.year, semester: obj.semester, subjectId: [] };
+
+        acc[key].subjectId.push(obj.subjectId);
+        return acc;
+      }, {}),
+    );
   }
 
   async function handleDelete(plan: { id: string }) {
@@ -95,6 +101,26 @@
         toast.error('Failed to delete plan!\nThis record is currenly in use.');
       }
     }
+  }
+
+  let showState = false;
+  let showData: ComponentProps<PlanDetail>['planData'];
+
+  function showPlanDetail(plan: {
+    id: string;
+    name: string;
+    detail: {
+      semester: number;
+      year: number;
+      subjectId: string;
+    }[];
+    courseId: string;
+  }) {
+    showState = true;
+    showData = {
+      ...plan,
+      detail: groupDetailData(plan.detail),
+    };
   }
 </script>
 
@@ -157,6 +183,13 @@
   </div>
 </Modal>
 
+<Modal bind:open="{showState}">
+  <div id="show-modal" class="p-4">
+    <h1 class="mb-4 block text-center text-2xl font-bold">Plan Detail</h1>
+    <PlanDetail planData="{showData}" />
+  </div>
+</Modal>
+
 <div id="records" class="overflow-x-auto">
   <table class="w-full">
     <thead>
@@ -174,7 +207,15 @@
         </tr>
       {/if}
       {#each data.plan.data as plan (plan.id)}
-        <tr class="hover:bg-light">
+        <tr
+          on:click|stopPropagation="{() =>
+            showPlanDetail({
+              ...plan,
+              detail: plan.detail.map((d) => ({ ...d, subjectId: d.subject.id })),
+              courseId: plan.course.id,
+            })}"
+          class="hover:bg-light"
+        >
           <td class="text-center">{plan.name}</td>
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(plan.createdAt).toLocaleDateString()}</p>
@@ -190,7 +231,7 @@
             <div class="space-x-4 whitespace-nowrap">
               <button
                 class="action-button text-blue-600"
-                on:click="{() =>
+                on:click|stopPropagation="{() =>
                   showEdit({
                     ...plan,
                     detail: plan.detail.map((d) => ({ ...d, subjectId: d.subject.id })),
@@ -201,7 +242,7 @@
               </button>
               <button
                 class="action-button text-red-600"
-                on:click="{() => handleDelete({ id: plan.id })}"
+                on:click|stopPropagation="{() => handleDelete({ id: plan.id })}"
               >
                 Delete
               </button>
