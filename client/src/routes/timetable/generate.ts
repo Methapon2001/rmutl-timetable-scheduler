@@ -54,11 +54,13 @@ export async function generate(
   option: {
     weekday?: WeekdayShort[];
     period?: number[];
-    target?: 'compulsory' | 'elective' | '*';
-    group?: API.Group;
+    target?: {
+      group?: API.Group;
+      subjectType?: 'compulsory' | 'elective' | '*';
+    };
   } = {},
 ) {
-  const subjectTarget = option.target ?? '*';
+  const subjectTarget = option.target?.subjectType ?? '*';
   const weekday = option.weekday ?? ['mon', 'tue', 'wed', 'thu', 'fri'];
   const rangeStart = option.period && option.period.length === 2 ? option.period[0] : 1;
   const rangeEnd = option.period && option.period.length === 2 ? option.period[1] : 18;
@@ -67,7 +69,7 @@ export async function generate(
     .filter((sec) => {
       return (
         schedule.findIndex((sched) => sched.section.id === sec.id) === -1 &&
-        (option.group ? option.group.id === sec.group?.id : true)
+        (option.target?.group ? option.target.group.id === sec.group?.id : true)
       );
     })
     .filter((sec) => {
