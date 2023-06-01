@@ -320,16 +320,6 @@
                 group="{g}"
               />
             </div>
-            <div class="mb-3 flex w-full justify-end">
-              <button
-                class="button mx-2 flex h-12 w-48 items-center justify-center rounded"
-                on:click="{async () => {
-                  await generate(data.section.data, scheduler);
-                  await invalidate('data:scheduler');
-                  resetState();
-                }}">Generate</button
-              >
-            </div>
           {/each}
         {:else}
           {#each instructor as i (i.id)}
@@ -442,15 +432,32 @@
   </div>
 </div>
 <div class="flex h-16 items-center justify-between overflow-hidden border p-4">
-  <div class="pov-switch pr-4">
+  <div class="pov-switch whitespace-nowrap pr-4">
     <button
       on:click="{() => {
         pov = pov === 'group' ? 'instructor' : 'group';
         resetState();
       }}"
-      class="w-48 rounded border bg-slate-900 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
+      class="rounded border bg-slate-900 px-8 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
     >
       View: <span class="capitalize">{pov}</span>
+    </button>
+    <button
+      class="rounded border bg-slate-900 px-8 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
+      on:click="{() => {
+        showState = true;
+        // await generate(data.section.data, scheduler);
+        // await invalidate('data:scheduler');
+        // resetState();
+      }}"
+    >
+      Generate
+    </button>
+    <button
+      class="rounded border bg-slate-900 px-8 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
+      on:click="{() => exportPDF()}"
+    >
+      Export PDF
     </button>
   </div>
   {#if state.section}
@@ -491,6 +498,10 @@
     </div>
   </div>
 </div>
+
+<Modal bind:open="{showState}">
+  <div id="show-modal" class="p-4"></div>
+</Modal>
 
 <style lang="postcss">
   .table-small-container {
