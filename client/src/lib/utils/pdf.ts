@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf';
 import THSarabun from '$lib/fonts/th-sarabun';
+import type { ProcessedOverlapReturnType } from './table';
 
 function vAlignTextCenter(height: number, doc: jsPDF) {
   return height * 0.5 + (doc.getLineHeight() / doc.internal.scaleFactor) * 0.275;
@@ -34,7 +35,7 @@ export function drawDetailTable(
 
   doc.rect(x, y, w, h);
   doc.line(
-    x + schedule.colHeaderWidth + schedule.colWidth * 7,
+    x + schedule.colHeaderWidth + schedule.colWidth * 5 + schedule.colWidth / 2,
     y + options.rowHeaderHeight,
     x + w,
     y + options.rowHeaderHeight,
@@ -44,7 +45,7 @@ export function drawDetailTable(
 
   for (let i = 1; i <= 13; i++) {
     doc.line(
-      x + schedule.colHeaderWidth + schedule.colWidth * 7,
+      x + schedule.colHeaderWidth + schedule.colWidth * 5 + schedule.colWidth / 2,
       y + i * rowHeight + options.rowHeaderHeight,
       x + w,
       y + i * rowHeight + options.rowHeaderHeight,
@@ -52,70 +53,39 @@ export function drawDetailTable(
   }
 
   doc.line(
-    x + schedule.colHeaderWidth + schedule.colWidth * 7,
+    x + schedule.colHeaderWidth + schedule.colWidth * 5 + schedule.colWidth / 2,
     y,
-    x + schedule.colHeaderWidth + schedule.colWidth * 7,
+    x + schedule.colHeaderWidth + schedule.colWidth * 5 + schedule.colWidth / 2,
     y + h,
   );
 
   doc.line(
-    x + schedule.colHeaderWidth + schedule.colWidth * 7 + schedule.colWidth / 2,
+    x + schedule.colHeaderWidth + schedule.colWidth * 6,
     y,
-    x + schedule.colHeaderWidth + schedule.colWidth * 7 + schedule.colWidth / 2,
+    x + schedule.colHeaderWidth + schedule.colWidth * 6,
     y + h - rowHeight,
   );
   doc.text(
     'ที่',
-    x + schedule.colHeaderWidth + schedule.colWidth * 7 + schedule.colWidth / 4,
+    x +
+      schedule.colHeaderWidth +
+      schedule.colWidth * 5 +
+      schedule.colWidth / 2 +
+      schedule.colWidth / 4,
     y + vAlignTextCenter(options.rowHeaderHeight, doc),
     {
       align: 'center',
     },
   );
   doc.line(
-    x + schedule.colHeaderWidth + schedule.colWidth * 10,
+    x + schedule.colHeaderWidth + schedule.colWidth * 8,
     y,
-    x + schedule.colHeaderWidth + schedule.colWidth * 10,
-    y + h - rowHeight,
+    x + schedule.colHeaderWidth + schedule.colWidth * 8,
+    y + h,
   );
   doc.text(
     'รหัสวิชา',
-    x +
-      schedule.colHeaderWidth +
-      schedule.colWidth * 7 +
-      schedule.colWidth / 4 +
-      (schedule.colWidth * 3) / 2,
-    y + vAlignTextCenter(options.rowHeaderHeight, doc),
-    {
-      align: 'center',
-    },
-  );
-  doc.line(
-    x + schedule.colHeaderWidth + schedule.colWidth * 16,
-    y,
-    x + schedule.colHeaderWidth + schedule.colWidth * 16,
-    y + h,
-  );
-  doc.text(
-    'ชื่อวิชา',
-    x + schedule.colHeaderWidth + schedule.colWidth * 10 + (schedule.colWidth * 6) / 2,
-    y + vAlignTextCenter(options.rowHeaderHeight, doc),
-    {
-      align: 'center',
-    },
-  );
-  doc.line(
-    x + schedule.colHeaderWidth + schedule.colWidth * 18 + schedule.colWidth / 2,
-    y,
-    x + schedule.colHeaderWidth + schedule.colWidth * 18 + schedule.colWidth / 2,
-    y + h,
-  );
-  doc.text(
-    'สภาพวิชา',
-    x +
-      schedule.colHeaderWidth +
-      schedule.colWidth * 16 +
-      (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+    x + schedule.colHeaderWidth + schedule.colWidth * 7,
     y + vAlignTextCenter(options.rowHeaderHeight, doc),
     {
       align: 'center',
@@ -123,75 +93,65 @@ export function drawDetailTable(
   );
   doc.text(
     'รวม',
-    x +
-      schedule.colHeaderWidth +
-      schedule.colWidth * 16 +
-      (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
-    y + vAlignTextCenter(rowHeight, doc) + rowHeight * 12 + options.rowHeaderHeight,
+    x + schedule.colHeaderWidth + schedule.colWidth * 8 + (schedule.colWidth * 6) / 2,
+    y + vAlignTextCenter(options.rowHeaderHeight, doc) + rowHeight * 13 + rowHeight / 2,
     {
       align: 'center',
     },
   );
   doc.line(
-    x + schedule.colHeaderWidth + schedule.colWidth * 19 + schedule.colWidth / 2,
+    x + schedule.colHeaderWidth + schedule.colWidth * 14,
     y,
-    x + schedule.colHeaderWidth + schedule.colWidth * 19 + schedule.colWidth / 2,
+    x + schedule.colHeaderWidth + schedule.colWidth * 14,
     y + h,
   );
   doc.text(
-    'หน่วยกิต',
-    x +
-      schedule.colHeaderWidth +
-      schedule.colWidth * 18 +
-      schedule.colWidth / 4 +
-      (schedule.colWidth * 1 + schedule.colWidth / 2) / 2,
+    'ชื่อวิชา',
+    x + schedule.colHeaderWidth + schedule.colWidth * 8 + (schedule.colWidth * 6) / 2,
     y + vAlignTextCenter(options.rowHeaderHeight, doc),
     {
       align: 'center',
     },
   );
   doc.line(
-    x + schedule.colHeaderWidth + schedule.colWidth * 21,
-    y,
-    x + schedule.colHeaderWidth + schedule.colWidth * 21,
+    x + schedule.colHeaderWidth + schedule.colWidth * 14,
+    y + rowHeight + 1,
+    x + schedule.colHeaderWidth + schedule.colWidth * 15 + schedule.colWidth / 2,
+    y + rowHeight + 1,
+  );
+  doc.line(
+    x + schedule.colHeaderWidth + schedule.colWidth * 14 + schedule.colWidth / 2,
+    y + rowHeight + 1,
+    x + schedule.colHeaderWidth + schedule.colWidth * 14 + schedule.colWidth / 2,
     y + h,
   );
   doc.line(
-    x + schedule.colHeaderWidth + schedule.colWidth * 19 + schedule.colWidth / 2,
+    x + schedule.colHeaderWidth + schedule.colWidth * 15,
     y + rowHeight + 1,
-    x + schedule.colHeaderWidth + schedule.colWidth * 25,
-    y + rowHeight + 1,
+    x + schedule.colHeaderWidth + schedule.colWidth * 15,
+    y + h,
+  );
+  doc.line(
+    x + schedule.colHeaderWidth + schedule.colWidth * 15 + schedule.colWidth / 2,
+    y,
+    x + schedule.colHeaderWidth + schedule.colWidth * 15 + schedule.colWidth / 2,
+    y + h,
   );
   doc.text(
-    'เวลาเรียน',
+    'หน่วยกิต',
     x +
       schedule.colHeaderWidth +
-      schedule.colWidth * 19 +
-      (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+      schedule.colWidth * 14 +
+      schedule.colWidth / 2 +
+      schedule.colWidth / 4,
     y + vAlignTextCenter(options.rowHeaderHeight, doc) - rowHeight / 2,
     {
       align: 'center',
     },
   );
-  doc.line(
-    x + schedule.colHeaderWidth + schedule.colWidth * 20,
-    y + rowHeight + 1,
-    x + schedule.colHeaderWidth + schedule.colWidth * 20,
-    y + h,
-  );
-  doc.line(
-    x + schedule.colHeaderWidth + schedule.colWidth * 20 + schedule.colWidth / 2,
-    y + rowHeight + 1,
-    x + schedule.colHeaderWidth + schedule.colWidth * 20 + schedule.colWidth / 2,
-    y + h,
-  );
   doc.text(
     'ท',
-    x +
-      schedule.colHeaderWidth +
-      schedule.colWidth * 18 +
-      schedule.colWidth / 2 +
-      (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+    x + schedule.colHeaderWidth + schedule.colWidth * 14 + schedule.colWidth / 4,
     y + vAlignTextCenter(options.rowHeaderHeight, doc) + rowHeight / 2,
     {
       align: 'center',
@@ -201,8 +161,9 @@ export function drawDetailTable(
     'ป',
     x +
       schedule.colHeaderWidth +
-      schedule.colWidth * 19 +
-      (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+      schedule.colWidth * 14 +
+      schedule.colWidth / 2 +
+      schedule.colWidth / 4,
     y + vAlignTextCenter(options.rowHeaderHeight, doc) + rowHeight / 2,
     {
       align: 'center',
@@ -210,96 +171,26 @@ export function drawDetailTable(
   );
   doc.text(
     'ร',
-    x +
-      schedule.colHeaderWidth +
-      schedule.colWidth * 19 +
-      schedule.colWidth / 2 +
-      (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+    x + schedule.colHeaderWidth + schedule.colWidth * 15 + schedule.colWidth / 4,
     y + vAlignTextCenter(options.rowHeaderHeight, doc) + rowHeight / 2,
     {
       align: 'center',
     },
   );
-  doc.text(
-    'จำนวนชั่วโมง/สัปดาห์',
-    x +
-      schedule.colHeaderWidth +
-      schedule.colWidth * 20 +
-      schedule.colWidth / 2 +
-      schedule.colWidth / 4 +
-      (schedule.colWidth * 4 + schedule.colWidth / 2) / 2,
-    y + vAlignTextCenter(options.rowHeaderHeight, doc) - rowHeight / 2,
-    {
-      align: 'center',
-    },
-  );
   doc.line(
-    x + schedule.colHeaderWidth + schedule.colWidth * 23,
-    y + rowHeight + 1,
-    x + schedule.colHeaderWidth + schedule.colWidth * 23,
-    y + h,
-  );
-  doc.line(
-    x + schedule.colHeaderWidth + schedule.colWidth * 23 + schedule.colWidth / 2,
-    y + rowHeight + 1,
-    x + schedule.colHeaderWidth + schedule.colWidth * 23 + schedule.colWidth / 2,
-    y + h,
-  );
-  doc.line(
-    x + schedule.colHeaderWidth + schedule.colWidth * 24,
-    y + rowHeight + 1,
-    x + schedule.colHeaderWidth + schedule.colWidth * 24,
-    y + h,
-  );
-  doc.line(
-    x + schedule.colHeaderWidth + schedule.colWidth * 24 + schedule.colWidth / 2,
-    y + rowHeight + 1,
-    x + schedule.colHeaderWidth + schedule.colWidth * 24 + schedule.colWidth / 2,
+    x + schedule.colHeaderWidth + schedule.colWidth * 20,
+    y,
+    x + schedule.colHeaderWidth + schedule.colWidth * 20,
     y + h,
   );
   doc.text(
     'กลุ่มเรียน',
     x +
       schedule.colHeaderWidth +
-      schedule.colWidth * 20 +
+      schedule.colWidth * 17 +
       schedule.colWidth / 2 +
-      schedule.colWidth / 4 +
-      (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
-    y + vAlignTextCenter(options.rowHeaderHeight, doc) + rowHeight / 2,
-    {
-      align: 'center',
-    },
-  );
-  doc.text(
-    'เช้า',
-    x +
-      schedule.colHeaderWidth +
-      schedule.colWidth * 22 +
-      (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
-    y + vAlignTextCenter(options.rowHeaderHeight, doc) + rowHeight / 2,
-    {
-      align: 'center',
-    },
-  );
-  doc.text(
-    'บ่าย',
-    x +
-      schedule.colHeaderWidth +
-      schedule.colWidth * 22 +
-      schedule.colWidth / 2 +
-      (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
-    y + vAlignTextCenter(options.rowHeaderHeight, doc) + rowHeight / 2,
-    {
-      align: 'center',
-    },
-  );
-  doc.text(
-    'สมทบ',
-    x +
-      schedule.colHeaderWidth +
-      schedule.colWidth * 23 +
-      (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
-    y + vAlignTextCenter(options.rowHeaderHeight, doc) + rowHeight / 2,
+      schedule.colWidth / 4,
+    y + vAlignTextCenter(options.rowHeaderHeight, doc),
     {
       align: 'center',
     },
@@ -308,10 +199,115 @@ export function drawDetailTable(
     'รวม',
     x +
       schedule.colHeaderWidth +
-      schedule.colWidth * 23 +
+      schedule.colWidth * 15 +
+      (schedule.colWidth * 5 + schedule.colWidth / 2) / 2,
+    y + vAlignTextCenter(options.rowHeaderHeight, doc) + rowHeight * 13 + rowHeight / 2,
+    {
+      align: 'center',
+    },
+  );
+  doc.line(
+    x + schedule.colHeaderWidth + schedule.colWidth * 21,
+    y,
+    x + schedule.colHeaderWidth + schedule.colWidth * 21,
+    y + h,
+  );
+  doc.text(
+    'ระดับ',
+    x + schedule.colHeaderWidth + schedule.colWidth * 20 + schedule.colWidth / 2,
+    y + vAlignTextCenter(options.rowHeaderHeight, doc),
+    {
+      align: 'center',
+    },
+  );
+  doc.line(
+    x + schedule.colHeaderWidth + schedule.colWidth * 22,
+    y,
+    x + schedule.colHeaderWidth + schedule.colWidth * 22,
+    y + h,
+  );
+  doc.text(
+    'ภาค',
+    x + schedule.colHeaderWidth + schedule.colWidth * 21 + schedule.colWidth / 2,
+    y + vAlignTextCenter(options.rowHeaderHeight, doc),
+    {
+      align: 'center',
+    },
+  );
+  doc.line(
+    x + schedule.colHeaderWidth + schedule.colWidth * 22,
+    y,
+    x + schedule.colHeaderWidth + schedule.colWidth * 22,
+    y + h,
+  );
+  doc.line(
+    x + schedule.colHeaderWidth + schedule.colWidth * 22 + schedule.colWidth / 2,
+    y + rowHeight + 1,
+    x + schedule.colHeaderWidth + schedule.colWidth * 22 + schedule.colWidth / 2,
+    y + h,
+  );
+  doc.line(
+    x + schedule.colHeaderWidth + schedule.colWidth * 23,
+    y + rowHeight + 1,
+    x + schedule.colHeaderWidth + schedule.colWidth * 23,
+    y + h,
+  );
+  doc.line(
+    x + schedule.colHeaderWidth + schedule.colWidth * 23 + schedule.colWidth / 2,
+    y,
+    x + schedule.colHeaderWidth + schedule.colWidth * 23 + schedule.colWidth / 2,
+    y + h,
+  );
+  doc.line(
+    x + schedule.colHeaderWidth + schedule.colWidth * 22,
+    y + rowHeight + 1,
+    x + schedule.colHeaderWidth + schedule.colWidth * 23 + schedule.colWidth / 2,
+    y + rowHeight + 1,
+  );
+  doc.text(
+    'จำนวนชม.',
+    x +
+      schedule.colHeaderWidth +
+      schedule.colWidth * 22 +
       schedule.colWidth / 2 +
-      (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+      schedule.colWidth / 4,
+    y + vAlignTextCenter(options.rowHeaderHeight, doc) - rowHeight / 2,
+    {
+      align: 'center',
+    },
+  );
+  doc.text(
+    'ท',
+    x + schedule.colHeaderWidth + schedule.colWidth * 22 + schedule.colWidth / 4,
     y + vAlignTextCenter(options.rowHeaderHeight, doc) + rowHeight / 2,
+    {
+      align: 'center',
+    },
+  );
+  doc.text(
+    'ป',
+    x +
+      schedule.colHeaderWidth +
+      schedule.colWidth * 22 +
+      schedule.colWidth / 2 +
+      schedule.colWidth / 4,
+    y + vAlignTextCenter(options.rowHeaderHeight, doc) + rowHeight / 2,
+    {
+      align: 'center',
+    },
+  );
+  doc.text(
+    'ร',
+    x + schedule.colHeaderWidth + schedule.colWidth * 23 + schedule.colWidth / 4,
+    y + vAlignTextCenter(options.rowHeaderHeight, doc) + rowHeight / 2,
+    {
+      align: 'center',
+    },
+  );
+  doc.text(
+    'หมายเหตุ',
+    x + schedule.colHeaderWidth + schedule.colWidth * 24 + schedule.colWidth / 4,
+    y + vAlignTextCenter(options.rowHeaderHeight, doc),
     {
       align: 'center',
     },
@@ -333,6 +329,16 @@ export function drawDetailTable(
   }[] = [];
 
   return {
+    setHeader: (title: string) => {
+      doc.text(
+        title,
+        x + (schedule.colHeaderWidth + schedule.colWidth * 5 + schedule.colWidth / 2) / 2,
+        y + vAlignTextCenter(options.rowHeaderHeight + rowHeight * 13, doc),
+        {
+          align: 'center',
+        },
+      );
+    },
     addDetail: () => {
       listDetail.push(
         {
@@ -366,7 +372,11 @@ export function drawDetailTable(
       listDetail.forEach((detail, idx) => {
         doc.text(
           (idx + 1).toString(),
-          x + schedule.colHeaderWidth + schedule.colWidth * 7 + schedule.colWidth / 4,
+          x +
+            schedule.colHeaderWidth +
+            schedule.colWidth * 5 +
+            schedule.colWidth / 2 +
+            schedule.colWidth / 4,
           y + options.rowHeaderHeight + rowHeight * idx + vAlignTextCenter(rowHeight, doc),
           {
             align: 'center',
@@ -374,48 +384,31 @@ export function drawDetailTable(
         );
         doc.text(
           detail.code,
-          x +
-            schedule.colHeaderWidth +
-            schedule.colWidth * 7 +
-            schedule.colWidth / 2 +
-            schedule.colWidth / 10,
+          x + schedule.colHeaderWidth + schedule.colWidth * 6 + (schedule.colWidth * 2) / 2,
           y + options.rowHeaderHeight + rowHeight * idx + vAlignTextCenter(rowHeight, doc),
+          {
+            align: 'center',
+          },
         );
         doc.text(
           detail.name,
-          x + schedule.colHeaderWidth + schedule.colWidth * 10 + schedule.colWidth / 10,
+          x + schedule.colHeaderWidth + schedule.colWidth * 8 + schedule.colWidth / 10,
           y + options.rowHeaderHeight + rowHeight * idx + vAlignTextCenter(rowHeight, doc),
         );
-        doc.text(
-          detail.type,
-          x +
-            schedule.colHeaderWidth +
-            schedule.colWidth * 16 +
-            (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
-          y + options.rowHeaderHeight + rowHeight * idx + vAlignTextCenter(rowHeight, doc),
-          {
-            align: 'center',
-          },
-        );
-        doc.text(
-          detail.credit.toString(),
-          x +
-            schedule.colHeaderWidth +
-            schedule.colWidth * 18 +
-            schedule.colWidth / 4 +
-            (schedule.colWidth * 1 + schedule.colWidth / 2) / 2,
-          y + options.rowHeaderHeight + rowHeight * idx + vAlignTextCenter(rowHeight, doc),
-          {
-            align: 'center',
-          },
-        );
+        // doc.text(
+        //   detail.credit.toString(),
+        //   x +
+        //     schedule.colHeaderWidth +
+        //     schedule.colWidth * 14 +
+        //     schedule.colWidth / 4,
+        //   y + options.rowHeaderHeight + rowHeight * idx + vAlignTextCenter(rowHeight, doc),
+        //   {
+        //     align: 'center',
+        //   },
+        // );
         doc.text(
           detail.lecture.toString(),
-          x +
-            schedule.colHeaderWidth +
-            schedule.colWidth * 18 +
-            schedule.colWidth / 2 +
-            (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+          x + schedule.colHeaderWidth + schedule.colWidth * 14 + schedule.colWidth * 0.25,
           y + options.rowHeaderHeight + rowHeight * idx + vAlignTextCenter(rowHeight, doc),
           {
             align: 'center',
@@ -423,10 +416,7 @@ export function drawDetailTable(
         );
         doc.text(
           detail.lab.toString(),
-          x +
-            schedule.colHeaderWidth +
-            schedule.colWidth * 19 +
-            (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+          x + schedule.colHeaderWidth + schedule.colWidth * 14 + schedule.colWidth * 0.75,
           y + options.rowHeaderHeight + rowHeight * idx + vAlignTextCenter(rowHeight, doc),
           {
             align: 'center',
@@ -434,55 +424,42 @@ export function drawDetailTable(
         );
         doc.text(
           detail.learn.toString(),
-          x +
-            schedule.colHeaderWidth +
-            schedule.colWidth * 19 +
-            schedule.colWidth / 2 +
-            (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+          x + schedule.colHeaderWidth + schedule.colWidth * 15 + schedule.colWidth * 0.25,
           y + options.rowHeaderHeight + rowHeight * idx + vAlignTextCenter(rowHeight, doc),
           {
             align: 'center',
           },
         );
         doc.text(
-          `${detail.sec.toString()}${detail.alt ? `, ${detail.alt}` : ''}`,
+          `${detail.code}_SEC_${detail.sec.toString()}${detail.alt ? `, ${detail.alt}` : ''}`,
           x +
             schedule.colHeaderWidth +
-            schedule.colWidth * 20 +
+            schedule.colWidth * 15 +
             schedule.colWidth / 2 +
-            schedule.colWidth / 4 +
-            (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+            schedule.colWidth / 10,
           y + options.rowHeaderHeight + rowHeight * idx + vAlignTextCenter(rowHeight, doc),
-          {
-            align: 'center',
-          },
         );
       });
 
-      const totalCredit = listDetail.reduce<number>((acc, detail) => (acc += detail.credit), 0);
+      // const totalCredit = listDetail.reduce<number>((acc, detail) => (acc += detail.credit), 0);
       const totalLecture = listDetail.reduce<number>((acc, detail) => (acc += detail.lecture), 0);
       const totalLab = listDetail.reduce<number>((acc, detail) => (acc += detail.lab), 0);
       const totalLearn = listDetail.reduce<number>((acc, detail) => (acc += detail.learn), 0);
 
-      doc.text(
-        totalCredit.toString(),
-        x +
-          schedule.colHeaderWidth +
-          schedule.colWidth * 18 +
-          schedule.colWidth / 4 +
-          (schedule.colWidth * 1 + schedule.colWidth / 2) / 2,
-        y + vAlignTextCenter(rowHeight, doc) + rowHeight * 12 + options.rowHeaderHeight,
-        {
-          align: 'center',
-        },
-      );
+      // doc.text(
+      //   totalCredit.toString(),
+      //   x +
+      //   schedule.colHeaderWidth +
+      //   schedule.colWidth * 14 +
+      //   schedule.colWidth / 4,
+      //   y + vAlignTextCenter(rowHeight, doc) + rowHeight * 12 + options.rowHeaderHeight,
+      //   {
+      //     align: 'center',
+      //   },
+      // );
       doc.text(
         totalLecture.toString(),
-        x +
-          schedule.colHeaderWidth +
-          schedule.colWidth * 18 +
-          schedule.colWidth / 2 +
-          (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+        x + schedule.colHeaderWidth + schedule.colWidth * 14 + schedule.colWidth * 0.25,
         y + vAlignTextCenter(rowHeight, doc) + rowHeight * 12 + options.rowHeaderHeight,
         {
           align: 'center',
@@ -490,10 +467,7 @@ export function drawDetailTable(
       );
       doc.text(
         totalLab.toString(),
-        x +
-          schedule.colHeaderWidth +
-          schedule.colWidth * 19 +
-          (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+        x + schedule.colHeaderWidth + schedule.colWidth * 14 + schedule.colWidth * 0.75,
         y + vAlignTextCenter(rowHeight, doc) + rowHeight * 12 + options.rowHeaderHeight,
         {
           align: 'center',
@@ -501,11 +475,7 @@ export function drawDetailTable(
       );
       doc.text(
         totalLearn.toString(),
-        x +
-          schedule.colHeaderWidth +
-          schedule.colWidth * 19 +
-          schedule.colWidth / 2 +
-          (schedule.colWidth * 2 + schedule.colWidth / 2) / 2,
+        x + schedule.colHeaderWidth + schedule.colWidth * 15 + schedule.colWidth * 0.25,
         y + vAlignTextCenter(rowHeight, doc) + rowHeight * 12 + options.rowHeaderHeight,
         {
           align: 'center',
@@ -614,22 +584,7 @@ export function drawSchedule(
     rowHeaderHeight: options.rowHeaderHeight,
     colWidth: colWidth,
     rowHeight: rowHeight,
-    assignSchedule: (
-      day: number,
-      period: number[],
-      subject: {
-        code: string;
-        name: string;
-        section: {
-          type: 'lecture' | 'lab';
-          no: number;
-          lab: number | null;
-          alt?: string;
-        };
-      },
-      overlap?: number,
-      offset?: number,
-    ) => {
+    assignSchedule: (data: ProcessedOverlapReturnType) => {
       const sourceSetting = {
         fontSize: doc.getFontSize(),
         lineWidth: doc.getLineWidth(),
@@ -640,42 +595,56 @@ export function drawSchedule(
 
       doc.setFillColor(200, 200, 255);
 
-      const cords = [
-        scheduleAnchor[0] + colWidth * (period[0] - 1),
-        scheduleAnchor[1] +
-          rowHeight * (day - 1) +
-          (overlap && offset ? (rowHeight * offset) / overlap : 0),
-        (period[1] - period[0] + 1) * colWidth,
-        (day * rowHeight) / (overlap ?? 1),
-      ];
+      const weekdayMap = {
+        mon: 1,
+        tue: 2,
+        wed: 3,
+        thu: 4,
+        fri: 5,
+        sat: 6,
+        sun: 7,
+      };
 
-      doc.rect(cords[0], cords[1], cords[2], cords[3], 'F');
-      doc.rect(cords[0], cords[1], cords[2], cords[3]);
+      data.forEach((v) => {
+        doc.setFillColor(200, 200, 255);
+        const maxOverlap =
+          Math.max(...data.filter((obj) => obj.weekday === v.weekday).map((obj) => obj._offset)) +
+          1;
 
-      if (!overlap) {
+        const cords = [
+          scheduleAnchor[0] + colWidth * (v.period - 1),
+          scheduleAnchor[1] +
+            rowHeight * (weekdayMap[v.weekday] - 1) +
+            (v._overlap ? (rowHeight * v._offset) / maxOverlap : 0),
+          v.size * colWidth,
+          v._overlap ? rowHeight / maxOverlap : rowHeight,
+        ];
+        doc.rect(cords[0], cords[1], cords[2], cords[3], 'F');
+        doc.rect(cords[0], cords[1], cords[2], cords[3]);
+        if (!v._overlap) {
+          doc.text(
+            `${v.section.subject.code}_SEC${v.section.no}${
+              v.section.type === 'lab' ? '_L' + v.section.subject.lab : ''
+            }`,
+            cords[0] + cords[2] / 2,
+            cords[1] + vAlignTextCenter(cords[3] / 2, doc) + cords[3] / 10,
+            {
+              align: 'center',
+            },
+          );
+        }
         doc.text(
-          `${subject.code}_SEC${subject.section.no}${
-            subject.section.type === 'lab' ? '_L' + subject.section.lab : ''
-          }`,
+          v.section.subject.name,
           cords[0] + cords[2] / 2,
-          cords[1] + vAlignTextCenter(cords[3] / 2, doc) + cords[3] / 10,
+          cords[1] +
+            (v._overlap ? 0 : cords[3] / 2) +
+            vAlignTextCenter(v._overlap ? cords[3] : cords[3] / 2, doc) -
+            (v._overlap ? 0 : cords[3] / 10),
           {
             align: 'center',
           },
         );
-      }
-
-      doc.text(
-        subject.name,
-        cords[0] + cords[2] / 2,
-        cords[1] +
-          (overlap ? 0 : cords[3] / 2) +
-          vAlignTextCenter(overlap ? cords[3] : cords[3] / 2, doc) -
-          (overlap ? 0 : cords[3] / 10),
-        {
-          align: 'center',
-        },
-      );
+      });
 
       doc.setFontSize(sourceSetting.fontSize);
       doc.setLineWidth(sourceSetting.lineWidth);
@@ -683,7 +652,7 @@ export function drawSchedule(
   };
 }
 
-export function openTemplate() {
+export function createPDF() {
   const doc = new jsPDF({
     orientation: 'landscape',
     unit: 'mm',
@@ -698,110 +667,5 @@ export function openTemplate() {
   doc.addFont('THSarabun.ttf', 'THSarabun', 'normal');
   doc.setFont('THSarabun');
 
-  const { width: pageWidth, height: pageHeight } = doc.internal.pageSize;
-
-  const pageGap = 3;
-
-  let schedule: ReturnType<typeof drawSchedule>;
-  let detail: ReturnType<typeof drawDetailTable>;
-
-  schedule = drawSchedule(doc, pageGap, 100, pageWidth - pageGap * 2, pageHeight - 100 - pageGap, {
-    period: 25,
-    fontSize: 12,
-    borderWidth: 0.3,
-    colHeaderWidth: 15,
-    rowHeaderHeight: 12,
-  });
-
-  detail = drawDetailTable(
-    doc,
-    pageGap,
-    pageGap,
-    pageWidth - pageGap * 2,
-    100 - pageGap,
-    {
-      period: 25,
-      fontSize: 12,
-      borderWidth: 0.3,
-      rowHeaderHeight: 14,
-    },
-    {
-      ...schedule,
-    },
-  );
-
-  detail.addDetail();
-  detail.renderDetail();
-
-  schedule.assignSchedule(
-    1,
-    [5, 8],
-    {
-      code: 'ENGCE101',
-      name: 'Computer Programming',
-      section: {
-        type: 'lecture',
-        no: 1,
-        lab: null,
-      },
-    },
-    2,
-    0,
-  );
-  schedule.assignSchedule(
-    1,
-    [3, 6],
-    {
-      code: 'ENGCE101',
-      name: 'Computer Programming',
-      section: {
-        type: 'lecture',
-        no: 1,
-        lab: null,
-      },
-    },
-    2,
-    1,
-  );
-
-  doc.addPage();
-
-  schedule = drawSchedule(doc, pageGap, 100, pageWidth - pageGap * 2, pageHeight - 100 - pageGap, {
-    period: 25,
-    fontSize: 12,
-    borderWidth: 0.3,
-    colHeaderWidth: 15,
-    rowHeaderHeight: 12,
-  });
-
-  detail = drawDetailTable(
-    doc,
-    pageGap,
-    pageGap,
-    pageWidth - pageGap * 2,
-    100 - pageGap,
-    {
-      period: 25,
-      fontSize: 12,
-      borderWidth: 0.3,
-      rowHeaderHeight: 14,
-    },
-    {
-      ...schedule,
-    },
-  );
-
-  detail.addDetail();
-  detail.renderDetail();
-
-  schedule.assignSchedule(1, [1, 4], {
-    code: 'ENGCE101',
-    name: 'Computer Programming',
-    section: {
-      type: 'lecture',
-      no: 1,
-      lab: null,
-    },
-  });
-  doc.output('dataurlnewwindow');
+  return doc;
 }

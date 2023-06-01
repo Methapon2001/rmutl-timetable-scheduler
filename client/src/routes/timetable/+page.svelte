@@ -6,9 +6,9 @@
   import { createPDF, drawDetailTable, drawSchedule } from '$lib/utils/pdf';
   import { createScheduler } from '$lib/api/scheduler';
   import { processOverlaps } from '$lib/utils/table';
-  import debounce from '$lib/utils/debounce';
+  // import debounce from '$lib/utils/debounce';
   import { checkOverlap } from './utils';
-  import { generate } from './generate';
+  // import { generate } from './generate';
   import toast from 'svelte-french-toast';
   import Table from './Table.svelte';
   import Modal from '$lib/components/Modal.svelte';
@@ -243,6 +243,95 @@
       });
     }
   }
+
+  function exportPDF() {
+    const doc = createPDF();
+
+    const { width: pageWidth, height: pageHeight } = doc.internal.pageSize;
+
+    const pageGap = 3;
+
+    let docSchedule: ReturnType<typeof drawSchedule>;
+    let docScheduleDetail: ReturnType<typeof drawDetailTable>;
+
+    const drawLayout = () => {
+      docSchedule = drawSchedule(
+        doc,
+        pageGap,
+        105,
+        pageWidth - pageGap * 2,
+        pageHeight - 105 - pageGap,
+        {
+          period: 25,
+          fontSize: 12,
+          borderWidth: 0.3,
+          colHeaderWidth: 15,
+          rowHeaderHeight: 12,
+        },
+      );
+
+      docScheduleDetail = drawDetailTable(
+        doc,
+        pageGap,
+        pageGap,
+        pageWidth - pageGap * 2,
+        105 - pageGap,
+        {
+          period: 25,
+          fontSize: 12,
+          borderWidth: 0.3,
+          rowHeaderHeight: 14,
+        },
+        docSchedule,
+      );
+    };
+
+    group.forEach((grp) => {
+      const filtered = scheduler.filter((sched) => sched.section.group?.id === grp.id);
+      const processed = processOverlaps(filtered);
+
+      drawLayout();
+
+      docSchedule.assignSchedule(processed);
+      docScheduleDetail.setHeader('test');
+      docScheduleDetail.addDetail();
+      docScheduleDetail.renderDetail();
+
+      doc.addPage();
+    });
+
+    instructor.forEach((inst) => {
+      const filtered = scheduler.filter(
+        (sched) => sched.section.instructor.findIndex((v) => v.id === inst.id) !== -1,
+      );
+      const processed = processOverlaps(filtered);
+
+      drawLayout();
+
+      docSchedule.assignSchedule(processed);
+      docScheduleDetail.addDetail();
+      docScheduleDetail.renderDetail();
+
+      doc.addPage();
+    });
+
+    room.forEach((r) => {
+      const filtered = scheduler.filter((v) => v.id === r.id);
+      const processed = processOverlaps(filtered);
+
+      drawLayout();
+
+      docSchedule.assignSchedule(processed);
+      docScheduleDetail.addDetail();
+      docScheduleDetail.renderDetail();
+      doc.addPage();
+    });
+    doc.deletePage(doc.getNumberOfPages());
+    doc.output('dataurlnewwindow');
+  }
+
+  let showState = false;
+
   let searchText = '';
 </script>
 
@@ -303,7 +392,7 @@
         {#if data.section.total === 0}
           <div class="p-8 text-center">
             <h1 class="mb-4 text-5xl font-extrabold">No Data</h1>
-            <h2 class="text-secondary text-3xl">
+            <h2 class="text-3xl text-secondary">
               No section created.<br />Must have section data in order for timetable to show.
             </h2>
           </div>
@@ -340,7 +429,7 @@
     </div>
   </div>
   <div>
-    <div class="section-selector bg-light border-l">
+    <div class="section-selector border-l bg-light">
       <div class="w-full p-4">
         <input type="text" class="input bg-white shadow" bind:value="{searchText}" />
       </div>
@@ -358,12 +447,12 @@
             <div class="mb-2 space-y-2 text-sm">
               <div class="flex gap-2">
                 <span
-                  class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
+                  class="inline-block flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
                 >
                   {section.subject.code}
                 </span>
                 <span
-                  class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
+                  class="inline-block flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
                 >
                   {section.subject.name}
                 </span>
@@ -371,12 +460,12 @@
 
               <div class="flex gap-2">
                 <span
-                  class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
+                  class="inline-block flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
                 >
                   SEC {section.no}
                 </span>
                 <span
-                  class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
+                  class="inline-block flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
                 >
                   {section.group?.name ?? 'Any'}
                 </span>
@@ -474,7 +563,7 @@
   </div>
   {#if state.section}
     <div
-      class="border-primary bg-light flex flex justify-between gap-2 overflow-hidden rounded border font-semibold shadow"
+      class="flex flex justify-between gap-2 overflow-hidden rounded border border-primary bg-light font-semibold shadow"
     >
       <span class="bg-primary px-3 py-2 font-semibold text-white">Selected</span>
       <span class="truncate px-4 py-2">
@@ -490,7 +579,7 @@
   {/if}
 
   <div class="alloc-control">
-    <div class="bg-primary grid grid-cols-6 rounded font-semibold text-white">
+    <div class="grid grid-cols-6 rounded bg-primary font-semibold text-white">
       <div class="col-span-5 flex items-center px-4 py-2">
         <input
           class="w-full"
