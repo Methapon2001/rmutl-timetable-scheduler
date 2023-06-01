@@ -280,6 +280,9 @@ export async function requestSection(
         where: sectionWhere,
         orderBy: [
           {
+            createdAt: "asc",
+          },
+          {
             subject: {
               name: "asc",
             },
