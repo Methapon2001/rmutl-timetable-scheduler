@@ -77,7 +77,7 @@
       <span class="font-semibold">Select Instructor :</span>
       <Select
         options="{instructorOptions}"
-        placeholder="Select Group"
+        placeholder="Select Instructor"
         bind:value="{instructorState}"
       />
     </div>
