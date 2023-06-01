@@ -106,6 +106,16 @@
   let showState = false;
   let showData: ComponentProps<PlanDetail>['planData'];
 
+  const subjectMap = data.plan.data.reduce<
+    Record<string, Omit<API.Subject, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>>
+  >((acc, curr) => {
+    curr.detail.forEach((det) => {
+      if (!acc[`${det.subject.id}`]) acc[`${det.subject.id}`] = det.subject;
+    });
+
+    return acc;
+  }, {});
+
   function showPlanDetail(plan: {
     id: string;
     name: string;
@@ -186,7 +196,7 @@
 <Modal bind:open="{showState}">
   <div id="show-modal" class="p-4">
     <h1 class="mb-4 block text-center text-2xl font-bold">Plan Detail</h1>
-    <PlanDetail planData="{showData}" />
+    <PlanDetail planData="{showData}" subjects="{subjectMap}" />
   </div>
 </Modal>
 
@@ -214,7 +224,7 @@
               detail: plan.detail.map((d) => ({ ...d, subjectId: d.subject.id })),
               courseId: plan.course.id,
             })}"
-          class="hover:bg-light"
+          class="hover:bg-light cursor-pointer"
         >
           <td class="text-center">{plan.name}</td>
           <td class="fit-width whitespace-nowrap text-center text-sm">
