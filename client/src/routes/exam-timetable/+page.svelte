@@ -321,10 +321,10 @@
                 .includes(searchText.toLocaleLowerCase()) || sec.subject.code
                 .toLocaleLowerCase()
                 .includes(searchText.toLocaleLowerCase()) || sec.group?.name
-                .toLocaleLowerCase()s
-                .includes(searchText.toLocaleLowerCase())) || obj.instructor.ome( (inst) => inst.name
                 .toLocaleLowerCase()
-                .includes(searchText.toLocaleLowerCase()), )) as exam}
+                .includes(searchText.toLocaleLowerCase())) || obj.instructor.some((inst) => inst.name
+              .toLocaleLowerCase()
+              .includes(searchText.toLocaleLowerCase()))) as exam}
         <div class="w-full space-y-2 border-b p-4">
           <div class="mb-2 space-y-2 text-sm">
             <div class="flex gap-2">
