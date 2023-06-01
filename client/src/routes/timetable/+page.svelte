@@ -243,6 +243,7 @@
       });
     }
   }
+  let searchText = '';
 </script>
 
 <svelte:window on:keydown="{handleKeydown}" />
@@ -340,7 +341,18 @@
   </div>
   <div>
     <div class="section-selector bg-light border-l">
-      {#each data.section.data as section}
+      <div class="w-full p-4">
+        <input type="text" class="input bg-white shadow" bind:value="{searchText}" />
+      </div>
+      {#each data.section.data.filter((obj) => obj.subject.code
+            .toLocaleLowerCase()
+            .includes(searchText.toLocaleLowerCase()) || obj.group?.name
+            .toLocaleLowerCase()
+            .includes(searchText.toLocaleLowerCase()) || obj.subject.name
+            .toLocaleLowerCase()
+            .includes(searchText.toLocaleLowerCase()) || obj.instructor.some((ins) => ins.name
+              .toLocaleLowerCase()
+              .includes(searchText.toLocaleLowerCase()))) as section}
         {#if section.parent === null}
           <div class="w-full space-y-2 border-b p-4">
             <div class="mb-2 space-y-2 text-sm">

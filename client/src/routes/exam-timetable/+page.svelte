@@ -204,6 +204,8 @@
       });
     }
   }
+
+  let searchText = '';
 </script>
 
 <svelte:window on:keydown="{handleKeydown}" />
@@ -311,7 +313,18 @@
   </div>
   <div>
     <div class="section-selector bg-light border-l">
-      {#each data.exam.data as exam}
+      <div class="w-full p-4">
+        <input type="text" class="input bg-white shadow" bind:value="{searchText}" />
+      </div>
+      {#each data.exam.data.filter((obj) => obj.section.some((sec) => sec.subject.name
+                .toLocaleLowerCase()
+                .includes(searchText.toLocaleLowerCase()) || sec.subject.code
+                .toLocaleLowerCase()
+                .includes(searchText.toLocaleLowerCase()) || sec.group?.name
+                .toLocaleLowerCase()s
+                .includes(searchText.toLocaleLowerCase())) || obj.instructor.ome( (inst) => inst.name
+                .toLocaleLowerCase()
+                .includes(searchText.toLocaleLowerCase()), )) as exam}
         <div class="w-full space-y-2 border-b p-4">
           <div class="mb-2 space-y-2 text-sm">
             <div class="flex gap-2">
@@ -385,7 +398,7 @@
       <span class="px-4 py-2">
         SEC
         {#each state.exam.section as sec}
-          _{sec.no ?? ''}
+          {sec.no ?? ''}
         {/each}
       </span>
     </div>
