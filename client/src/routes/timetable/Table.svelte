@@ -1,6 +1,7 @@
 <script lang="ts">
   import { invalidate } from '$app/navigation';
   import { deleteScheduler } from '$lib/api/scheduler';
+  import { processOverlaps } from '$lib/utils/table';
   import { createEventDispatcher } from 'svelte';
 
   type WeekdayShort = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
@@ -78,57 +79,6 @@
 
   $: processedData = processOverlaps(localData);
 
-  function processOverlaps(arr: typeof data) {
-    const processed = arr.map((current) => {
-      return {
-        ...current,
-        _overlap: arr.some(
-          (item) =>
-            item != current &&
-            item.weekday == current.weekday &&
-            item.period + item.size > current.period &&
-            item.period < current.period + current.size,
-        ),
-        _offset: -1,
-      };
-    });
-
-    for (let i = 0; i < processed.length; i++) {
-      if (processed[i]._overlap == false || processed[i]._offset !== -1) continue;
-
-      const offsetList: number[] = [];
-
-      const mutualOverlap = processed.filter(
-        (item) =>
-          processed[i].id != item.id &&
-          item.weekday == processed[i].weekday &&
-          processed[i].period < item.period + item.size &&
-          processed[i].period + processed[i].size > item.period,
-      );
-
-      mutualOverlap.forEach((item) => {
-        if (item._offset !== -1) offsetList.push(item._offset);
-      });
-
-      let j = 0;
-
-      while (offsetList.includes(j)) j++;
-
-      processed[i]._offset = j;
-
-      for (let k = 0; k < processed.length; k++) {
-        if (processed[i].weekday != processed[k].weekday || i == k) continue;
-
-        if (processed[i].section.subject.id == processed[k].section.subject.id) {
-          processed[k]._overlap = true;
-          processed[k]._offset = j;
-        }
-      }
-    }
-
-    return processed;
-  }
-
   function handleClick(weekday: string, period: number) {
     if (!selectable || !visualize) return;
 
@@ -177,7 +127,10 @@
   {/if}
 
   {#each processedData as item}
-    {@const overlapMaxOffset = Math.max(...processedData.map((obj) => obj._offset)) + 1}
+    {@const overlapMaxOffset =
+      Math.max(
+        ...processedData.filter((obj) => obj.weekday === item.weekday).map((obj) => obj._offset),
+      ) + 1}
     <div
       class="pointer-events-auto absolute z-10 w-full border bg-blue-600 text-xs font-bold text-white"
       style:grid-row="{weekdayMapRow[item.weekday]}"
@@ -199,28 +152,29 @@
             {/if}
             <p class="block">{item.section.subject.name}</p>
           </div>
-
-          <div
-            class="pointer-events-none absolute hidden h-full w-full items-center justify-center bg-black/30 group-hover:flex"
-          >
-            <button
-              class="pointer-events-auto h-8 rounded bg-red-600 px-2 py-1 text-white hover:bg-red-500"
-              on:click="{async () => {
-                await deleteScheduler({ id: item.id });
-                await invalidate('data:scheduler');
-
-                state = {
-                  period: item.period,
-                  size: item.size,
-                  weekday: item.weekday,
-                  section: item.section,
-                  selected: false,
-                };
-              }}"
+          {#if selectable}
+            <div
+              class="pointer-events-none absolute hidden h-full w-full items-center justify-center bg-black/30 group-hover:flex"
             >
-              Delete
-            </button>
-          </div>
+              <button
+                class="pointer-events-auto h-8 rounded bg-red-600 px-2 py-1 text-white hover:bg-red-500"
+                on:click="{async () => {
+                  await deleteScheduler({ id: item.id });
+                  await invalidate('data:scheduler');
+
+                  state = {
+                    period: item.period,
+                    size: item.size,
+                    weekday: item.weekday,
+                    section: item.section,
+                    selected: false,
+                  };
+                }}"
+              >
+                Delete
+              </button>
+            </div>
+          {/if}
         </div>
       {:else}
         <div class="group relative flex h-full w-full items-center text-center text-xs">
