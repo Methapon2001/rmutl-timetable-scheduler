@@ -125,7 +125,7 @@
     <tbody>
       {#if data.subject.total == 0}
         <tr>
-          <td class="text-center text-secondary" colspan="10">No records found.</td>
+          <td class="text-secondary text-center" colspan="10">No records found.</td>
         </tr>
       {/if}
       {#each data.subject.data as subject (subject.id)}
@@ -140,12 +140,12 @@
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(subject.createdAt).toLocaleDateString()}</p>
             <p class="text-dark">{new Date(subject.createdAt).toLocaleTimeString()}</p>
-            <p class="capitalize text-secondary">{subject.createdBy.username}</p>
+            <p class="text-secondary capitalize">{subject.createdBy.username}</p>
           </td>
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(subject.updatedAt).toLocaleDateString()}</p>
             <p class="text-dark">{new Date(subject.updatedAt).toLocaleTimeString()}</p>
-            <p class="capitalize text-secondary">{subject.updatedBy.username}</p>
+            <p class="text-secondary capitalize">{subject.updatedBy.username}</p>
           </td>
           <td class="fit-width text-center">
             <div class="space-x-4 whitespace-nowrap">
