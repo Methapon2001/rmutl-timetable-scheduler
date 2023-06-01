@@ -45,29 +45,38 @@
     };
   });
 
-  let instructor = data.section.data.reduce<
-    Omit<API.Instructor, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>[] // eslint-disable-line no-undef
-  >((acc, curr) => {
-    return acc
-      .concat(curr.instructor)
-      .filter((a, idx, arr) => arr.findIndex((b) => b.id === a.id) === idx);
-  }, []);
+  let instructor = Object.values(
+    data.section.data.reduce<
+      Record<string, Omit<API.Instructor, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>> // eslint-disable-line no-undef
+    >((acc, curr) => {
+      curr.instructor.forEach((inst) => {
+        if (!acc[`${inst.id}`]) acc[`${inst.id}`] = inst;
+      });
+      return acc;
+    }, {}),
+  );
 
-  let room = data.section.data.reduce<
-    Omit<API.Room, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>[] // eslint-disable-line no-undef
-  >((acc, curr) => {
-    return acc
-      .concat(curr.room ?? [])
-      .filter((a, idx, arr) => arr.findIndex((b) => b.id === a.id) === idx);
-  }, []);
+  let room = Object.values(
+    data.section.data.reduce<
+      Record<string, Omit<API.Room, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>> // eslint-disable-line no-undef
+    >((acc, curr) => {
+      if (curr.room && !acc[`${curr.room.id}`]) {
+        acc[`${curr.room.id}`] = curr.room;
+      }
+      return acc;
+    }, {}),
+  );
 
-  let group = data.section.data.reduce<
-    Omit<API.Group, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>[] // eslint-disable-line no-undef
-  >((acc, curr) => {
-    return acc
-      .concat(curr.group ?? [])
-      .filter((a, idx, arr) => arr.findIndex((b) => b.id === a.id) === idx);
-  }, []);
+  let group = Object.values(
+    data.section.data.reduce<
+      Record<string, Omit<API.Group, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>> // eslint-disable-line no-undef
+    >((acc, curr) => {
+      if (curr.group && !acc[`${curr.group.id}`]) {
+        acc[`${curr.group.id}`] = curr.group;
+      }
+      return acc;
+    }, {}),
+  );
 
   let state: ComponentProps<Table>['state'] = {
     selected: false,
