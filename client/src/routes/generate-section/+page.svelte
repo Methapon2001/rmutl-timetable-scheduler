@@ -1,7 +1,6 @@
 <script lang="ts">
   import type { PageData } from './$types';
   import { type ZodError, z } from 'zod';
-  import { getZodErrorMessage } from '$lib/utils/zod';
   import Select from '$lib/components/Select.svelte';
   import { createSection } from '$lib/api/section';
   import toast from 'svelte-french-toast';
@@ -70,13 +69,14 @@
     value: room.id,
   }));
 
+  // eslint-disable-next-line no-undef
   let groupMap = data.group.data.reduce<{ [id: string]: API.Group }>((acc, curr) => {
     acc[curr.id] = curr;
     return acc;
   }, {});
 
   let subjectMap = data.group.data.reduce<{
-    [id: string]: API.Group['plan']['detail'][number]['subject'];
+    [id: string]: API.Group['plan']['detail'][number]['subject']; //eslint-disable-line no-undef
   }>((acc, curr) => {
     curr.plan.detail.forEach((v) => {
       acc[v.subject.id] = v.subject;
@@ -299,9 +299,7 @@
               >
               <section id="input-room" class="grid grid-cols-6">
                 <div class="col-span-2 flex items-center">
-                  <label for="room" class="font-semibold">
-                    Room 
-                  </label>
+                  <label for="room" class="font-semibold"> Room </label>
                 </div>
                 <div class="col-span-4">
                   <Select
@@ -315,9 +313,7 @@
               </section>
               <section id="input-instructor" class="grid grid-cols-6">
                 <div class="col-span-2 flex items-center">
-                  <label for="instructor" class="font-semibold">
-                    Instructor 
-                  </label>
+                  <label for="instructor" class="font-semibold"> Instructor </label>
                 </div>
                 <div class="col-span-4">
                   <Select
@@ -334,8 +330,8 @@
           {/each}
         {/each}
       {/each}
-      
+
       <button type="submit" class="button" on:click="{() => handleSubmit()}">Create</button>
-    </article> 
+    </article>
   {/if}
 </div>

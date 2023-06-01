@@ -19,7 +19,7 @@
   let instructorState: string;
 
   const instructorMap = data.scheduler.data.reduce<
-    Record<string, Omit<API.Instructor, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>>
+    Record<string, Omit<API.Instructor, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>> // eslint-disable-line no-undef
   >((acc, curr) => {
     curr.section.instructor.forEach((inst) => {
       if (!acc[`${inst.id}`]) acc[`${inst.id}`] = inst;
@@ -34,7 +34,7 @@
   }));
 
   const groupMap = data.scheduler.data.reduce<
-    Record<string, Omit<API.Group, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>>
+    Record<string, Omit<API.Group, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>> // eslint-disable-line no-undef
   >((acc, curr) => {
     if (curr.section.group && !acc[`${curr.section.group.id}`]) {
       acc[`${curr.section.group.id}`] = curr.section.group;

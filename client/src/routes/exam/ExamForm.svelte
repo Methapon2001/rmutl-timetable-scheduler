@@ -1,7 +1,6 @@
 <script lang="ts">
   import { type ZodError, z } from 'zod';
   import { invalidate } from '$app/navigation';
-  import { blurOnEscape } from '$lib/utils/directives';
   import { getZodErrorMessage } from '$lib/utils/zod';
   import { createExam, editExam } from '$lib/api/exam';
   import { onMount } from 'svelte';
@@ -23,7 +22,7 @@
     label: string;
     value: string;
     disabled?: boolean;
-    detail: API.Section; // eslint-disale-line no-undef
+    detail: API.Section; // eslint-disable-line no-undef
   }[];
 
   export let instructorOptions: {

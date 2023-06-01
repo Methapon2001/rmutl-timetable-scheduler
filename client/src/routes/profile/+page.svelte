@@ -57,17 +57,19 @@
       return;
     }
 
-    const ret = await editUser({ id: data.session?.user.id!, ...result.data }).catch(
-      (r: Response) => console.error(r),
-    );
+    if (data.session?.user.id) {
+      const ret = await editUser({ id: data.session.user.id, ...result.data }).catch(
+        (r: Response) => console.error(r),
+      );
 
-    if (ret) {
-      form.data = {
-        password: '',
-        confirmPassword: '',
-      };
+      if (ret) {
+        form.data = {
+          password: '',
+          confirmPassword: '',
+        };
 
-      await invalidateAll();
+        await invalidateAll();
+      }
     }
   }
 </script>

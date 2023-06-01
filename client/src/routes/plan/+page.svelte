@@ -3,7 +3,7 @@
   import { page } from '$app/stores';
   import { invalidate } from '$app/navigation';
   import { blurOnEscape } from '$lib/utils/directives';
-  import { deletePlan, editPlan } from '$lib/api/plan';
+  import { deletePlan } from '$lib/api/plan';
   import debounce from '$lib/utils/debounce';
   import Modal from '$lib/components/Modal.svelte';
   import Pagination from '$lib/components/Pagination.svelte';
@@ -107,7 +107,7 @@
   let showData: ComponentProps<PlanDetail>['planData'];
 
   const subjectMap = data.plan.data.reduce<
-    Record<string, Omit<API.Subject, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>>
+    Record<string, Omit<API.Subject, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>> // eslint-disable-line no-undef
   >((acc, curr) => {
     curr.detail.forEach((det) => {
       if (!acc[`${det.subject.id}`]) acc[`${det.subject.id}`] = det.subject;
@@ -213,7 +213,7 @@
     <tbody>
       {#if data.plan.total == 0}
         <tr>
-          <td class="text-secondary text-center" colspan="4">No records found.</td>
+          <td class="text-center text-secondary" colspan="4">No records found.</td>
         </tr>
       {/if}
       {#each data.plan.data as plan (plan.id)}
@@ -224,18 +224,18 @@
               detail: plan.detail.map((d) => ({ ...d, subjectId: d.subject.id })),
               courseId: plan.course.id,
             })}"
-          class="hover:bg-light cursor-pointer"
+          class="cursor-pointer hover:bg-light"
         >
           <td class="text-center">{plan.name}</td>
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(plan.createdAt).toLocaleDateString()}</p>
             <p class="text-dark">{new Date(plan.createdAt).toLocaleTimeString()}</p>
-            <p class="text-secondary capitalize">{plan.createdBy.username}</p>
+            <p class="capitalize text-secondary">{plan.createdBy.username}</p>
           </td>
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(plan.updatedAt).toLocaleDateString()}</p>
             <p class="text-dark">{new Date(plan.updatedAt).toLocaleTimeString()}</p>
-            <p class="text-secondary capitalize">{plan.updatedBy.username}</p>
+            <p class="capitalize text-secondary">{plan.updatedBy.username}</p>
           </td>
           <td class="fit-width text-center">
             <div class="space-x-4 whitespace-nowrap">

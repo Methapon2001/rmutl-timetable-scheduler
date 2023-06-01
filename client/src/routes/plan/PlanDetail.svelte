@@ -12,7 +12,7 @@
 
   export let subjects: Record<
     string,
-    Omit<API.Subject, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>
+    Omit<API.Subject, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'> // eslint-disable-line no-undef
   >;
 </script>
 

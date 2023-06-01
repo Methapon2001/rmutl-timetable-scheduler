@@ -142,7 +142,7 @@
     <tbody>
       {#if data.group.total == 0}
         <tr>
-          <td class="text-secondary text-center" colspan="7">No records found.</td>
+          <td class="text-center text-secondary" colspan="7">No records found.</td>
         </tr>
       {/if}
       {#each data.group.data as group (group.id)}
@@ -153,17 +153,17 @@
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(group.createdAt).toLocaleDateString()}</p>
             <p class="text-dark">{new Date(group.createdAt).toLocaleTimeString()}</p>
-            <p class="text-secondary capitalize">{group.createdBy.username}</p>
+            <p class="capitalize text-secondary">{group.createdBy.username}</p>
           </td>
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(group.updatedAt).toLocaleDateString()}</p>
             <p class="text-dark">{new Date(group.updatedAt).toLocaleTimeString()}</p>
-            <p class="text-secondary capitalize">{group.updatedBy.username}</p>
+            <p class="capitalize text-secondary">{group.updatedBy.username}</p>
           </td>
           <td class="fit-width text-center">
             <div class="space-x-4 whitespace-nowrap">
               <button
-                class="action-button disabled:text-secondary text-blue-600"
+                class="action-button text-blue-600 disabled:text-secondary"
                 on:click="{() =>
                   showEdit({ ...group, courseId: group.course.id, planId: group.plan.id })}"
                 disabled="{data.session?.user.id != group.createdBy.id &&
@@ -172,7 +172,7 @@
                 Edit
               </button>
               <button
-                class="action-button disabled:text-secondary text-red-600"
+                class="action-button text-red-600 disabled:text-secondary"
                 on:click="{() => handleDelete({ id: group.id })}"
                 disabled="{data.session?.user.id != group.createdBy.id &&
                   data.session?.user.role != 'admin'}"

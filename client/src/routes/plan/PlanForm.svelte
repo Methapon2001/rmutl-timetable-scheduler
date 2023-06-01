@@ -29,7 +29,7 @@
     label: string;
     value: string;
     disabled?: boolean;
-    detail: API.Course;
+    detail: API.Course; // eslint-disable-line no-undef
   }[];
 
   export let subjectOptions: {

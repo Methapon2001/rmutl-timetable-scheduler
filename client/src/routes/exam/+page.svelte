@@ -172,7 +172,7 @@
     <tbody>
       {#if data.exam.total == 0}
         <tr>
-          <td class="text-secondary text-center" colspan="6">No records found.</td>
+          <td class="text-center text-secondary" colspan="6">No records found.</td>
         </tr>
       {/if}
       {#each data.exam.data as exam (exam.id)}
@@ -190,7 +190,7 @@
           <td class="text-center">
             {#each exam.instructor as inst}
               <p>
-                <span class="bg-light-hover whitespace-nowrap rounded px-2">
+                <span class="whitespace-nowrap rounded bg-light-hover px-2">
                   {inst.name}
                 </span>
               </p>
@@ -200,12 +200,12 @@
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(exam.createdAt).toLocaleDateString()}</p>
             <p class="text-dark">{new Date(exam.createdAt).toLocaleTimeString()}</p>
-            <p class="text-secondary capitalize">{exam.createdBy.username}</p>
+            <p class="capitalize text-secondary">{exam.createdBy.username}</p>
           </td>
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(exam.updatedAt).toLocaleDateString()}</p>
             <p class="text-dark">{new Date(exam.updatedAt).toLocaleTimeString()}</p>
-            <p class="text-secondary capitalize">{exam.updatedBy.username}</p>
+            <p class="capitalize text-secondary">{exam.updatedBy.username}</p>
           </td>
           <td class="fit-width text-center">
             <div class="space-x-4 whitespace-nowrap">

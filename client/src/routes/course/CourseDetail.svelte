@@ -1,7 +1,9 @@
 <script lang="ts">
-  export let courseData: API.Course;
+  export let courseData: API.Course; // eslint-disable-line no-undef
 
-  courseData.detail.sort((a, b) => a.subject.code.localeCompare(b.subject.code) || a.type.localeCompare(b.type));
+  courseData.detail.sort(
+    (a, b) => a.subject.code.localeCompare(b.subject.code) || a.type.localeCompare(b.type),
+  );
 </script>
 
 <div>

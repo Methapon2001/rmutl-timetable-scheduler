@@ -75,8 +75,9 @@
   }
 
   let showState = false;
-  let showData: API.Course;
+  let showData: API.Course; // eslint-disable-line no-undef
 
+  // eslint-disable-next-line no-undef
   function showCourseDetail(course: API.Course) {
     showState = true;
     showData = {
@@ -163,24 +164,24 @@
     <tbody>
       {#if data.course.total == 0}
         <tr>
-          <td class="text-secondary text-center" colspan="4">No records found.</td>
+          <td class="text-center text-secondary" colspan="4">No records found.</td>
         </tr>
       {/if}
       {#each data.course.data as course (course.id)}
         <tr
           on:click|stopPropagation="{() => showCourseDetail(course)}"
-          class="hover:bg-light cursor-pointer"
+          class="cursor-pointer hover:bg-light"
         >
           <td class="text-center">{course.name}</td>
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(course.createdAt).toLocaleDateString()}</p>
             <p class="text-dark">{new Date(course.createdAt).toLocaleTimeString()}</p>
-            <p class="text-secondary capitalize">{course.createdBy.username}</p>
+            <p class="capitalize text-secondary">{course.createdBy.username}</p>
           </td>
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(course.updatedAt).toLocaleDateString()}</p>
             <p class="text-dark">{new Date(course.updatedAt).toLocaleTimeString()}</p>
-            <p class="text-secondary capitalize">{course.updatedBy.username}</p>
+            <p class="capitalize text-secondary">{course.updatedBy.username}</p>
           </td>
           <td class="fit-width text-center">
             <div class="space-x-4 whitespace-nowrap">
