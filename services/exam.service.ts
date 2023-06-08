@@ -25,6 +25,7 @@ const subjectSelect: Prisma.SubjectSelect = {
   credit: true,
   lecture: true,
   lab: true,
+  learn: true,
   exam: true,
 };
 
