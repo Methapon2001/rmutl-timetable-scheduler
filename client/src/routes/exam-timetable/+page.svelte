@@ -2,11 +2,14 @@
   import type { PageData } from './$types';
   import { PUBLIC_API_WS } from '$env/static/public';
   import { onMount, type ComponentProps, onDestroy } from 'svelte';
+  import { createPDF, drawScheduleExam, drawExamDetailTable } from '$lib/utils/pdf';
   import { createSchedulerExam } from '$lib/api/scheduler-exam';
   import { invalidate } from '$app/navigation';
   import toast from 'svelte-french-toast';
+  import Modal from '$lib/components/Modal.svelte';
   import { checkOverlap } from './utils';
   import Table from './Table.svelte';
+  import { generate } from './generate';
 
   export let data: PageData;
 
@@ -136,17 +139,10 @@
   }
 
   async function handleKeydown(e: KeyboardEvent) {
-    let confirmOverlap = false;
-
     switch (e.key) {
       case 'Enter':
         if (!state.exam) return;
-        if (state.isOverflow) return alert('Overflowed!!! Not Allowed.');
-        if (state.isOverlap && !state.allowOverlap)
-          return alert('Overlap Detected!!! Not Allowed.');
-        if (state.isOverlap)
-          confirmOverlap = confirm('Overlap Detected!!! Do you want to continue?');
-        if (state.isOverlap && !confirmOverlap) return;
+        if (state.isOverlap) return alert('Overlap Detected!!! Not Allowed.');
 
         await createSchedulerExam({
           weekday: state.weekday,
@@ -154,8 +150,6 @@
           end: state.period + state.size - 1,
           examId: state.exam.id,
         });
-
-        // await invalidate('data:scheduler');
 
         resetState();
         break;
@@ -167,6 +161,8 @@
 
   // eslint-disable-next-line no-undef
   function handleSelectExam(exam: API.SchedulerExam['exam']) {
+    if (schedulerExam.findIndex((schedule) => schedule.exam.id === exam.id) !== -1) return;
+
     if (!exam.instructor && !exam.section.filter(() => group != null)) {
       toast.error('Section must assign at least one instructor or one group.', {
         duration: 7500,
@@ -204,6 +200,100 @@
       });
     }
   }
+
+  function exportPDF() {
+    const doc = createPDF();
+
+    const { width: pageWidth, height: pageHeight } = doc.internal.pageSize;
+
+    const pageGap = 3;
+
+    let docScheduleExam: ReturnType<typeof drawScheduleExam>;
+    let docScheduleExamDetail: ReturnType<typeof drawExamDetailTable>;
+
+    const drawLayout = () => {
+      docScheduleExam = drawScheduleExam(
+        doc,
+        pageGap,
+        105,
+        pageWidth - pageGap * 2,
+        pageHeight - 105 - pageGap,
+        {
+          period: 25,
+          fontSize: 12,
+          borderWidth: 0.3,
+          colHeaderWidth: 15,
+          rowHeaderHeight: 12,
+        },
+      );
+
+      docScheduleExamDetail = drawExamDetailTable(
+        doc,
+        pageGap,
+        pageGap,
+        pageWidth - pageGap * 2,
+        105 - pageGap,
+        {
+          period: 25,
+          fontSize: 12,
+          borderWidth: 0.3,
+          rowHeaderHeight: 14,
+        },
+        docScheduleExam,
+      );
+    };
+
+    group.forEach((grp) => {
+      const filtered = schedulerExam.filter(
+        (sched) => sched.exam.section.findIndex((sec) => sec.group?.id === grp.id) !== -1,
+      );
+
+      if (filtered.length === 0) return;
+
+      drawLayout();
+
+      docScheduleExam.assignSchedule(filtered);
+      docScheduleExamDetail.setHeader(grp.name);
+      docScheduleExamDetail.addDetail(filtered);
+
+      doc.addPage();
+    });
+
+    instructor.forEach((inst) => {
+      const filtered = schedulerExam.filter(
+        (sched) => sched.exam.instructor.findIndex((ins) => ins.id === inst.id) !== -1,
+      );
+
+      if (filtered.length === 0) return;
+
+      drawLayout();
+
+      docScheduleExam.assignSchedule(filtered);
+      docScheduleExamDetail.setHeader(inst.name);
+      docScheduleExamDetail.addDetail(filtered);
+
+      doc.addPage();
+    });
+
+    room.forEach((r) => {
+      const filtered = schedulerExam.filter((sched) => sched.exam.room?.id === r.id);
+
+      if (filtered.length === 0) return;
+
+      drawLayout();
+
+      docScheduleExam.assignSchedule(filtered);
+      docScheduleExamDetail.setHeader(r.name);
+      docScheduleExamDetail.addDetail(filtered);
+
+      doc.addPage();
+    });
+    doc.deletePage(doc.getNumberOfPages());
+    doc.output('dataurlnewwindow');
+  }
+
+  let showState = false;
+  let maxPerDay = 2;
 
   let searchText = '';
 </script>
@@ -265,7 +355,7 @@
         {#if data.exam.total === 0}
           <div class="p-8 text-center">
             <h1 class="mb-4 text-5xl font-extrabold">No Data</h1>
-            <h2 class="text-3xl text-secondary">
+            <h2 class="text-secondary text-3xl">
               No section created.<br />Must have section data in order for timetable to show.
             </h2>
           </div>
@@ -283,7 +373,7 @@
                 group="{g}"
               />
             </div>
-            <div class="mb-3 flex w-full justify-end">
+            <!-- <div class="mb-3 flex w-full justify-end">
               <button
                 class="button mx-2 flex h-12 w-48 items-center justify-center rounded"
                 on:click="{async () => {
@@ -292,7 +382,7 @@
                   resetState();
                 }}">Generate</button
               >
-            </div>
+            </div> -->
           {/each}
         {:else}
           {#each instructor as i (i.id)}
@@ -312,9 +402,14 @@
     </div>
   </div>
   <div>
-    <div class="section-selector border-l bg-light">
+    <div class="section-selector bg-light border-l">
       <div class="w-full p-4">
-        <input type="text" class="input bg-white shadow" bind:value="{searchText}" />
+        <input
+          type="text"
+          class="input bg-white shadow"
+          placeholder="Search"
+          bind:value="{searchText}"
+        />
       </div>
       {#each data.exam.data.filter((obj) => obj.section.some((sec) => sec.subject.name
                 .toLocaleLowerCase()
@@ -329,12 +424,12 @@
           <div class="mb-2 space-y-2 text-sm">
             <div class="flex gap-2">
               <span
-                class="inline-block flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
+                class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
               >
                 {exam.section[0]?.subject.code ?? ''}
               </span>
               <span
-                class="inline-block flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
+                class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
               >
                 {exam.section[0]?.subject.name ?? ''}
               </span>
@@ -342,7 +437,7 @@
             <div class="flex gap-2">
               {#each exam.section as sec}
                 <span
-                  class="inline-block flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
+                  class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
                 >
                   SEC {sec.no}
                 </span>
@@ -375,7 +470,7 @@
   </div>
 </div>
 <div class="flex h-16 items-center justify-between overflow-hidden border p-4">
-  <div class="pov-switch pr-4">
+  <div class="pov-switch whitespace-nowrap pr-4">
     <button
       on:click="{() => {
         pov = pov === 'group' ? 'instructor' : 'group';
@@ -385,10 +480,25 @@
     >
       View: <span class="capitalize">{pov}</span>
     </button>
+    <button
+      class="rounded border bg-slate-900 px-8 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
+      on:click="{() => {
+        showState = true;
+        resetState();
+      }}"
+    >
+      Generate
+    </button>
+    <button
+      class="rounded border bg-slate-900 px-8 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
+      on:click="{() => exportPDF()}"
+    >
+      Export PDF
+    </button>
   </div>
   {#if state.exam}
     <div
-      class="flex flex justify-between gap-2 overflow-hidden rounded border border-primary bg-light font-semibold shadow"
+      class="border-primary bg-light flex flex justify-between gap-2 overflow-hidden rounded border font-semibold shadow"
     >
       <span class="bg-primary px-3 py-2 font-semibold text-white">Selected</span>
       <span class="truncate px-4 py-2">
@@ -404,6 +514,28 @@
     </div>
   {/if}
 </div>
+
+<Modal bind:open="{showState}">
+  <div id="show-modal" class="my-8 space-y-4 p-4">
+    <h1 class="text-center text-2xl font-bold">Auto Generate</h1>
+
+    <section id="input-group" class="grid grid-cols-6">
+      <div class="col-span-2 flex items-center">
+        <label for="" class="font-semibold">Max Exam per day </label>
+      </div>
+      <div class="col-span-4">
+        <input type="number" class="input" bind:value="{maxPerDay}" />
+      </div>
+    </section>
+
+    <button
+      class="w-full rounded border bg-slate-900 px-8 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
+      on:click="{() => generate(data.exam.data, schedulerExam, { maxPerDay: maxPerDay })}"
+    >
+      Generate
+    </button>
+  </div>
+</Modal>
 
 <style lang="postcss">
   .table-small-container {
