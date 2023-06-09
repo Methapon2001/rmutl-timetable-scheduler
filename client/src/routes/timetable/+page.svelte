@@ -289,14 +289,16 @@
 
     group.forEach((grp) => {
       const filtered = scheduler.filter((sched) => sched.section.group?.id === grp.id);
+
+      if (filtered.length === 0) return;
+
       const processed = processOverlaps(filtered);
 
       drawLayout();
 
       docSchedule.assignSchedule(processed);
-      docScheduleDetail.setHeader('test');
-      docScheduleDetail.addDetail();
-      docScheduleDetail.renderDetail();
+      docScheduleDetail.setHeader(grp.name);
+      docScheduleDetail.addDetail(processed);
 
       doc.addPage();
     });
@@ -305,26 +307,33 @@
       const filtered = scheduler.filter(
         (sched) => sched.section.instructor.findIndex((v) => v.id === inst.id) !== -1,
       );
+
+      if (filtered.length === 0) return;
+
       const processed = processOverlaps(filtered);
 
       drawLayout();
 
       docSchedule.assignSchedule(processed);
-      docScheduleDetail.addDetail();
-      docScheduleDetail.renderDetail();
+      docScheduleDetail.setHeader(inst.name);
+      docScheduleDetail.addDetail(processed);
 
       doc.addPage();
     });
 
     room.forEach((r) => {
-      const filtered = scheduler.filter((v) => v.id === r.id);
+      const filtered = scheduler.filter((v) => v.section.room?.id === r.id);
+
+      if (filtered.length === 0) return;
+
       const processed = processOverlaps(filtered);
 
       drawLayout();
 
       docSchedule.assignSchedule(processed);
-      docScheduleDetail.addDetail();
-      docScheduleDetail.renderDetail();
+      docScheduleDetail.setHeader(`${r.building.code}-${r.name}`);
+      docScheduleDetail.addDetail(processed);
+
       doc.addPage();
     });
     doc.deletePage(doc.getNumberOfPages());
