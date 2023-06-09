@@ -1,6 +1,7 @@
 <script lang="ts">
   import { invalidate } from '$app/navigation';
   import { deleteSchedulerExam } from '$lib/api/scheduler-exam';
+  import CrossIcon from '$lib/icons/CrossIcon.svelte';
   import { createEventDispatcher } from 'svelte';
 
   type WeekdayShort = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
@@ -180,7 +181,7 @@
   {#each processedData as item}
     {@const overlapMaxOffset = Math.max(...processedData.map((obj) => obj._offset)) + 1}
     <div
-      class="pointer-events-auto absolute z-10 w-full border bg-blue-600 text-xs font-bold text-white"
+      class="pointer-events-none absolute z-10 w-full border bg-blue-600 text-xs font-bold text-white"
       style:grid-row="{weekdayMapRow[item.weekday]}"
       style:grid-column="{`${item.period + 3}/${item.period + item.size + 3}`}"
       style:height="{item._overlap ? `${(100 / overlapMaxOffset).toPrecision(6)}%` : '100%'}"
@@ -189,37 +190,45 @@
         : '0%'}"
     >
       {#if !small}
-        <div class="group relative flex h-full w-full items-center text-center">
+        <div class="relative flex h-full w-full items-center text-center">
+          <div class="flex h-full flex-grow items-center overflow-hidden">
+            <div class="w-full">
+              {#if !item._overlap}
+                <h6 class="block overflow-hidden font-bold">
+                  {item.exam.section[0].subject.code}_SEC <!-- sec no loop thru -->
+                </h6>
+              {/if}
+              <p class="block">{item.exam.section[0].subject.name}</p>
+            </div>
+          </div>
+          {#if selectable}
+            <div class="pointer-events-auto p-1 pl-0">
+              <button
+                class="rounded bg-red-600 p-0.5 text-white"
+                on:click="{async () => {
+                  await deleteSchedulerExam({ id: item.id });
+                  await invalidate('data:scheduler');
+
+                  state = {
+                    period: item.period,
+                    size: item.size,
+                    weekday: item.weekday,
+                    exam: item.exam,
+                    selected: false,
+                  };
+                }}"
+              >
+                <CrossIcon height="{18}" width="{18}" />
+              </button>
+            </div>
+          {/if}
+        </div>
+      {:else}
+        <div class="group relative flex h-full w-full items-center text-center text-xs">
           <div class="flex-grow">
             {#if !item._overlap}
-              <h6 class="block font-bold">
-                {item.exam.section[0].subject
-                  .code}_SEC{#each item.exam.section as sec}_{sec.no}{/each}
-              </h6>
+              {item.exam.section[0].subject.code}_SEC <!-- sec no loop thru -->
             {/if}
-            <p class="block">{item.exam.section[0].subject.name}</p>
-          </div>
-
-          <div
-            class="pointer-events-none absolute hidden h-full w-full items-center justify-center bg-black/30 group-hover:flex"
-          >
-            <button
-              class="pointer-events-auto h-8 rounded bg-red-600 px-2 py-1 text-white hover:bg-red-500"
-              on:click="{async () => {
-                await deleteSchedulerExam({ id: item.id });
-                await invalidate('data:scheduler');
-
-                state = {
-                  period: item.period,
-                  size: item.size,
-                  weekday: item.weekday,
-                  exam: item.exam,
-                  selected: false,
-                };
-              }}"
-            >
-              Delete
-            </button>
           </div>
         </div>
       {/if}

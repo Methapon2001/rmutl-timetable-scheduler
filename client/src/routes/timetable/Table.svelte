@@ -1,6 +1,7 @@
 <script lang="ts">
   import { invalidate } from '$app/navigation';
   import { deleteScheduler } from '$lib/api/scheduler';
+  import CrossIcon from '$lib/icons/CrossIcon.svelte';
   import { processOverlaps } from '$lib/utils/table';
   import { createEventDispatcher } from 'svelte';
 
@@ -109,7 +110,7 @@
     </div>
     {#each { length: 25 } as _, period}
       <button
-        class="transition-none hover:bg-slate-100"
+        class="cursor-default transition-none hover:bg-slate-100"
         on:click="{() => handleClick(weekday, period + 1)}"></button>
     {/each}
   {/each}
@@ -132,7 +133,7 @@
         ...processedData.filter((obj) => obj.weekday === item.weekday).map((obj) => obj._offset),
       ) + 1}
     <div
-      class="pointer-events-auto absolute z-10 w-full border bg-blue-600 text-xs font-bold text-white"
+      class="pointer-events-none absolute z-10 w-full border bg-blue-600 text-xs font-bold text-white"
       style:grid-row="{weekdayMapRow[item.weekday]}"
       style:grid-column="{`${item.period + 3}/${item.period + item.size + 3}`}"
       style:height="{item._overlap ? `${(100 / overlapMaxOffset).toPrecision(6)}%` : '100%'}"
@@ -141,23 +142,23 @@
         : '0%'}"
     >
       {#if !small}
-        <div class="group relative flex h-full w-full items-center text-center">
-          <div class="flex-grow">
-            {#if !item._overlap}
-              <h6 class="block font-bold">
-                {item.section.subject.code}_SEC_{item.section.no}{item.section.type === 'lab'
-                  ? `_L${item.section.lab}`
-                  : ''}
-              </h6>
-            {/if}
-            <p class="block">{item.section.subject.name}</p>
+        <div class="relative flex h-full w-full items-center text-center">
+          <div class="flex h-full flex-grow items-center overflow-hidden">
+            <div class="w-full">
+              {#if !item._overlap}
+                <h6 class="block overflow-hidden font-bold">
+                  {item.section.subject.code}_SEC_{item.section.no}{item.section.type === 'lab'
+                    ? `_L${item.section.lab}`
+                    : ''}
+                </h6>
+              {/if}
+              <p class="block">{item.section.subject.name}</p>
+            </div>
           </div>
           {#if selectable}
-            <div
-              class="pointer-events-none absolute hidden h-full w-full items-center justify-center bg-black/30 group-hover:flex"
-            >
+            <div class="pointer-events-auto p-1 pl-0">
               <button
-                class="pointer-events-auto h-8 rounded bg-red-600 px-2 py-1 text-white hover:bg-red-500"
+                class="rounded bg-red-600 p-0.5 text-white"
                 on:click="{async () => {
                   await deleteScheduler({ id: item.id });
                   await invalidate('data:scheduler');
@@ -171,15 +172,19 @@
                   };
                 }}"
               >
-                Delete
+                <CrossIcon height="{18}" width="{18}" />
               </button>
             </div>
           {/if}
         </div>
       {:else}
-        <div class="group relative flex h-full w-full items-center text-center text-xs">
+        <div class="relative flex h-full w-full items-center text-center text-xs">
           <div class="flex-grow">
             {#if !item._overlap}
+              {item.section.subject.code}_SEC_{item.section.no}{item.section.type === 'lab'
+                ? `_L${item.section.lab}`
+                : ''}
+            {:else}
               {item.section.subject.code}_SEC_{item.section.no}{item.section.type === 'lab'
                 ? `_L${item.section.lab}`
                 : ''}
@@ -201,7 +206,6 @@
   .grid > * {
     border-width: 0 1px 1px 0;
     display: flex;
-    overflow: hidden;
     justify-content: center;
     align-items: center;
     outline: none;
