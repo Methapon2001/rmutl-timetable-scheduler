@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { fade } from 'svelte/transition';
+  import { fade, fly } from 'svelte/transition';
   import { clickOutside } from '$lib/utils/directives';
   import CrossIcon from '$lib/icons/CrossIcon.svelte';
 
@@ -16,7 +16,8 @@
 {#if open}
   <div class="modal" transition:fade="{{ duration: 150 }}">
     <div
-      class="modal-content"
+      transition:fly="{{ x: 100 }}"
+      class="modal-content max-w-md md:max-w-xl"
       style:width="{width}"
       on:outclick="{() => (open = false)}"
       use:clickOutside
@@ -34,20 +35,18 @@
     position: fixed;
     inset: 0;
     display: flex;
-    justify-content: center;
+    justify-content: right;
     background-color: rgb(0 0 0 / 0.35);
-    padding: 2rem;
     z-index: 50;
   }
 
   .modal-content {
     position: relative;
-    height: fit-content;
-    max-height: 100%;
-    max-width: 100%;
+    height: 100%;
     overflow-y: auto;
     background-color: #fff;
-    border-radius: 0.5rem;
+    border-top-left-radius: 0.5rem;
+    border-bottom-left-radius: 0.5rem;
   }
 
   .close {
