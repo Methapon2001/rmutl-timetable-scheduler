@@ -7,7 +7,6 @@ function isCurrentRegGood(
   current: API.Section,
   weekday: WeekdayShort,
   period: number,
-  gap: number,
   schedule: {
     id: string;
     section: API.Scheduler['section'];
@@ -15,7 +14,16 @@ function isCurrentRegGood(
     period: number;
     size: number;
   }[],
+  option: {
+    maxPerDay?: number;
+    consecutiveGap?: number;
+    restGap?: number;
+  },
 ) {
+  const maxPerDay = 3;
+  const consecutiveGap = option.consecutiveGap ?? 2;
+  const restGap = option.restGap ?? 2;
+
   const entries = schedule.filter(
     (sched) =>
       sched.weekday === weekday &&
@@ -26,18 +34,29 @@ function isCurrentRegGood(
         ) !== -1),
   );
 
-  if (entries.length <= 1) return true;
-  if (entries.length > 2) return false;
+  if (entries.length < 1) return true;
+  if (entries.length >= maxPerDay) return false;
+
+  entries.sort((a, b) => a.period - b.period);
 
   for (let i = 0; i < entries.length; i++) {
+    const curr = entries[i];
+
+    // if there is one entries that is longer than 5 hours (10 periods) then return false
+    if (curr.size >= 10 && curr.period + curr.size - 1 + restGap >= period) return false;
+
     if (i === entries.length - 1) return true;
 
-    const current = entries[i];
     const next = entries[i + 1];
-    const last = entries[entries.length - 1];
 
-    if (current.period + current.size - 1 + gap >= next.period) {
-      if (last.period + last.size - 1 + gap >= period) return false;
+    // if two entries is considered consecutive then check if current period
+    // that will be registed is in range of gap after the later entries.
+    //
+    // note:
+    //    this does not considered overlap situation as it should be checked before call this.
+    //    this does not considered section that comes after current that will be registered.
+    if (curr.period + curr.size - 1 + consecutiveGap >= next.period) {
+      if (next.period + next.size - 1 + restGap >= period) return false;
     }
   }
 }
@@ -55,9 +74,12 @@ export async function generate(
     weekday?: WeekdayShort[];
     period?: number[];
     target?: {
-      group?: API.Group;
+      group?: Omit<API.Group, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>;
       subjectType?: 'compulsory' | 'elective' | '*';
     };
+    maxPerDay?: number;
+    consecutiveGap?: number;
+    restGap?: number;
   } = {},
 ) {
   const subjectTarget = option.target?.subjectType ?? '*';
@@ -96,7 +118,14 @@ export async function generate(
 
         if (isOverlap) continue;
 
-        if (!isCurrentRegGood(sec, day, i, 2, schedule)) continue;
+        if (
+          !isCurrentRegGood(sec, day, i, schedule, {
+            maxPerDay: option.maxPerDay,
+            consecutiveGap: option.consecutiveGap,
+            restGap: option.restGap,
+          })
+        )
+          continue;
 
         schedule = [
           ...schedule,
