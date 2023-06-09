@@ -431,7 +431,12 @@
   <div>
     <div class="section-selector border-l bg-light">
       <div class="w-full p-4">
-        <input type="text" class="input bg-white shadow" bind:value="{searchText}" />
+        <input
+          type="text"
+          class="input bg-white shadow"
+          placeholder="Search"
+          bind:value="{searchText}"
+        />
       </div>
       {#each data.section.data.filter((obj) => obj.subject.code
             .toLocaleLowerCase()
