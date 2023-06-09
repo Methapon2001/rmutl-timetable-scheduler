@@ -12,6 +12,7 @@
   import toast from 'svelte-french-toast';
   import Table from './Table.svelte';
   import Modal from '$lib/components/Modal.svelte';
+  import GenerateModal from './GenerateModal.svelte';
 
   export let data: PageData;
 
@@ -552,9 +553,7 @@
       class="rounded border bg-slate-900 px-8 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
       on:click="{() => {
         showState = true;
-        // await generate(data.section.data, scheduler);
-        // await invalidate('data:scheduler');
-        // resetState();
+        resetState();
       }}"
     >
       Generate
@@ -606,7 +605,9 @@
 </div>
 
 <Modal bind:open="{showState}">
-  <div id="show-modal" class="p-4"></div>
+  <div id="show-modal" class="my-8 p-4">
+    <GenerateModal sections="{data.section.data}" schedule="{scheduler}" group="{group}" />
+  </div>
 </Modal>
 
 <style lang="postcss">
