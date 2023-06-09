@@ -145,6 +145,7 @@
   <button type="button" class="button w-full md:w-fit" on:click="{() => (newState = !newState)}">
     New Section
   </button>
+  <a href="/section/gen" class="button w-full text-center md:w-fit"> Generate Section </a>
 </div>
 
 {#if newState}
