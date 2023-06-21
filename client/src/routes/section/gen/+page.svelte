@@ -25,6 +25,7 @@
         .object({
           roomId: z.string().transform((v) => v.trim() || null),
           instructor: z.string().array(),
+          capacity: z.number(),
         })
         .array(),
     })
@@ -37,6 +38,7 @@
           return {
             roomId: sec.roomId === '' ? null : sec.roomId,
             instructor: sec.instructor.map((inst) => ({ id: inst })),
+            capacity: sec.capacity,
           };
         }),
       };
@@ -65,7 +67,7 @@
   }));
 
   let roomOptions = data.room.data.map((room) => ({
-    label: room.name,
+    label: `${room.building.code}-${room.name} (${room.type})`,
     value: room.id,
   }));
 
@@ -149,6 +151,7 @@
             {
               roomId: '',
               instructor: [],
+              capacity: 0,
             },
           ],
         };
@@ -157,6 +160,7 @@
           sec.section.push({
             roomId: '',
             instructor: [],
+            capacity: 0,
           });
         }
 
@@ -299,7 +303,9 @@
               >
               <section id="input-room" class="grid grid-cols-6">
                 <div class="col-span-2 flex items-center">
-                  <label for="room" class="font-semibold"> Room </label>
+                  <label for="room" class="font-semibold">
+                    Room <span class="text-red-600">*</span>
+                  </label>
                 </div>
                 <div class="col-span-4">
                   <Select
@@ -313,7 +319,9 @@
               </section>
               <section id="input-instructor" class="grid grid-cols-6">
                 <div class="col-span-2 flex items-center">
-                  <label for="instructor" class="font-semibold"> Instructor </label>
+                  <label for="instructor" class="font-semibold">
+                    Instructor <span class="text-red-600">*</span>
+                  </label>
                 </div>
                 <div class="col-span-4">
                   <Select
@@ -323,6 +331,22 @@
                       secIdx
                     ].instructor}"
                     multiple
+                  />
+                </div>
+              </section>
+              <section id="input-capacity" class="grid grid-cols-6">
+                <div class="col-span-2 flex items-center">
+                  <label for="" class="font-semibold">
+                    Capacity <span class="text-red-600">*</span>
+                  </label>
+                </div>
+                <div class="col-span-4">
+                  <input
+                    type="number"
+                    class="input"
+                    bind:value="{sectionState[sectionIdx].subjectSection[subjectSecIdx].section[
+                      secIdx
+                    ].capacity}"
                   />
                 </div>
               </section>

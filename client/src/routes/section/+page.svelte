@@ -69,6 +69,7 @@
     groupId: string;
     roomId: string;
     instructor: string[];
+    capacity: number;
   };
 
   let showData: {
@@ -87,6 +88,7 @@
       instructor: {
         id: string;
       }[];
+      capacity: number;
     },
     showSectionData: {
       no: number;
@@ -191,11 +193,12 @@
       <tr>
         <th>Subject</th>
         <th>No.</th>
-        <th>Alternate Section No.</th>
+        <th>Alt Section No.</th>
         <th>Type</th>
         <th>Lab No.</th>
         <th>Group</th>
         <th>Room</th>
+        <th>Capacity</th>
         <th>Instructors</th>
         <th>Created</th>
         <th>Updated</th>
@@ -219,6 +222,7 @@
           <td class="whitespace-nowrap text-center">
             {section.room?.building.code ?? ''}-{section.room?.name ?? ''}
           </td>
+          <td class="text-center">{section.capacity}</td>
           <td class="space-y-2 text-center">
             {section.instructor.length ? '' : '-'}
             {#each section.instructor as instructor (instructor.id)}
@@ -253,6 +257,7 @@
                       groupId: section.group?.id ?? '',
                       roomId: section.room?.id ?? '',
                       instructor: section.instructor,
+                      capacity: section.capacity,
                     },
                     {
                       no: section.no,

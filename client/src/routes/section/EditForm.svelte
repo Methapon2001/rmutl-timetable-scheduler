@@ -19,6 +19,7 @@
     groupId: z.string().transform((v) => v.trim() || null),
     roomId: z.string().transform((v) => v.trim() || null),
     instructor: z.string().array(),
+    capacity: z.number(),
   });
 
   export let groupOptions: {
@@ -54,6 +55,7 @@
       groupId: '',
       roomId: '',
       instructor: [],
+      capacity: 0,
     },
     error: undefined,
   };
@@ -65,6 +67,7 @@
     groupId: '',
     roomId: '',
     instructor: [],
+    capacity: 0,
   };
 
   export let showData: {
@@ -100,6 +103,7 @@
         groupId: '',
         roomId: '',
         instructor: [],
+        capacity: 0,
       };
 
       await invalidate('data:section');
@@ -126,9 +130,7 @@
   </h1>
   <section id="input-alt" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
-      <label for="" class="font-semibold">
-        Alternate Section No. <span class="text-red-600">*</span>
-      </label>
+      <label for="" class="font-semibold"> Alternate Section No. </label>
     </div>
     <div class="col-span-4">
       <input
@@ -195,6 +197,26 @@
     </div>
     <div class="col-span-4 col-start-3 text-red-600">
       {form.error ? getZodErrorMessage(form.error, ['instructor']) : ''}
+    </div>
+  </section>
+  <section id="input-capacity" class="grid grid-cols-6">
+    <div class="col-span-2 flex items-center">
+      <label for="" class="font-semibold">
+        Capacity <span class="text-red-600">*</span>
+      </label>
+    </div>
+    <div class="col-span-4">
+      <input
+        type="number"
+        class="input
+          {form.error && getZodErrorMessage(form.error, ['capacity']).length > 0
+          ? 'border border-red-600'
+          : ''}"
+        bind:value="{form.data.capacity}"
+      />
+    </div>
+    <div class="col-span-4 col-start-3 text-red-600">
+      {form.error ? getZodErrorMessage(form.error, ['capacity']) : ''}
     </div>
   </section>
 

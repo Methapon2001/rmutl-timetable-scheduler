@@ -25,6 +25,7 @@
       .object({
         roomId: z.string().transform((v) => v.trim() || null),
         instructor: z.string().array(),
+        capacity: z.number(),
       })
       .array(),
   });
@@ -81,6 +82,7 @@
       {
         roomId: '',
         instructor: [],
+        capacity: 0,
       },
     ];
   }
@@ -116,6 +118,7 @@
       {
         roomId: '',
         instructor: [],
+        capacity: 0,
       },
     ];
 
@@ -125,6 +128,7 @@
         {
           roomId: '',
           instructor: [],
+          capacity: 0,
         },
       ];
     }
@@ -143,6 +147,7 @@
             return {
               roomId: sec.roomId === '' ? null : sec.roomId,
               instructor: sec.instructor.map((inst) => ({ id: inst })),
+              capacity: sec.capacity,
             };
           }),
         };
@@ -317,6 +322,26 @@
             {form.error
               ? getZodErrorMessage(form.error, ['section', sectionIdx, 'instructorId'])
               : ''}
+          </div>
+        </section>
+        <section id="input-capacity" class="grid grid-cols-6">
+          <div class="col-span-2 flex items-center">
+            <label for="" class="font-semibold">
+              Capacity <span class="text-red-600">*</span>
+            </label>
+          </div>
+          <div class="col-span-4">
+            <input
+              type="number"
+              class="input
+                {form.error && getZodErrorMessage(form.error, ['capacity']).length > 0
+                ? 'border border-red-600'
+                : ''}"
+              bind:value="{form.data.section[sectionIdx].capacity}"
+            />
+          </div>
+          <div class="col-span-4 col-start-3 text-red-600">
+            {form.error ? getZodErrorMessage(form.error, ['capacity']) : ''}
           </div>
         </section>
       </div>
