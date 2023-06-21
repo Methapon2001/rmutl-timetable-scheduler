@@ -78,6 +78,7 @@ const childSectionSelect: Prisma.SectionSelect = {
   alt: true,
   lab: true,
   type: true,
+  capacity: true,
   group: {
     select: groupSelect,
   },
@@ -164,6 +165,7 @@ type CreateBody = Pick<Section, "type" | "subjectId"> &
     section: {
       roomId: string | null;
       instructor?: Instructor[];
+      capacity: number;
     }[];
   };
 
@@ -190,6 +192,7 @@ export async function createSection(
           ? idx + 1
           : null,
       manual: request.body.manual,
+      capacity: val.capacity,
       subjectId: request.body.subjectId,
       groupId: request.body.groupId,
       roomId: val.roomId,
@@ -315,7 +318,7 @@ export async function requestSection(
 export async function updateSection(
   request: FastifyRequest<{
     Params: Pick<Section, "id">;
-    Body: Partial<Pick<Section, "alt" | "roomId" | "groupId">> & {
+    Body: Partial<Pick<Section, "alt" | "capacity" | "roomId" | "groupId">> & {
       instructor?: Instructor[];
     };
   }>,

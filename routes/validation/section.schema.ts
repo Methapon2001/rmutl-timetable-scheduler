@@ -34,7 +34,9 @@ export default {
         maxItems: 10,
         items: {
           type: "object",
+          required: ["capacity"],
           properties: {
+            capacity: { type: "number" },
             roomId: { type: ["string", "null"] },
             instructor: {
               type: "array",
@@ -54,6 +56,7 @@ export default {
     type: "object",
     properties: {
       alt: { type: ["string", "null"] },
+      capacity: { type: "number" },
       groupId: { type: ["string", "null"] },
       roomId: { type: ["string", "null"] },
       instructor: {

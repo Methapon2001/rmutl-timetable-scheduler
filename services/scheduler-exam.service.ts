@@ -52,6 +52,7 @@ const childSectionSelect: Prisma.SectionSelect = {
   no: true,
   lab: true,
   type: true,
+  capacity: true,
   subject: {
     select: subjectSelect,
   },

@@ -237,12 +237,13 @@ model Group {
 }
 
 model Section {
-  id     String      @id @default(nanoid(16))
-  type   SectionType
-  alt    String?
-  no     Int
-  lab    Int?
-  manual Boolean     @default(false)
+  id       String      @id @default(nanoid(16))
+  type     SectionType
+  alt      String?
+  no       Int
+  lab      Int?
+  manual   Boolean     @default(false)
+  capacity Int
 
   subjectId String
   subject   Subject @relation(fields: [subjectId], references: [id])
