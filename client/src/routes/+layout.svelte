@@ -76,7 +76,7 @@
 <nav style:width="{menu ? '16rem' : '0'}">
   <ul>
     <li>
-      <div id="app-icon"><img src="./favicon.png" alt="icon" /></div>
+      <div id="app-icon"><img src="/favicon.png" alt="icon" /></div>
     </li>
   </ul>
 

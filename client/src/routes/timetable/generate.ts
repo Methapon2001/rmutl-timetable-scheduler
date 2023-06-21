@@ -151,6 +151,7 @@ export async function generate(
       start: schedule[i].period,
       end: schedule[i].period + schedule[i].size - 1,
       weekday: schedule[i].weekday,
+      publish: false,
     });
 
     schedule[i].id = ret.id;
