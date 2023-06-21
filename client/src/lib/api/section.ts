@@ -9,6 +9,7 @@ export const createSection = async (data: {
   section: {
     roomId: string | null;
     instructor: { id: string }[];
+    capacity: number;
   }[];
 }): Promise<API.Section> => {
   const userSession = await refresh();

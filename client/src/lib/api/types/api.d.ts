@@ -97,6 +97,7 @@ declare namespace API {
     alt: string;
     lab: number;
     type: string;
+    capacity: number;
     group: Omit<API.Group, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'> | null;
     room: Omit<API.Room, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'> | null;
     subject: Omit<API.Subject, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>;
@@ -115,6 +116,7 @@ declare namespace API {
     start: number;
     end: number;
     section: Omit<API.Section, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>;
+    publish: boolean;
     createdAt: string;
     createdBy: Omit<API.User, 'createdAt' | 'updatedAt'>;
     updatedAt: string;
