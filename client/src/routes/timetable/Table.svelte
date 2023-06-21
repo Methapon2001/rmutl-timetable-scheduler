@@ -133,7 +133,7 @@
         ...processedData.filter((obj) => obj.weekday === item.weekday).map((obj) => obj._offset),
       ) + 1}
     <div
-      class="pointer-events-none absolute z-10 w-full border bg-blue-600 text-xs font-bold text-white"
+      class="pointer-events-none absolute z-10 w-full border bg-blue-300 text-xs font-bold"
       style:grid-row="{weekdayMapRow[item.weekday]}"
       style:grid-column="{`${item.period + 3}/${item.period + item.size + 3}`}"
       style:height="{item._overlap ? `${(100 / overlapMaxOffset).toPrecision(6)}%` : '100%'}"
@@ -178,7 +178,9 @@
           {/if}
         </div>
       {:else}
-        <div class="relative flex h-full w-full items-center text-center text-xs">
+        <div
+          class="pointer-events-auto relative flex h-full w-full items-center overflow-x-auto overflow-y-hidden text-center text-xs"
+        >
           <div class="flex-grow">
             {#if !item._overlap}
               {item.section.subject.code}_SEC_{item.section.no}{item.section.type === 'lab'

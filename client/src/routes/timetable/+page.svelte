@@ -13,6 +13,9 @@
   import Table from './Table.svelte';
   import Modal from '$lib/components/Modal.svelte';
   import GenerateModal from './GenerateModal.svelte';
+  import FilterIcon from '$lib/icons/FilterIcon.svelte';
+  import Filter from './Filter.svelte';
+  import { publish } from '$lib/api/publish';
 
   export let data: PageData;
 
@@ -162,9 +165,8 @@
           start: state.period,
           end: state.period + state.size - 1,
           sectionId: state.section.id,
+          publish: false,
         });
-
-        // await invalidate('data:scheduler');
 
         resetState();
         break;
@@ -340,9 +342,45 @@
     doc.output('dataurlnewwindow');
   }
 
+  let showFilter = false;
+  let filterSelected: string[] = [];
+
+  const filterList = [
+    {
+      group: 'Group',
+      options: group.map((grp) => ({
+        value: grp.name,
+        label: grp.name,
+      })),
+    },
+    {
+      group: 'Instructor',
+      options: instructor.map((inst) => ({
+        value: inst.name,
+        label: inst.name,
+      })),
+    },
+  ];
+
   let showState = false;
 
   let searchText = '';
+
+  $: filteredSection = data.section.data.filter((obj) => {
+    const filterFn = (text: string) =>
+      obj.subject.code.toLocaleLowerCase().includes(text.toLocaleLowerCase()) ||
+      obj.group?.name.toLocaleLowerCase().includes(text.toLocaleLowerCase()) ||
+      obj.subject.name.toLocaleLowerCase().includes(text.toLocaleLowerCase()) ||
+      obj.instructor.some((ins) => ins.name.toLocaleLowerCase().includes(text.toLocaleLowerCase()));
+
+    if (filterSelected.length > 0) {
+      return filterSelected.some((txt) => filterFn(txt));
+    }
+    if (searchText && filterSelected.length > 0) {
+      return [searchText, ...filterSelected].some((txt) => filterFn(txt));
+    }
+    return filterFn(searchText);
+  });
 </script>
 
 <svelte:window on:keydown="{handleKeydown}" />
@@ -355,7 +393,14 @@
           {#if pov === 'group'}
             {#each instructor.filter((obj) => state.section?.instructor.findIndex((inst) => inst.id == obj.id) !== -1) as i (i.id)}
               <div id="inst-{i.id}" class="p-4 pr-2" style:scroll-gutter="stable">
-                <h6 class="text-center font-semibold">Instructor - {i.name}</h6>
+                <div class="mb-2 flex justify-between">
+                  <h6 class="font-semibold">Instructor - {i.name}</h6>
+                  {#if data.scheduler.data.some((sched) => sched.section.instructor.some((inst) => inst.id === i.id) && sched.publish === true)}
+                    <span class="rounded bg-green-600 px-2 font-semibold text-white">Public</span>
+                  {:else}
+                    <span class="rounded bg-secondary px-2 font-semibold text-white">Private</span>
+                  {/if}
+                </div>
                 <Table
                   bind:data="{scheduler}"
                   bind:state="{state}"
@@ -369,7 +414,14 @@
           {:else}
             {#each group.filter((obj) => !state.selected || state.section?.group?.id === obj.id) as g (g.id)}
               <div id="group-{g.id}" class="p-4 pr-2" style:scroll-gutter="stable">
-                <h6 class="text-center font-semibold">Group - {g.name}</h6>
+                <div class="mb-2 flex justify-between">
+                  <h6 class="font-semibold">Group - {g.name}</h6>
+                  {#if data.scheduler.data.some((sched) => sched.section.group && sched.section.group.id === g.id && sched.publish === true)}
+                    <span class="rounded bg-green-600 px-2 font-semibold text-white">Public</span>
+                  {:else}
+                    <span class="rounded bg-secondary px-2 font-semibold text-white">Private</span>
+                  {/if}
+                </div>
                 <Table
                   bind:data="{scheduler}"
                   bind:state="{state}"
@@ -385,7 +437,9 @@
         <div class="table-small-container border-b">
           {#each room.filter((obj) => !state.selected || obj.id === state.section?.room?.id) as r (r.id)}
             <div id="room-{r.id}" class="p-4 pr-2" style:scroll-gutter="stable">
-              <h6 class="text-center font-semibold">Room - {r.building.code}-{r.name}</h6>
+              <div class="mb-2 flex justify-between">
+                <h6 class="text-center font-semibold">Room - {r.building.code}-{r.name}</h6>
+              </div>
               <Table
                 bind:data="{scheduler}"
                 bind:state="{state}"
@@ -410,8 +464,19 @@
 
         {#if pov === 'group'}
           {#each group as g (g.id)}
+            {@const pub = data.scheduler.data.some(
+              (sched) =>
+                sched.section.group && sched.section.group.id === g.id && sched.publish === true,
+            )}
             <div id="group-{g.id}" class="p-4 pr-2" style:scroll-gutter="stable">
-              <h6 class="text-center font-semibold">Group - {g.name}</h6>
+              <div class="mb-2 flex justify-between">
+                <h6 class="font-semibold">Group - {g.name}</h6>
+                {#if pub}
+                  <span class="rounded bg-green-600 px-2 font-semibold text-white">Public</span>
+                {:else}
+                  <span class="rounded bg-secondary px-2 font-semibold text-white">Private</span>
+                {/if}
+              </div>
               <Table
                 bind:data="{scheduler}"
                 bind:state="{state}"
@@ -420,11 +485,50 @@
                 group="{g}"
               />
             </div>
+            <div class="flex justify-end">
+              {#if pub}
+                <button
+                  class="button mr-2"
+                  on:click="{async () => {
+                    await publish({ groupId: g.id }, false);
+                    await invalidate('data:scheduler');
+                  }}"
+                >
+                  Unpublish
+                </button>
+              {:else}
+                <button
+                  class="button mr-2"
+                  on:click="{async () => {
+                    const ret = await publish({ groupId: g.id }, true);
+                    if (ret.count == 0) {
+                      toast.error(
+                        "This table can't be published because there is no data on this table.",
+                        {
+                          duration: 10000,
+                        },
+                      );
+                    } else {
+                      await invalidate('data:scheduler');
+                    }
+                  }}"
+                >
+                  Publish
+                </button>
+              {/if}
+            </div>
           {/each}
         {:else}
           {#each instructor as i (i.id)}
             <div id="inst-{i.id}" class="p-4 pr-2" style:scroll-gutter="stable">
-              <h6 class="text-center font-semibold">Instructor - {i.name}</h6>
+              <div class="mb-2 flex justify-between">
+                <h6 class="font-semibold">Instructor - {i.name}</h6>
+                {#if data.scheduler.data.some((sched) => sched.section.instructor.some((inst) => inst.id === i.id) && sched.publish === true)}
+                  <span class="rounded bg-green-600 px-2 font-semibold text-white">Public</span>
+                {:else}
+                  <span class="rounded bg-secondary px-2 font-semibold text-white">Private</span>
+                {/if}
+              </div>
               <Table
                 bind:data="{scheduler}"
                 bind:state="{state}"
@@ -440,23 +544,24 @@
   </div>
   <div>
     <div class="section-selector border-l bg-light">
-      <div class="w-full p-4">
+      <div class="relative m-4 grid grid-cols-4 items-center gap-4">
         <input
           type="text"
-          class="input bg-white shadow"
+          class="input col-span-3 bg-white shadow"
           placeholder="Search"
           bind:value="{searchText}"
         />
+        <button
+          class="input flex !w-full items-center justify-center bg-white text-secondary shadow"
+          on:click="{() => (showFilter = !showFilter)}"
+        >
+          <FilterIcon />
+        </button>
+        <div class="absolute top-full mt-2 w-full overflow-hidden rounded bg-white shadow">
+          <Filter show="{showFilter}" list="{filterList}" bind:selected="{filterSelected}" />
+        </div>
       </div>
-      {#each data.section.data.filter((obj) => obj.subject.code
-            .toLocaleLowerCase()
-            .includes(searchText.toLocaleLowerCase()) || obj.group?.name
-            .toLocaleLowerCase()
-            .includes(searchText.toLocaleLowerCase()) || obj.subject.name
-            .toLocaleLowerCase()
-            .includes(searchText.toLocaleLowerCase()) || obj.instructor.some((ins) => ins.name
-              .toLocaleLowerCase()
-              .includes(searchText.toLocaleLowerCase()))) as section}
+      {#each filteredSection as section}
         {#if section.parent === null}
           <div class="w-full space-y-2 border-b p-4">
             <div class="mb-2 space-y-2 text-sm">
@@ -621,7 +726,7 @@
 
 <style lang="postcss">
   .table-small-container {
-    height: calc(193px + 1rem + 1.5rem + 1rem);
+    height: calc(193px + 1rem + 1.5rem + 1rem + 0.5rem);
     overflow-y: auto;
     scrollbar-gutter: stable;
   }
