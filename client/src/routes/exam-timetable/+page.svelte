@@ -10,6 +10,8 @@
   import { checkOverlap } from './utils';
   import Table from './Table.svelte';
   import { generate } from './generate';
+  import Filter from './Filter.svelte';
+  import FilterIcon from '$lib/icons/FilterIcon.svelte';
 
   export let data: PageData;
 
@@ -292,10 +294,49 @@
     doc.output('dataurlnewwindow');
   }
 
+  let showFilter = false;
+  let filterSelected: string[] = [];
+
+  const filterList = [
+    {
+      group: 'Group',
+      options: group.map((grp) => ({
+        value: grp.name,
+        label: grp.name,
+      })),
+    },
+    {
+      group: 'Instructor',
+      options: instructor.map((inst) => ({
+        value: inst.name,
+        label: inst.name,
+      })),
+    },
+  ];
+
   let showState = false;
   let maxPerDay = 2;
 
   let searchText = '';
+
+  $: filteredExam = data.exam.data.filter((sec) => {
+    const filterFn = (text: string) =>
+      sec.section.some(
+        (sec) =>
+          sec.subject.name.toLocaleLowerCase().includes(text.toLocaleLowerCase()) ||
+          sec.group?.name.toLocaleLowerCase().includes(text.toLocaleLowerCase()) ||
+          sec.subject.name.toLocaleLowerCase().includes(text.toLocaleLowerCase()),
+      ) ||
+      sec.instructor.some((ins) => ins.name.toLocaleLowerCase().includes(text.toLocaleLowerCase()));
+
+    if (filterSelected.length > 0) {
+      return filterSelected.some((txt) => filterFn(txt));
+    }
+    if (searchText && filterSelected.length > 0) {
+      return [searchText, ...filterSelected].some((txt) => filterFn(txt));
+    }
+    return filterFn(searchText);
+  });
 </script>
 
 <svelte:window on:keydown="{handleKeydown}" />
@@ -355,7 +396,7 @@
         {#if data.exam.total === 0}
           <div class="p-8 text-center">
             <h1 class="mb-4 text-5xl font-extrabold">No Data</h1>
-            <h2 class="text-secondary text-3xl">
+            <h2 class="text-3xl text-secondary">
               No section created.<br />Must have section data in order for timetable to show.
             </h2>
           </div>
@@ -373,16 +414,6 @@
                 group="{g}"
               />
             </div>
-            <!-- <div class="mb-3 flex w-full justify-end">
-              <button
-                class="button mx-2 flex h-12 w-48 items-center justify-center rounded"
-                on:click="{async () => {
-                  // await generate(data.section.data, scheduler);
-                  // await invalidate('data:scheduler');
-                  resetState();
-                }}">Generate</button
-              >
-            </div> -->
           {/each}
         {:else}
           {#each instructor as i (i.id)}
@@ -402,34 +433,35 @@
     </div>
   </div>
   <div>
-    <div class="section-selector bg-light border-l">
-      <div class="w-full p-4">
+    <div class="section-selector border-l bg-light">
+      <div class="relative m-4 grid grid-cols-4 items-center gap-4">
         <input
           type="text"
-          class="input bg-white shadow"
+          class="input col-span-3 bg-white shadow"
           placeholder="Search"
           bind:value="{searchText}"
         />
+        <button
+          class="input flex !w-full items-center justify-center bg-white text-secondary shadow"
+          on:click="{() => (showFilter = !showFilter)}"
+        >
+          <FilterIcon />
+        </button>
+        <div class="absolute top-full mt-2 w-full overflow-hidden rounded bg-white shadow">
+          <Filter show="{showFilter}" list="{filterList}" bind:selected="{filterSelected}" />
+        </div>
       </div>
-      {#each data.exam.data.filter((obj) => obj.section.some((sec) => sec.subject.name
-                .toLocaleLowerCase()
-                .includes(searchText.toLocaleLowerCase()) || sec.subject.code
-                .toLocaleLowerCase()
-                .includes(searchText.toLocaleLowerCase()) || sec.group?.name
-                .toLocaleLowerCase()
-                .includes(searchText.toLocaleLowerCase())) || obj.instructor.some( (inst) => inst.name
-                .toLocaleLowerCase()
-                .includes(searchText.toLocaleLowerCase()), )) as exam}
+      {#each filteredExam as exam}
         <div class="w-full space-y-2 border-b p-4">
           <div class="mb-2 space-y-2 text-sm">
             <div class="flex gap-2">
               <span
-                class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
+                class="inline-block flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
               >
                 {exam.section[0]?.subject.code ?? ''}
               </span>
               <span
-                class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
+                class="inline-block flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
               >
                 {exam.section[0]?.subject.name ?? ''}
               </span>
@@ -437,7 +469,7 @@
             <div class="flex gap-2">
               {#each exam.section as sec}
                 <span
-                  class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
+                  class="inline-block flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
                 >
                   SEC {sec.no}
                 </span>
@@ -498,7 +530,7 @@
   </div>
   {#if state.exam}
     <div
-      class="border-primary bg-light flex flex justify-between gap-2 overflow-hidden rounded border font-semibold shadow"
+      class="flex flex justify-between gap-2 overflow-hidden rounded border border-primary bg-light font-semibold shadow"
     >
       <span class="bg-primary px-3 py-2 font-semibold text-white">Selected</span>
       <span class="truncate px-4 py-2">
