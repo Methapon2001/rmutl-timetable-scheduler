@@ -603,7 +603,7 @@
               <div
                 class="flex h-full w-full items-center justify-center rounded-l border-r font-semibold"
               >
-                <small>
+                <small class="block">
                   {section.type}
                   {section.lab ?? ''}
                 </small>
@@ -611,7 +611,7 @@
               <div class="col-span-3 w-full pl-3 text-left font-semibold">
                 {#if section.instructor.length == 0}<small>Not assigned</small>{/if}
                 {#each section.instructor as instructor}
-                  <small>{instructor.name}</small><br />
+                  <small class="block">{instructor.name}</small>
                 {/each}
               </div>
             </button>
