@@ -396,7 +396,7 @@
                   {#if data.scheduler.data.some((sched) => sched.section.instructor.some((inst) => inst.id === i.id) && sched.publish === true)}
                     <span class="rounded bg-green-600 px-2 font-semibold text-white">Public</span>
                   {:else}
-                    <span class="bg-secondary rounded px-2 font-semibold text-white">Private</span>
+                    <span class="rounded bg-secondary px-2 font-semibold text-white">Private</span>
                   {/if}
                 </div>
                 <Table
@@ -417,7 +417,7 @@
                   {#if data.scheduler.data.some((sched) => sched.section.group && sched.section.group.id === g.id && sched.publish === true)}
                     <span class="rounded bg-green-600 px-2 font-semibold text-white">Public</span>
                   {:else}
-                    <span class="bg-secondary rounded px-2 font-semibold text-white">Private</span>
+                    <span class="rounded bg-secondary px-2 font-semibold text-white">Private</span>
                   {/if}
                 </div>
                 <Table
@@ -454,7 +454,7 @@
         {#if data.section.total === 0}
           <div class="p-8 text-center">
             <h1 class="mb-4 text-5xl font-extrabold">No Data</h1>
-            <h2 class="text-secondary text-3xl">
+            <h2 class="text-3xl text-secondary">
               No section created.<br />Must have section data in order for timetable to show.
             </h2>
           </div>
@@ -472,7 +472,7 @@
                 {#if pub}
                   <span class="rounded bg-green-600 px-2 font-semibold text-white">Public</span>
                 {:else}
-                  <span class="bg-secondary rounded px-2 font-semibold text-white">Private</span>
+                  <span class="rounded bg-secondary px-2 font-semibold text-white">Private</span>
                 {/if}
               </div>
               <Table
@@ -524,7 +524,7 @@
                 {#if data.scheduler.data.some((sched) => sched.section.instructor.some((inst) => inst.id === i.id) && sched.publish === true)}
                   <span class="rounded bg-green-600 px-2 font-semibold text-white">Public</span>
                 {:else}
-                  <span class="bg-secondary rounded px-2 font-semibold text-white">Private</span>
+                  <span class="rounded bg-secondary px-2 font-semibold text-white">Private</span>
                 {/if}
               </div>
               <Table
@@ -541,7 +541,7 @@
     </div>
   </div>
   <div>
-    <div class="section-selector bg-light border-l">
+    <div class="section-selector border-l bg-light">
       <div class="relative m-4 grid grid-cols-4 items-center gap-4">
         <input
           type="text"
@@ -550,7 +550,7 @@
           bind:value="{searchText}"
         />
         <button
-          class="input text-secondary flex !w-full items-center justify-center bg-white shadow"
+          class="input flex !w-full items-center justify-center bg-white text-secondary shadow"
           on:click="{() => (showFilter = !showFilter)}"
         >
           <FilterIcon />
@@ -565,12 +565,12 @@
             <div class="mb-2 space-y-2 text-sm">
               <div class="flex gap-2">
                 <span
-                  class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
+                  class="inline-block flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
                 >
                   {section.subject.code}
                 </span>
                 <span
-                  class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
+                  class="inline-block flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
                 >
                   {section.subject.name}
                 </span>
@@ -578,12 +578,12 @@
 
               <div class="flex gap-2">
                 <span
-                  class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
+                  class="inline-block flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
                 >
                   SEC {section.no}
                 </span>
                 <span
-                  class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
+                  class="inline-block flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
                 >
                   {section.group?.name ?? 'Any'}
                 </span>
@@ -679,7 +679,7 @@
   </div>
   {#if state.section}
     <div
-      class="border-primary bg-light flex flex justify-between gap-2 overflow-hidden rounded border font-semibold shadow"
+      class="flex flex justify-between gap-2 overflow-hidden rounded border border-primary bg-light font-semibold shadow"
     >
       <span class="bg-primary px-3 py-2 font-semibold text-white">Selected</span>
       <span class="truncate px-4 py-2">
@@ -695,7 +695,7 @@
   {/if}
 
   <div class="alloc-control">
-    <div class="bg-primary grid grid-cols-6 rounded font-semibold text-white">
+    <div class="grid grid-cols-6 rounded bg-primary font-semibold text-white">
       <div class="col-span-5 flex items-center px-4 py-2">
         <input
           class="w-full"

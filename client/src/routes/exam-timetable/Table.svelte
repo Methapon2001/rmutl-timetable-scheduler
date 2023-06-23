@@ -181,7 +181,7 @@
   {#each processedData as item}
     {@const overlapMaxOffset = Math.max(...processedData.map((obj) => obj._offset)) + 1}
     <div
-      class="pointer-events-none absolute z-10 w-full border bg-blue-300 text-xs font-bold "
+      class="pointer-events-none absolute z-10 w-full border bg-blue-300 text-xs font-bold"
       style:grid-row="{weekdayMapRow[item.weekday]}"
       style:grid-column="{`${item.period + 3}/${item.period + item.size + 3}`}"
       style:height="{item._overlap ? `${(100 / overlapMaxOffset).toPrecision(6)}%` : '100%'}"

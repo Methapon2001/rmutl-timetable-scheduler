@@ -257,7 +257,7 @@
     </div>
   </section>
   {#if form.data.courseId}
-    {#each form.data.detail as detail, detailIdx}
+    {#each form.data.detail as _, detailIdx}
       <div class="space-y-2 rounded border p-4">
         <section id="input-year" class="grid grid-cols-6">
           <div class="col-span-2 flex items-center">
