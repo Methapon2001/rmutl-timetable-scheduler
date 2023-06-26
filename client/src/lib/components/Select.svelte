@@ -224,7 +224,12 @@
 
 <svelte:window on:touchstart="{handleOutclick}" on:click="{handleOutclick}" />
 
-<div class="svs" bind:this="{selectContainerRef}" on:mouseup|stopPropagation="{openDropdown}">
+<div
+  class="svs"
+  bind:this="{selectContainerRef}"
+  on:mouseup|stopPropagation="{openDropdown}"
+  role="none"
+>
   <select id="{id}" name="{name}" multiple="{multiple}" tabindex="-1" aria-hidden="true">
     {#each selectedOptions as option (option.value)}
       <option value="{option.label}" selected>{option.value}</option>
@@ -300,6 +305,7 @@
   <ul class="options" class:open="{open}">
     {#each matchedOptions as opt, idx (opt.value)}
       <li
+        role="none"
         class:disabled="{opt.disabled}"
         class:active="{activeIndex == idx}"
         on:mouseup|stopPropagation="{() => add(opt)}"

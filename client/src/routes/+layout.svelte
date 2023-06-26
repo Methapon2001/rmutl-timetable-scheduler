@@ -12,54 +12,18 @@
   let innerWidth: number;
   let route: string | null;
   let menuList1 = [
-    {
-      path: '/',
-      text: 'Home',
-    },
-    {
-      path: '/subject',
-      text: 'Subject',
-    },
-    {
-      path: '/instructor',
-      text: 'Instructor',
-    },
-    {
-      path: '/building',
-      text: 'Building',
-    },
-    {
-      path: '/room',
-      text: 'Room',
-    },
-    {
-      path: '/course',
-      text: 'Course',
-    },
-    {
-      path: '/plan',
-      text: 'Plan',
-    },
-    {
-      path: '/group',
-      text: 'Group',
-    },
-    {
-      path: '/section',
-      text: 'Section',
-    },
-    {
-      path: '/exam',
-      text: 'Exam',
-    },
-    {
-      path: '/timetable',
-      text: 'Timetable (Study)',
-    },
-    {
-      path: '/exam-timetable',
-      text: 'Timetable (Exam)',
-    },
+    { path: '/', text: 'Home' },
+    { path: '/subject', text: 'Subject' },
+    { path: '/instructor', text: 'Instructor' },
+    { path: '/building', text: 'Building' },
+    { path: '/room', text: 'Room' },
+    { path: '/course', text: 'Course' },
+    { path: '/plan', text: 'Plan' },
+    { path: '/group', text: 'Group' },
+    { path: '/section', text: 'Section' },
+    { path: '/exam', text: 'Exam' },
+    { path: '/timetable', text: 'Timetable (Study)' },
+    { path: '/exam-timetable', text: 'Timetable (Exam)' },
   ];
 
   $: if (innerWidth && innerWidth < 768) {
