@@ -348,7 +348,7 @@
         <div class="table-small-container border-b border-r">
           {#if pov === 'group'}
             {#each instructor.filter((obj) => state.exam?.instructor.findIndex((inst) => inst.id == obj.id) !== -1) as i (i.id)}
-              <div id="inst-{i.id}" class="p-4 pr-2" style:scroll-gutter="stable">
+              <div id="inst-{i.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
                 <h6 class="text-center font-semibold">Instructor - {i.name}</h6>
                 <Table
                   bind:data="{schedulerExam}"
@@ -362,7 +362,7 @@
             {/each}
           {:else}
             {#each group.filter((obj) => state.exam?.section.findIndex((grp) => grp.id == obj.id) !== -1) as g (g.id)}
-              <div id="group-{g.id}" class="p-4 pr-2" style:scroll-gutter="stable">
+              <div id="group-{g.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
                 <h6 class="text-center font-semibold">Group - {g.name}</h6>
                 <Table
                   bind:data="{schedulerExam}"
@@ -378,7 +378,7 @@
         </div>
         <div class="table-small-container border-b">
           {#each room.filter((obj) => !state.selected || obj.id === state.exam?.room?.id) as r (r.id)}
-            <div id="room-{r.id}" class="p-4 pr-2" style:scroll-gutter="stable">
+            <div id="room-{r.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
               <h6 class="text-center font-semibold">Room - {r.building.code}-{r.name}</h6>
               <Table
                 bind:data="{schedulerExam}"
@@ -404,7 +404,7 @@
 
         {#if pov === 'group'}
           {#each group as g (g.id)}
-            <div id="group-{g.id}" class="p-4 pr-2" style:scroll-gutter="stable">
+            <div id="group-{g.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
               <h6 class="text-center font-semibold">Group - {g.name}</h6>
               <Table
                 bind:data="{schedulerExam}"
@@ -417,7 +417,7 @@
           {/each}
         {:else}
           {#each instructor as i (i.id)}
-            <div id="inst-{i.id}" class="p-4 pr-2" style:scroll-gutter="stable">
+            <div id="inst-{i.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
               <h6 class="text-center font-semibold">Instructor - {i.name}</h6>
               <Table
                 bind:data="{schedulerExam}"

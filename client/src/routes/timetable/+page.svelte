@@ -390,7 +390,7 @@
         <div class="table-small-container border-b border-r">
           {#if pov === 'group'}
             {#each instructor.filter((obj) => state.section?.instructor.findIndex((inst) => inst.id == obj.id) !== -1) as i (i.id)}
-              <div id="inst-{i.id}" class="p-4 pr-2" style:scroll-gutter="stable">
+              <div id="inst-{i.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
                 <div class="mb-2 flex justify-between">
                   <h6 class="font-semibold">Instructor - {i.name}</h6>
                   {#if data.scheduler.data.some((sched) => sched.section.instructor.some((inst) => inst.id === i.id) && sched.publish === true)}
@@ -411,7 +411,7 @@
             {/each}
           {:else}
             {#each group.filter((obj) => !state.selected || state.section?.group?.id === obj.id) as g (g.id)}
-              <div id="group-{g.id}" class="p-4 pr-2" style:scroll-gutter="stable">
+              <div id="group-{g.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
                 <div class="mb-2 flex justify-between">
                   <h6 class="font-semibold">Group - {g.name}</h6>
                   {#if data.scheduler.data.some((sched) => sched.section.group && sched.section.group.id === g.id && sched.publish === true)}
@@ -434,7 +434,7 @@
         </div>
         <div class="table-small-container border-b">
           {#each room.filter((obj) => !state.selected || obj.id === state.section?.room?.id) as r (r.id)}
-            <div id="room-{r.id}" class="p-4 pr-2" style:scroll-gutter="stable">
+            <div id="room-{r.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
               <div class="mb-2 flex justify-between">
                 <h6 class="text-center font-semibold">Room - {r.building.code}-{r.name}</h6>
               </div>
@@ -466,7 +466,7 @@
               (sched) =>
                 sched.section.group && sched.section.group.id === g.id && sched.publish === true,
             )}
-            <div id="group-{g.id}" class="p-4 pr-2" style:scroll-gutter="stable">
+            <div id="group-{g.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
               <div class="mb-2 flex justify-between">
                 <h6 class="font-semibold">Group - {g.name}</h6>
                 {#if pub}
@@ -518,7 +518,7 @@
           {/each}
         {:else}
           {#each instructor as i (i.id)}
-            <div id="inst-{i.id}" class="p-4 pr-2" style:scroll-gutter="stable">
+            <div id="inst-{i.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
               <div class="mb-2 flex justify-between">
                 <h6 class="font-semibold">Instructor - {i.name}</h6>
                 {#if data.scheduler.data.some((sched) => sched.section.instructor.some((inst) => inst.id === i.id) && sched.publish === true)}
