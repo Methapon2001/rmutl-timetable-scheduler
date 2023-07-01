@@ -1,10 +1,13 @@
 import * as dotenv from "dotenv";
 dotenv.config();
 
+import path from "path";
+
 import Ajv from "ajv";
 import fastify from "fastify";
 import fastifyCors from "@fastify/cors";
 import fastifyWebsocket from "@fastify/websocket";
+import fastifyStatic from "@fastify/static";
 import * as routes from "./routes";
 
 const server = fastify();
@@ -51,6 +54,9 @@ server.setValidatorCompiler((request) => {
   return compiler.compile(request.schema);
 });
 
+server.register(fastifyStatic, {
+  root: path.join(path.resolve(), "client/build"),
+});
 server.register(fastifyCors);
 server.register(fastifyWebsocket);
 
