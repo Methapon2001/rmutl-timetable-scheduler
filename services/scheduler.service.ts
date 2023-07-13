@@ -22,20 +22,20 @@ const subjectSelect: Prisma.SubjectSelect = {
   exam: true,
 };
 
-const courseDetailSelect: Prisma.CourseDetailSelect = {
-  id: true,
-  type: true,
-  subject: {
-    select: subjectSelect,
-  },
-};
+// const courseDetailSelect: Prisma.CourseDetailSelect = {
+//   id: true,
+//   type: true,
+//   subject: {
+//     select: subjectSelect,
+//   },
+// };
 
 const courseSelect: Prisma.CourseSelect = {
   id: true,
   name: true,
-  detail: {
-    select: courseDetailSelect,
-  },
+  // detail: {
+  //   select: courseDetailSelect,
+  // },
 };
 
 const groupSelect: Prisma.GroupSelect = {
