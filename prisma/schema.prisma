@@ -50,6 +50,8 @@ model User {
 
   createdPlan Plan[] @relation("PlanCreatedBy")
   updatedPlan Plan[] @relation("PlanUpdatedBy")
+
+  openedRequestSection OpenedRequestSection[]
 }
 
 enum Role {
@@ -88,13 +90,15 @@ model Subject {
   updatedBy       User     @relation("SubjectUpdatedBy", fields: [updatedByUserId], references: [id])
   updatedAt       DateTime @updatedAt
 
-  section      Section[]
-  courseDetail CourseDetail[]
-  planDetail   PlanDetail[]
+  section        Section[]
+  courseDetail   CourseDetail[]
+  planDetail     PlanDetail[]
+  RequestSection RequestSection[]
 }
 
 model Instructor {
-  id   String @id @default(nanoid(16))
+  id String @id @default(nanoid(16))
+
   name String
 
   createdByUserId String
@@ -105,8 +109,9 @@ model Instructor {
   updatedBy       User     @relation("InstructorUpdatedBy", fields: [updatedByUserId], references: [id])
   updatedAt       DateTime @updatedAt
 
-  section Section[]
-  exam    Exam[]
+  section          Section[]
+  exam             Exam[]
+  requestedSection RequestSection[]
 }
 
 model Building {
@@ -341,4 +346,30 @@ model SchedulerExam {
   updatedByUserId String
   updatedBy       User     @relation("SchedulerExamUpdatedBy", fields: [updatedByUserId], references: [id])
   updatedAt       DateTime @updatedAt
+}
+
+model OpenedRequestSection {
+  id        String   @id @default(nanoid(16))
+  key       String   @default(nanoid(16))
+  createdAt DateTime @default(now())
+
+  openedByUserId String @unique
+  opener         User   @relation(fields: [openedByUserId], references: [id])
+
+  requests RequestSection[]
+}
+
+model RequestSection {
+  id        String   @id @default(nanoid(16))
+  number    Int      @default(1)
+  createdAt DateTime @default(now())
+
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id])
+
+  requestedByInstructorId String
+  requester               Instructor @relation(fields: [requestedByInstructorId], references: [id])
+
+  openedRequestSection   OpenedRequestSection @relation(fields: [openedRequestSectionId], references: [id], onDelete: Cascade)
+  openedRequestSectionId String
 }

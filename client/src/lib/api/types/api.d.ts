@@ -170,4 +170,20 @@ declare namespace API {
     updatedAt: string;
     updatedBy: Omit<API.User, 'createdAt' | 'updatedAt'>;
   };
+
+  type OpenedRequestSection = {
+    id: string;
+    key: string;
+    opener: Omit<API.User, 'createdAt' | 'updatedAt'>;
+    createdAt: string;
+  };
+
+  type RequestSection ={
+    id: string;
+    number: number;
+    subject: Omit<API.Subject, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>;
+    requester: Omit<API.Instructor, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>;
+    openedRequestSection: Omit<API.OpenedRequestSection, 'createdAt'>;
+    createdAt: string;
+  }
 }
