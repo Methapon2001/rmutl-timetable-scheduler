@@ -14,3 +14,4 @@ export { default as schedulerExamRoute } from "./scheduler-exam.route";
 export { default as planRoute } from "./plan.route";
 export { default as publishRoute } from "./publish.route";
 export { default as requestSectionRoute } from "./request-section.route";
+export { default as timetableExportRoute } from "./timetable-export.route";
