@@ -4,6 +4,7 @@
   import { invalidate } from '$app/navigation';
   import Modal from '$lib/components/Modal.svelte';
   import NewForm from './NewForm.svelte';
+  import toast from 'svelte-french-toast';
 
   export let data: PageData;
 
@@ -119,15 +120,27 @@
 {#if !data.requestSectionStatus.data}
   <div class="flex w-full justify-center">
     <div class="block p-3">
-      <button class="button" on:click="{() => requestSection('open')}">Open Request</button>
       <h3 class="text-center font-bold">Status : <span class="text-red-500">Closed</span></h3>
+      <button class="button" on:click="{() => requestSection('open')}">Open Request</button>
     </div>
   </div>
 {:else}
   <div class="flex w-full justify-center">
     <div class="block p-3">
-      <button class="button" on:click="{() => requestSection('close')}">Close Request</button>
       <h3 class="text-center font-bold">Status : <span class="text-green-600">Opened</span></h3>
+      <button class="button" on:click="{() => requestSection('close')}">Close Request</button>
+      <button
+        class="button"
+        on:click="{() => {
+          navigator.clipboard.writeText(
+            `${window.location.origin}/request-section-form?key=${data.requestSectionStatus.data.key}`,
+          );
+
+          toast.success("Link Copied")
+        }}"
+      >
+        Copy Form Link
+      </button>
     </div>
   </div>
 {/if}

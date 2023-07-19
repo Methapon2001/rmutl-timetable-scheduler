@@ -14,6 +14,8 @@
   import FilterIcon from '$lib/icons/FilterIcon.svelte';
   import Filter from './Filter.svelte';
   import { publish } from '$lib/api/publish';
+  import viewport from '$lib/utils/useViewportAction';
+  import SectionNewForm from '../section/NewForm.svelte';
 
   export let data: PageData;
 
@@ -32,6 +34,46 @@
   });
 
   onDestroy(() => ws.close());
+  const groupOptions = async () => {
+    return (await data.lazy.group).data.map((group) => ({
+      label: group.name,
+      value: group.id,
+    }));
+  };
+
+  const roomOptions = async () => {
+    return (await data.lazy.room).data.map((room) => ({
+      label: `${room.building.code}-${room.name} (${room.type
+        .charAt(0)
+        .toLocaleUpperCase()}${room.type.slice(1)})`,
+      value: room.id,
+      detail: room,
+    }));
+  };
+
+  const subjectOptions = async () => {
+    return (await data.lazy.subject).data.map((subject) => ({
+      label: `${subject.code} ${subject.name}`,
+      value: subject.id,
+      detail: subject,
+    }));
+  };
+
+  const instructorOptions = async () => {
+    return (await data.lazy.instructor).data.map((instructor) => ({
+      label: instructor.name,
+      value: instructor.id,
+    }));
+  };
+
+  const formOptions = async () => {
+    return {
+      group: await groupOptions(),
+      subject: await subjectOptions(),
+      room: await roomOptions(),
+      instructor: await instructorOptions(),
+    };
+  };
 
   let scheduler: ComponentProps<Table>['data'];
 
@@ -377,13 +419,16 @@
     }
     return filterFn(searchText);
   });
+
+  let newState = false;
+  let tableSelectState: string;
 </script>
 
 <svelte:window on:keydown="{handleKeydown}" />
 
 <div class="flex">
   <div class="flex-grow">
-    <div>
+    <div class="relative">
       <div class="z-20 grid grid-cols-2">
         <div class="table-small-container border-b border-r">
           {#if pov === 'group'}
@@ -464,7 +509,16 @@
               (sched) =>
                 sched.section.group && sched.section.group.id === g.id && sched.publish === true,
             )}
-            <div id="group-{g.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
+            <div
+              id="group-{g.id}"
+              class="p-4 pr-2"
+              style:scrollbar-gutter="stable"
+              use:viewport
+              on:enterViewport="{() => {
+                tableSelectState = g.id;
+                console.log(tableSelectState);
+              }}"
+            >
               <div class="mb-2 flex justify-between">
                 <h6 class="font-semibold">Group - {g.name}</h6>
                 {#if pub}
@@ -516,7 +570,16 @@
           {/each}
         {:else}
           {#each instructor as i (i.id)}
-            <div id="inst-{i.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
+            <div
+              id="inst-{i.id}"
+              class="p-4 pr-2"
+              style:scrollbar-gutter="stable"
+              use:viewport
+              on:enterViewport="{() => {
+                tableSelectState = i.id;
+                console.log(tableSelectState);
+              }}"
+            >
               <div class="mb-2 flex justify-between">
                 <h6 class="font-semibold">Instructor - {i.name}</h6>
                 {#if data.scheduler.data.some((sched) => sched.section.instructor.some((inst) => inst.id === i.id) && sched.publish === true)}
@@ -533,6 +596,25 @@
                 instructor="{i}"
               />
             </div>
+          {/each}
+        {/if}
+      </div>
+      <div class="absolute bottom-0 left-0 right-0 z-40 flex overflow-x-auto border-t bg-white">
+        {#if pov === 'instructor'}
+          {#each instructor as i (i.id)}
+            <a
+              href="#inst-{i.id}"
+              class="inline-block whitespace-nowrap border-r px-4 py-2 last:border-r-0"
+              class:bg-slate-200="{i.id === tableSelectState}">{i.name}</a
+            >
+          {/each}
+        {:else}
+          {#each group as g (g.id)}
+            <a
+              href="#group-{g.id}"
+              class="inline-block whitespace-nowrap border-r px-4 py-2 last:border-r-0"
+              class:bg-slate-200="{g.id === tableSelectState}">{g.name}</a
+            >
           {/each}
         {/if}
       </div>
@@ -645,6 +727,9 @@
           </div>
         {/if}
       {/each}
+      <div class="p-4">
+        <button class="button" on:click="{() => (newState = !newState)}">Add Section</button>
+      </div>
     </div>
   </div>
 </div>
@@ -720,6 +805,26 @@
   </div>
 </Modal>
 
+<Modal bind:open="{newState}">
+  {#if newState}
+    <div id="new" class="p-4">
+      <h1 class="mb-4 block text-center text-2xl font-bold">New Section</h1>
+      <div class="mx-auto max-w-screen-md">
+        {#await formOptions()}
+          Loading...
+        {:then options}
+          <SectionNewForm
+            groupOptions="{options.group}"
+            roomOptions="{options.room}"
+            subjectOptions="{options.subject}"
+            instructorOptions="{options.instructor}"
+          />
+        {/await}
+      </div>
+    </div>
+  {/if}
+</Modal>
+
 <style lang="postcss">
   .table-small-container {
     height: calc(193px + 1rem + 1.5rem + 1rem + 0.5rem);
@@ -728,7 +833,7 @@
   }
 
   .main-table-container {
-    height: calc(100vh - 4rem - 4rem - (193px + 1rem + 1.5rem + 1rem));
+    height: calc(100vh - 4rem - 4rem - (193px + 1rem + 1.5rem + 1rem + 0.5rem));
     overflow-y: auto;
   }
 

@@ -30,7 +30,7 @@
       <Select
         options="{group.map((v) => ({ label: v.name, value: v.id }))}"
         bind:value="{groupId}"
-        placeholder="Group"
+        placeholder="All"
       />
     </div>
   </section>

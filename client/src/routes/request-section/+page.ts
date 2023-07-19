@@ -11,15 +11,6 @@ export const load = (async ({ fetch, parent, depends }) => {
 
   if (!session) throw redirect(302, '/login?redirect=/request-section');
 
-  // const res = await fetch(api, {
-  //   method: 'GET',
-  //   headers: {
-  //     'Content-Type': 'application/json',
-  //     Authorization: `Bearer ${session?.token.access}`,
-  //   },
-  // });
-  // const body = await res.json();
-
   const requestRequestSectionStatus = async () => {
     const res = await fetch(api, {
       method: 'GET',
@@ -30,7 +21,7 @@ export const load = (async ({ fetch, parent, depends }) => {
     });
     const body = await res.json();
     return body as {
-      data: API.OpenedRequestSection[];
+      data: API.OpenedRequestSection;
     };
   };
 
@@ -91,10 +82,6 @@ export const load = (async ({ fetch, parent, depends }) => {
       total: number;
     };
   };
-
-  // return {
-  //   requestSection: body,
-  // };
 
   return {
     requestSectionStatus: requestRequestSectionStatus(),

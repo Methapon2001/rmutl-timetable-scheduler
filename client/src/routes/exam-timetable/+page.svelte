@@ -12,6 +12,7 @@
   import { generate } from './generate';
   import Filter from './Filter.svelte';
   import FilterIcon from '$lib/icons/FilterIcon.svelte';
+  import viewport from '$lib/utils/useViewportAction';
 
   export let data: PageData;
 
@@ -254,9 +255,9 @@
 
       drawLayout();
 
-      docScheduleExam.assignSchedule(filtered);
+      docScheduleExam.assignSchedule(filtered, 'group', grp);
       docScheduleExamDetail.setHeader(grp.name);
-      docScheduleExamDetail.addDetail(filtered);
+      docScheduleExamDetail.addDetail(filtered, 'group', grp);
 
       doc.addPage();
     });
@@ -270,9 +271,9 @@
 
       drawLayout();
 
-      docScheduleExam.assignSchedule(filtered);
+      docScheduleExam.assignSchedule(filtered, 'instructor', inst);
       docScheduleExamDetail.setHeader(inst.name);
-      docScheduleExamDetail.addDetail(filtered);
+      docScheduleExamDetail.addDetail(filtered, 'instructor', inst);
 
       doc.addPage();
     });
@@ -284,9 +285,9 @@
 
       drawLayout();
 
-      docScheduleExam.assignSchedule(filtered);
+      docScheduleExam.assignSchedule(filtered, 'room', r);
       docScheduleExamDetail.setHeader(r.name);
-      docScheduleExamDetail.addDetail(filtered);
+      docScheduleExamDetail.addDetail(filtered, 'room', r);
 
       doc.addPage();
     });
@@ -337,13 +338,15 @@
     }
     return filterFn(searchText);
   });
+
+  let tableSelectState: string;
 </script>
 
 <svelte:window on:keydown="{handleKeydown}" />
 
 <div class="flex">
   <div class="flex-grow">
-    <div>
+    <div class="relative">
       <div class="z-20 grid grid-cols-2">
         <div class="table-small-container border-b border-r">
           {#if pov === 'group'}
@@ -396,7 +399,7 @@
         {#if data.exam.total === 0}
           <div class="p-8 text-center">
             <h1 class="mb-4 text-5xl font-extrabold">No Data</h1>
-            <h2 class="text-3xl text-secondary">
+            <h2 class="text-secondary text-3xl">
               No section created.<br />Must have section data in order for timetable to show.
             </h2>
           </div>
@@ -404,7 +407,16 @@
 
         {#if pov === 'group'}
           {#each group as g (g.id)}
-            <div id="group-{g.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
+            <div
+              id="group-{g.id}"
+              class="p-4 pr-2"
+              style:scrollbar-gutter="stable"
+              use:viewport
+              on:enterViewport="{() => {
+                tableSelectState = g.id;
+                console.log(tableSelectState);
+              }}"
+            >
               <h6 class="text-center font-semibold">Group - {g.name}</h6>
               <Table
                 bind:data="{schedulerExam}"
@@ -417,7 +429,16 @@
           {/each}
         {:else}
           {#each instructor as i (i.id)}
-            <div id="inst-{i.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
+            <div
+              id="inst-{i.id}"
+              class="p-4 pr-2"
+              style:scrollbar-gutter="stable"
+              use:viewport
+              on:enterViewport="{() => {
+                tableSelectState = i.id;
+                console.log(tableSelectState);
+              }}"
+            >
               <h6 class="text-center font-semibold">Instructor - {i.name}</h6>
               <Table
                 bind:data="{schedulerExam}"
@@ -430,10 +451,29 @@
           {/each}
         {/if}
       </div>
+      <div class="absolute bottom-0 left-0 right-0 z-40 flex overflow-x-auto border-t bg-white">
+        {#if pov === 'instructor'}
+          {#each instructor as i (i.id)}
+            <a
+              href="#inst-{i.id}"
+              class="inline-block whitespace-nowrap border-r px-4 py-2 last:border-r-0"
+              class:bg-slate-200="{i.id === tableSelectState}">{i.name}</a
+            >
+          {/each}
+        {:else}
+          {#each group as g (g.id)}
+            <a
+              href="#group-{g.id}"
+              class="inline-block whitespace-nowrap border-r px-4 py-2 last:border-r-0"
+              class:bg-slate-200="{g.id === tableSelectState}">{g.name}</a
+            >
+          {/each}
+        {/if}
+      </div>
     </div>
   </div>
   <div>
-    <div class="section-selector border-l bg-light">
+    <div class="section-selector bg-light border-l">
       <div class="relative m-4 grid grid-cols-4 items-center gap-4">
         <input
           type="text"
@@ -442,7 +482,7 @@
           bind:value="{searchText}"
         />
         <button
-          class="input flex !w-full items-center justify-center bg-white text-secondary shadow"
+          class="input text-secondary flex !w-full items-center justify-center bg-white shadow"
           on:click="{() => (showFilter = !showFilter)}"
         >
           <FilterIcon />
@@ -456,12 +496,12 @@
           <div class="mb-2 space-y-2 text-sm">
             <div class="flex gap-2">
               <span
-                class="inline-block flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
+                class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
               >
                 {exam.section[0]?.subject.code ?? ''}
               </span>
               <span
-                class="inline-block flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
+                class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
               >
                 {exam.section[0]?.subject.name ?? ''}
               </span>
@@ -469,7 +509,7 @@
             <div class="flex gap-2">
               {#each exam.section as sec}
                 <span
-                  class="inline-block flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
+                  class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
                 >
                   SEC {sec.no}
                 </span>
@@ -530,7 +570,7 @@
   </div>
   {#if state.exam}
     <div
-      class="flex flex justify-between gap-2 overflow-hidden rounded border border-primary bg-light font-semibold shadow"
+      class="border-primary bg-light flex flex justify-between gap-2 overflow-hidden rounded border font-semibold shadow"
     >
       <span class="bg-primary px-3 py-2 font-semibold text-white">Selected</span>
       <span class="truncate px-4 py-2">
