@@ -849,6 +849,11 @@ export function drawExamDetailTable(
         period: number;
         size: number;
       }[],
+      mode: 'group' | 'instructor' | 'room',
+      detailBy:
+        | API.SchedulerExam['exam']['instructor'][number]
+        | API.SchedulerExam['exam']['room']
+        | API.SchedulerExam['exam']['section'][number]['group'],
     ) => {
       doc.setFontSize(options.fontSize - 1);
       doc.setLineWidth(options.borderWidth);
@@ -903,10 +908,14 @@ export function drawExamDetailTable(
             align: 'center',
           },
         );
+
+        const sectionNo =
+          mode === 'group'
+            ? sched.exam.section.find((obj) => obj.group && obj.group.id === detailBy?.id)?.no
+            : sched.exam.section.map((obj) => obj.no).join(', ');
+
         doc.text(
-          `${sched.exam.section[0].subject.code}_SEC_${sched.exam.section[0].no}${
-            sched.exam.section[0].alt ? `, ${sched.exam.section[0].alt}` : ''
-          }`,
+          `${sched.exam.section[0].subject.code}_SEC_${sectionNo}`,
           x +
             schedule.colHeaderWidth +
             schedule.colWidth * 15 +
@@ -1274,6 +1283,11 @@ export function drawScheduleExam(
         period: number;
         size: number;
       }[],
+      mode: 'group' | 'instructor' | 'room',
+      detailBy:
+        | API.SchedulerExam['exam']['instructor'][number]
+        | API.SchedulerExam['exam']['room']
+        | API.SchedulerExam['exam']['section'][number]['group'],
     ) => {
       const sourceSetting = {
         fontSize: doc.getFontSize(),
@@ -1316,8 +1330,14 @@ export function drawScheduleExam(
             align: 'center',
           },
         );
+
+        const sectionNo =
+          mode === 'group'
+            ? v.exam.section.find((obj) => obj.group && obj.group.id === detailBy?.id)?.no
+            : v.exam.section.map((obj) => obj.no).join(', ');
+
         doc.text(
-          `SEC ${v.exam.section.map((sec) => sec.no).join(', ')}`,
+          `SEC ${sectionNo}`,
           cords[0] + cords[2] / 2,
           cords[1] + vAlignTextCenter(cords[2] / 2, doc) + cords[3] / 12,
           {
