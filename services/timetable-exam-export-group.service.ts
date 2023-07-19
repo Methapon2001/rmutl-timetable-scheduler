@@ -23,17 +23,9 @@ const subjectSelect = {
   exam: true,
 };
 
-const courseSelect = {
-  id: true,
-  name: true,
-};
-
 const groupSelect = {
   id: true,
   name: true,
-  course: {
-    select: courseSelect,
-  },
 };
 
 const buildingSelect = {
@@ -56,45 +48,31 @@ const instructorSelect = {
   name: true,
 };
 
-const childSectionSelect = {
+const sectionSelect = {
   id: true,
   no: true,
   alt: true,
   lab: true,
   type: true,
   capacity: true,
-  group: {
-    select: groupSelect,
-  },
-  room: {
-    select: roomSelect,
-  },
   subject: {
     select: subjectSelect,
   },
-  instructor: {
-    select: instructorSelect,
+  group: {
+    select: groupSelect,
   },
 };
 
-const sectionSelect = {
-  ...childSectionSelect,
-  parent: {
-    select: childSectionSelect,
-  },
-  child: {
-    select: childSectionSelect,
-  },
-};
-
-const schedulerSelect = {
+const examSelect = {
   id: true,
-  weekday: true,
-  start: true,
-  end: true,
-  publish: true,
+  room: {
+    select: roomSelect,
+  },
   section: {
     select: sectionSelect,
+  },
+  instructor: {
+    select: instructorSelect,
   },
   createdAt: true,
   createdBy: {
@@ -106,76 +84,41 @@ const schedulerSelect = {
   },
 };
 
-export async function exportRoomSchedule(
+const schedulerExamSelect = {
+  id: true,
+  weekday: true,
+  start: true,
+  end: true,
+  publish: true,
+  exam: {
+    select: examSelect,
+  },
+  createdAt: true,
+  createdBy: {
+    select: userSelect,
+  },
+  updatedAt: true,
+  updatedBy: {
+    select: userSelect,
+  },
+};
+export async function exportGroupScheduleExam(
   req: FastifyRequest,
   res: FastifyReply
 ) {
-  const data = await prisma.scheduler.findMany({
-    select: schedulerSelect,
+  const data = await prisma.schedulerExam.findMany({
+    select: schedulerExamSelect,
     where: {
       createdByUserId: req.user.id,
     },
   });
 
-  const processOverlaps = (arg: typeof data) => {
-    const processed = arg.map((current) => {
-      return {
-        ...current,
-        _overlap: arg.some(
-          (item) =>
-            item.id !== current.id &&
-            item.weekday == current.weekday &&
-            item.end >= current.start &&
-            item.start <= current.end
-        ),
-        _offset: -1,
-      };
-    });
-
-    for (let i = 0; i < processed.length; i++) {
-      if (processed[i]._overlap === false || processed[i]._offset !== -1)
-        continue;
-
-      const offsetList: number[] = [];
-
-      const mutualOverlap = processed.filter(
-        (item) =>
-          processed[i].id !== item.id &&
-          item.weekday === processed[i].weekday &&
-          processed[i].start <= item.end &&
-          processed[i].end >= item.start
-      );
-
-      mutualOverlap.forEach((item) => {
-        if (item._offset !== -1) offsetList.push(item._offset);
-      });
-
-      let j = 0;
-
-      while (offsetList.includes(j)) j++;
-
-      processed[i]._offset = j;
-
-      for (let k = 0; k < processed.length; k++) {
-        if (processed[i].weekday !== processed[k].weekday || i == k) continue;
-
-        if (
-          processed[i].section.subject.id == processed[k].section.subject.id
-        ) {
-          processed[k]._overlap = true;
-          processed[k]._offset = j;
-        }
-      }
-    }
-    return processed;
-  };
-
-  let room = data.reduce<
-    Record<string, (typeof data)[number]["section"]["room"]>
+  let group = data.reduce<
+    Record<string, (typeof data)[number]["exam"]["section"][number]["group"]>
   >((acc, curr) => {
-    if (curr.section.room && !acc[curr.section.room.id]) {
-      acc[curr.section.room.id] = curr.section.room;
-    }
+    curr.exam.section.forEach((v) => {
+      if (v.group && !acc[v.group.id]) acc[v.group.id] = v.group;
+    });
     return acc;
   }, {});
 
@@ -305,22 +248,11 @@ export async function exportRoomSchedule(
     return { ws, styleCenter, styleBorder };
   };
 
-  Object.values(room).forEach((vRoom) => {
-    const {
-      id: roomId,
-      name: roomName,
-      building: { code: buildingCode },
-    } = vRoom!;
+  Object.values(group).forEach((vGroup) => {
+    const { id: groupId, name: groupName } = vGroup!;
 
-    const { ws, styleCenter, styleBorder } = createWorksheetLayout(
-      `${buildingCode}-${roomName}`
-    );
+    const { ws, styleCenter, styleBorder } = createWorksheetLayout(groupName);
 
-    const p = processOverlaps(
-      data.filter((vSchedule) => vSchedule.section.room?.id === roomId)
-    );
-
-    const maxOverlap = Math.max(...p.map((obj) => obj._offset), 2) + 1;
     const weekdayMap = {
       mon: 0,
       tue: 1,
@@ -330,12 +262,13 @@ export async function exportRoomSchedule(
       sat: 5,
       sun: 6,
     };
+    const rowPerDay = 3;
 
     Object.values(weekdayMap).forEach((vWeekday) => {
       ws.cell(
-        18 + maxOverlap * vWeekday,
+        18 + rowPerDay * vWeekday,
         1,
-        18 + maxOverlap * vWeekday + maxOverlap - 1,
+        18 + rowPerDay * vWeekday + rowPerDay - 1,
         3,
         true
       )
@@ -346,9 +279,9 @@ export async function exportRoomSchedule(
         )
         .style({ ...styleCenter, ...styleBorder });
       ws.cell(
-        18 + maxOverlap * vWeekday + maxOverlap - 1,
+        18 + rowPerDay * vWeekday + rowPerDay - 1,
         1,
-        18 + maxOverlap * vWeekday + maxOverlap - 1,
+        18 + rowPerDay * vWeekday + rowPerDay - 1,
         53
       ).style({
         border: {
@@ -360,7 +293,7 @@ export async function exportRoomSchedule(
     });
 
     for (let i = 1; i <= 25; i++) {
-      ws.cell(18, 3 + i * 2, 18 + 7 * maxOverlap - 1, 3 + i * 2, false).style({
+      ws.cell(18, 3 + i * 2, 18 + 7 * rowPerDay - 1, 3 + i * 2, false).style({
         border: {
           right: {
             style: "thin",
@@ -379,66 +312,63 @@ export async function exportRoomSchedule(
       learn: 0,
     };
 
-    p.forEach((vProcessed, idx) => {
-      ws.cell(3 + idx, 16)
-        .string(vProcessed.section.subject.code)
-        .style(styleCenter);
-      ws.cell(3 + idx, 20).string(vProcessed.section.subject.name);
-      ws.cell(3 + idx, 32)
-        .number(vProcessed.section.subject.lecture)
-        .style(styleCenter);
-      ws.cell(3 + idx, 33)
-        .number(vProcessed.section.subject.lab)
-        .style(styleCenter);
-      ws.cell(3 + idx, 34)
-        .number(vProcessed.section.subject.learn)
-        .style(styleCenter);
-      ws.cell(3 + idx, 35).string(
-        vProcessed.section.subject.code + "_SEC_" + vProcessed.section.no
+    data.forEach((vProcessed, idx) => {
+      const associatedSection = vProcessed.exam.section.find(
+        (obj) => obj.group?.id === groupId
       );
 
-      total.lecture += vProcessed.section.subject.lecture;
-      total.lab += vProcessed.section.subject.lab;
-      total.learn += vProcessed.section.subject.learn;
+      if (!associatedSection) return;
 
-      if (!vProcessed._overlap) {
-        ws.cell(
-          18 + maxOverlap * weekdayMap[vProcessed.weekday],
-          4 + (vProcessed.start - 1) * 2,
-          18 + maxOverlap * weekdayMap[vProcessed.weekday] + maxOverlap - 1,
-          3 + vProcessed.end * 2,
-          true
-        )
-          .string(
-            vProcessed.section.subject.code +
-              "_SEC_" +
-              vProcessed.section.no +
-              (vProcessed.section.room
-                ? "\n" +
-                  vProcessed.section.room.building.code +
-                  "-" +
-                  vProcessed.section.room.name
-                : "")
-          )
-          .style({
-            ...styleBorder,
-            alignment: {
-              wrapText: true,
-              ...styleCenter.alignment,
-            },
-          });
-      } else {
-        ws.cell(
-          18 + maxOverlap * weekdayMap[vProcessed.weekday] + vProcessed._offset,
+      ws.cell(3 + idx, 16)
+        .string(associatedSection.subject.code)
+        .style(styleCenter);
+      ws.cell(3 + idx, 20).string(vProcessed.exam.section[0].subject.name);
+      ws.cell(3 + idx, 32)
+        .number(associatedSection.subject.lecture)
+        .style(styleCenter);
+      ws.cell(3 + idx, 33)
+        .number(associatedSection.subject.lab)
+        .style(styleCenter);
+      ws.cell(3 + idx, 34)
+        .number(associatedSection.subject.learn)
+        .style(styleCenter);
+      ws.cell(3 + idx, 35).string(
+        associatedSection.subject.code +
+          "_SEC_" +
+          associatedSection.no +
+          (associatedSection.alt ? `, ${associatedSection.alt}` : "")
+      );
 
-          4 + (vProcessed.start - 1) * 2,
-          18 + maxOverlap * weekdayMap[vProcessed.weekday] + vProcessed._offset,
-          3 + vProcessed.end * 2,
-          true
+      total.lecture += associatedSection.subject.lecture;
+      total.lab += associatedSection.subject.lab;
+      total.learn += associatedSection.subject.learn;
+
+      ws.cell(
+        18 + rowPerDay * weekdayMap[vProcessed.weekday],
+        4 + (vProcessed.start - 1) * 2,
+        18 + rowPerDay * weekdayMap[vProcessed.weekday] + rowPerDay - 1,
+        3 + vProcessed.end * 2,
+        true
+      )
+        .string(
+          associatedSection.subject.code +
+            "_SEC_" +
+            associatedSection.no +
+            (associatedSection.alt ? `, ${associatedSection.alt}` : "") +
+            (vProcessed.exam.room
+              ? "\n" +
+                vProcessed.exam.room.building.code +
+                "-" +
+                vProcessed.exam.room.name
+              : "")
         )
-          .string(vProcessed.section.subject.name)
-          .style({ ...styleBorder, ...styleCenter });
-      }
+        .style({
+          ...styleBorder,
+          alignment: {
+            wrapText: true,
+            ...styleCenter.alignment,
+          },
+        });
     });
 
     ws.cell(15, 32).number(total.lecture).style(styleCenter);

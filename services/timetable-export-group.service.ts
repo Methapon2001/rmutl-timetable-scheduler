@@ -387,6 +387,12 @@ export async function exportGroupSchedule(
       ws.cell(3 + idx, 34)
         .number(vProcessed.section.subject.learn)
         .style(styleCenter);
+      ws.cell(3 + idx, 35).string(
+        vProcessed.section.subject.code +
+          "_SEC_" +
+          vProcessed.section.no +
+          (vProcessed.section.alt ? `, ${vProcessed.section.alt}` : "")
+      );
 
       total.lecture += vProcessed.section.subject.lecture;
       total.lab += vProcessed.section.subject.lab;
@@ -400,8 +406,25 @@ export async function exportGroupSchedule(
           3 + vProcessed.end * 2,
           true
         )
-          .string(vProcessed.section.subject.name)
-          .style({ ...styleBorder, ...styleCenter });
+          .string(
+            vProcessed.section.subject.code +
+              "_SEC_" +
+              vProcessed.section.no +
+              (vProcessed.section.alt ? `, ${vProcessed.section.alt}` : "") +
+              (vProcessed.section.room
+                ? "\n" +
+                  vProcessed.section.room.building.code +
+                  "-" +
+                  vProcessed.section.room.name
+                : "")
+          )
+          .style({
+            ...styleBorder,
+            alignment: {
+              wrapText: true,
+              ...styleCenter.alignment,
+            },
+          });
       } else {
         ws.cell(
           18 + maxOverlap * weekdayMap[vProcessed.weekday] + vProcessed._offset,
