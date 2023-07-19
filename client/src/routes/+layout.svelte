@@ -21,6 +21,7 @@
     { path: '/plan', text: 'Plan' },
     { path: '/group', text: 'Group' },
     { path: '/section', text: 'Section' },
+    { path: '/request-section', text: 'Request Section' },
     { path: '/exam', text: 'Exam' },
     { path: '/timetable', text: 'Timetable (Study)' },
     { path: '/exam-timetable', text: 'Timetable (Exam)' },
