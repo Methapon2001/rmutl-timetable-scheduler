@@ -388,18 +388,29 @@ export async function exportRoomSchedule(
         .number(vProcessed.section.subject.lecture)
         .style(styleCenter);
       ws.cell(3 + idx, 33)
-        .number(vProcessed.section.subject.lab)
+        .number(vProcessed.section.subject.lab / 3)
         .style(styleCenter);
       ws.cell(3 + idx, 34)
-        .number(vProcessed.section.subject.learn)
+        .number(
+          vProcessed.section.subject.lecture +
+            vProcessed.section.subject.lab / 3
+        )
         .style(styleCenter);
       ws.cell(3 + idx, 35).string(
         vProcessed.section.subject.code + "_SEC_" + vProcessed.section.no
       );
+      ws.cell(3 + idx, 48)
+        .number(vProcessed.section.subject.lecture)
+        .style(styleCenter);
+      ws.cell(3 + idx, 49)
+        .number(vProcessed.section.subject.lab)
+        .style(styleCenter);
+      ws.cell(3 + idx, 50)
+        .number(vProcessed.section.subject.lecture + vProcessed.section.subject.lab)
+        .style(styleCenter);
 
       total.lecture += vProcessed.section.subject.lecture;
       total.lab += vProcessed.section.subject.lab;
-      total.learn += vProcessed.section.subject.learn;
 
       if (!vProcessed._overlap) {
         ws.cell(
@@ -442,8 +453,15 @@ export async function exportRoomSchedule(
     });
 
     ws.cell(15, 32).number(total.lecture).style(styleCenter);
-    ws.cell(15, 33).number(total.lab).style(styleCenter);
-    ws.cell(15, 34).number(total.learn).style(styleCenter);
+    ws.cell(15, 33).number(total.lab / 3).style(styleCenter);
+    ws.cell(15, 34)
+      .number(total.lecture + total.lab / 3)
+      .style(styleCenter);
+    ws.cell(15, 48).number(total.lecture).style(styleCenter);
+    ws.cell(15, 49).number(total.lab).style(styleCenter);
+    ws.cell(15, 50)
+      .number(total.lecture + total.lab)
+      .style(styleCenter);
   });
 
   const buffer = await wb.writeToBuffer();

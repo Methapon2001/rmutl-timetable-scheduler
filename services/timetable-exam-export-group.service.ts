@@ -312,32 +312,48 @@ export async function exportGroupScheduleExam(
       learn: 0,
     };
 
-    data.forEach((vProcessed, idx) => {
+    let count = 0;
+
+    data.forEach((vProcessed) => {
       const associatedSection = vProcessed.exam.section.find(
         (obj) => obj.group?.id === groupId
       );
 
       if (!associatedSection) return;
 
-      ws.cell(3 + idx, 16)
+      ws.cell(3 + count, 16)
         .string(associatedSection.subject.code)
         .style(styleCenter);
-      ws.cell(3 + idx, 20).string(vProcessed.exam.section[0].subject.name);
-      ws.cell(3 + idx, 32)
+      ws.cell(3 + count, 20).string(vProcessed.exam.section[0].subject.name);
+      ws.cell(3 + count, 32)
         .number(associatedSection.subject.lecture)
         .style(styleCenter);
-      ws.cell(3 + idx, 33)
-        .number(associatedSection.subject.lab)
+      ws.cell(3 + count, 33)
+        .number(associatedSection.subject.lab / 3)
         .style(styleCenter);
-      ws.cell(3 + idx, 34)
-        .number(associatedSection.subject.learn)
+      ws.cell(3 + count, 34)
+        .number(
+          associatedSection.subject.lecture + associatedSection.subject.lab / 3
+        )
         .style(styleCenter);
-      ws.cell(3 + idx, 35).string(
+      ws.cell(3 + count, 35).string(
         associatedSection.subject.code +
           "_SEC_" +
           associatedSection.no +
           (associatedSection.alt ? `, ${associatedSection.alt}` : "")
       );
+      ws.cell(3 + count, 48)
+        .number(associatedSection.subject.lecture)
+        .style(styleCenter);
+      ws.cell(3 + count, 49)
+        .number(associatedSection.subject.lab)
+        .style(styleCenter);
+      ws.cell(3 + count, 50)
+        .number(
+          associatedSection.subject.lecture + associatedSection.subject.lab
+        )
+        .style(styleCenter);
+      count++;
 
       total.lecture += associatedSection.subject.lecture;
       total.lab += associatedSection.subject.lab;
