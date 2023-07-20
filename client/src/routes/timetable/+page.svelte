@@ -16,6 +16,7 @@
   import { publish } from '$lib/api/publish';
   import viewport from '$lib/utils/useViewportAction';
   import SectionNewForm from '../section/NewForm.svelte';
+  import { exportSchedule } from '$lib/api/export-data';
 
   export let data: PageData;
 
@@ -758,6 +759,16 @@
       on:click="{() => exportPDF()}"
     >
       Export PDF
+    </button>
+    <button
+      class="rounded border bg-slate-900 px-8 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
+      on:click="{() => {
+        exportSchedule('group');
+        exportSchedule('instructor');
+        exportSchedule('room');
+      }}"
+    >
+      Export Excel
     </button>
   </div>
   {#if state.section}

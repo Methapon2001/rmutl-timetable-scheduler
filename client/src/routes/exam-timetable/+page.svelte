@@ -13,6 +13,7 @@
   import Filter from './Filter.svelte';
   import FilterIcon from '$lib/icons/FilterIcon.svelte';
   import viewport from '$lib/utils/useViewportAction';
+  import { exportSchedule } from '$lib/api/export-data';
 
   export let data: PageData;
 
@@ -566,6 +567,16 @@
       on:click="{() => exportPDF()}"
     >
       Export PDF
+    </button>
+    <button
+      class="rounded border bg-slate-900 px-8 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
+      on:click="{() => {
+        exportSchedule('group', true);
+        exportSchedule('instructor', true);
+        exportSchedule('room', true);
+      }}"
+    >
+      Export Excel
     </button>
   </div>
   {#if state.exam}
