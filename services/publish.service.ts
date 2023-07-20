@@ -29,6 +29,7 @@ export let action = async (
           : undefined,
         roomId: request.body.roomId,
       },
+      createdByUserId: request.user.id,
     },
     data: {
       publish: request.body.publish,
