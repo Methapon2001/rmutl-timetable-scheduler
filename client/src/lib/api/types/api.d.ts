@@ -150,6 +150,7 @@ declare namespace API {
     start: number;
     end: number;
     exam: Omit<API.Exam, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>;
+    publish: boolean;
     createdAt: string;
     createdBy: Omit<API.User, 'createdAt' | 'updatedAt'>;
     updatedAt: string;

@@ -14,6 +14,7 @@
   import FilterIcon from '$lib/icons/FilterIcon.svelte';
   import viewport from '$lib/utils/useViewportAction';
   import { exportSchedule } from '$lib/api/export-data';
+  import { publishExam } from '$lib/api/publish';
 
   export let data: PageData;
 
@@ -153,6 +154,7 @@
           start: state.period,
           end: state.period + state.size - 1,
           examId: state.exam.id,
+          publish: true,
         });
 
         resetState();
@@ -353,7 +355,14 @@
           {#if pov === 'group'}
             {#each instructor.filter((obj) => state.exam?.instructor.findIndex((inst) => inst.id == obj.id) !== -1) as i (i.id)}
               <div id="inst-{i.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
-                <h6 class="text-center font-semibold">Instructor - {i.name}</h6>
+                <div class="mb-2 flex justify-between">
+                  <h6 class="font-semibold">Instructor - {i.name}</h6>
+                  {#if data.schedulerExam.data.some((sched) => sched.exam.instructor.some((inst) => inst.id === i.id) && sched.publish === true)}
+                    <span class="rounded bg-green-600 px-2 font-semibold text-white">Public</span>
+                  {:else}
+                    <span class="rounded bg-secondary px-2 font-semibold text-white">Private</span>
+                  {/if}
+                </div>
                 <Table
                   bind:data="{schedulerExam}"
                   bind:state="{state}"
@@ -367,7 +376,14 @@
           {:else}
             {#each group.filter((obj) => state.exam?.section.findIndex((grp) => grp.id == obj.id) !== -1) as g (g.id)}
               <div id="group-{g.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
-                <h6 class="text-center font-semibold">Group - {g.name}</h6>
+                <div class="mb-2 flex justify-between">
+                  <h6 class="font-semibold">Group - {g.name}</h6>
+                  {#if data.schedulerExam.data.some((sched) => sched.exam.section.some((sec) => sec.group && sec.group.id === g.id) && sched.publish === true)}
+                    <span class="rounded bg-green-600 px-2 font-semibold text-white">Public</span>
+                  {:else}
+                    <span class="rounded bg-secondary px-2 font-semibold text-white">Private</span>
+                  {/if}
+                </div>
                 <Table
                   bind:data="{schedulerExam}"
                   bind:state="{state}"
@@ -400,7 +416,7 @@
         {#if data.exam.total === 0}
           <div class="p-8 text-center">
             <h1 class="mb-4 text-5xl font-extrabold">No Data</h1>
-            <h2 class="text-secondary text-3xl">
+            <h2 class="text-3xl text-secondary">
               No section created.<br />Must have section data in order for timetable to show.
             </h2>
           </div>
@@ -408,6 +424,11 @@
 
         {#if pov === 'group'}
           {#each group as g (g.id)}
+            {@const pub = data.schedulerExam.data.some(
+              (sched) =>
+                sched.exam.section.some((sec) => sec.group && sec.group.id === g.id) &&
+                sched.publish === true,
+            )}
             <div
               id="group-{g.id}"
               class="p-4 pr-2"
@@ -418,7 +439,14 @@
                 console.log(tableSelectState);
               }}"
             >
-              <h6 class="text-center font-semibold">Group - {g.name}</h6>
+              <div class="mb-2 flex justify-between">
+                <h6 class="font-semibold">Group - {g.name}</h6>
+                {#if data.schedulerExam.data.some((sched) => sched.exam.section.some((sec) => sec.group && sec.group.id === g.id) && sched.publish === true)}
+                  <span class="rounded bg-green-600 px-2 font-semibold text-white">Public</span>
+                {:else}
+                  <span class="rounded bg-secondary px-2 font-semibold text-white">Private</span>
+                {/if}
+              </div>
               <Table
                 bind:data="{schedulerExam}"
                 bind:state="{state}"
@@ -427,9 +455,45 @@
                 group="{g}"
               />
             </div>
+            <div class="flex justify-end">
+              {#if pub}
+                <button
+                  class="button mr-2"
+                  on:click="{async () => {
+                    await publishExam({ groupId: g.id }, false);
+                    await invalidate('data:scheduler-exam');
+                  }}"
+                >
+                  Unpublish
+                </button>
+              {:else}
+                <button
+                  class="button mr-2"
+                  on:click="{async () => {
+                    const ret = await publishExam({ groupId: g.id }, true);
+                    if (ret.count == 0) {
+                      toast.error(
+                        "This table can't be published because there is no data on this table.",
+                        {
+                          duration: 10000,
+                        },
+                      );
+                    } else {
+                      await invalidate('data:scheduler-exam');
+                    }
+                  }}"
+                >
+                  Publish
+                </button>
+              {/if}
+            </div>
           {/each}
         {:else}
           {#each instructor as i (i.id)}
+            {@const pub = data.schedulerExam.data.some(
+              (sched) =>
+                sched.exam.instructor.some((inst) => inst.id === i.id) && sched.publish === true,
+            )}
             <div
               id="inst-{i.id}"
               class="p-4 pr-2"
@@ -440,7 +504,14 @@
                 console.log(tableSelectState);
               }}"
             >
-              <h6 class="text-center font-semibold">Instructor - {i.name}</h6>
+              <div class="mb-2 flex justify-between">
+                <h6 class="font-semibold">Instructor - {i.name}</h6>
+                {#if data.schedulerExam.data.some((sched) => sched.exam.instructor.some((inst) => inst.id === i.id) && sched.publish === true)}
+                  <span class="rounded bg-green-600 px-2 font-semibold text-white">Public</span>
+                {:else}
+                  <span class="rounded bg-secondary px-2 font-semibold text-white">Private</span>
+                {/if}
+              </div>
               <Table
                 bind:data="{schedulerExam}"
                 bind:state="{state}"
@@ -448,6 +519,38 @@
                 selectable="{true}"
                 instructor="{i}"
               />
+            </div>
+            <div class="flex justify-end">
+              {#if pub}
+                <button
+                  class="button mr-2"
+                  on:click="{async () => {
+                    await publishExam({ instructorId: i.id }, false);
+                    await invalidate('data:scheduler-exam');
+                  }}"
+                >
+                  Unpublish
+                </button>
+              {:else}
+                <button
+                  class="button mr-2"
+                  on:click="{async () => {
+                    const ret = await publishExam({ instructorId: i.id }, true);
+                    if (ret.count == 0) {
+                      toast.error(
+                        "This table can't be published because there is no data on this table.",
+                        {
+                          duration: 10000,
+                        },
+                      );
+                    } else {
+                      await invalidate('data:scheduler-exam');
+                    }
+                  }}"
+                >
+                  Publish
+                </button>
+              {/if}
             </div>
           {/each}
         {/if}
@@ -474,7 +577,7 @@
     </div>
   </div>
   <div>
-    <div class="section-selector bg-light border-l">
+    <div class="section-selector border-l bg-light">
       <div class="relative m-4 grid grid-cols-4 items-center gap-4">
         <input
           type="text"
@@ -483,7 +586,7 @@
           bind:value="{searchText}"
         />
         <button
-          class="input text-secondary flex !w-full items-center justify-center bg-white shadow"
+          class="input flex !w-full items-center justify-center bg-white text-secondary shadow"
           on:click="{() => (showFilter = !showFilter)}"
         >
           <FilterIcon />
@@ -497,12 +600,12 @@
           <div class="mb-2 space-y-2 text-sm">
             <div class="flex gap-2">
               <span
-                class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
+                class="flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
               >
                 {exam.section[0]?.subject.code ?? ''}
               </span>
               <span
-                class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
+                class="flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
               >
                 {exam.section[0]?.subject.name ?? ''}
               </span>
@@ -510,7 +613,7 @@
             <div class="flex gap-2">
               {#each exam.section as sec}
                 <span
-                  class="bg-primary inline-block flex items-center rounded px-2 py-1 font-semibold text-white"
+                  class="flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
                 >
                   SEC {sec.no}
                 </span>
@@ -518,7 +621,7 @@
             </div>
           </div>
           <button
-            class="block grid w-full grid-cols-4 flex-row rounded border text-left font-semibold capitalize outline-none"
+            class="grid w-full grid-cols-4 flex-row rounded border text-left font-semibold capitalize outline-none"
             class:bg-white="{state.exam?.id !== exam.id}"
             class:bg-green-600="{state.exam?.id === exam.id}"
             class:text-white="{state.exam?.id === exam.id}"
@@ -581,7 +684,7 @@
   </div>
   {#if state.exam}
     <div
-      class="border-primary bg-light flex flex justify-between gap-2 overflow-hidden rounded border font-semibold shadow"
+      class="flex justify-between gap-2 overflow-hidden rounded border border-primary bg-light font-semibold shadow"
     >
       <span class="bg-primary px-3 py-2 font-semibold text-white">Selected</span>
       <span class="truncate px-4 py-2">

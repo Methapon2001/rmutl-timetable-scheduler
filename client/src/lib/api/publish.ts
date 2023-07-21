@@ -26,3 +26,28 @@ export const publish = async (
 
   return (await res.json()).data;
 };
+export const publishExam = async (
+  data: {
+    groupId?: string;
+    instructorId?: string;
+    roomId?: string;
+  },
+  publish: boolean,
+): Promise<{
+  count: number;
+}> => {
+  const userSession = await refresh();
+
+  const res = await fetch(`${PUBLIC_API_HOST}/api/publish-exam`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${userSession?.token.access}`,
+    },
+    body: JSON.stringify({ ...data, publish }),
+  });
+
+  if (!res.ok) throw res;
+
+  return (await res.json()).data;
+};
