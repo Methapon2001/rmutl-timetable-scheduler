@@ -693,9 +693,7 @@
       </span>
       <span class=" py-2">
         SEC
-        {#each state.exam.section as sec}
-          {sec.no ?? ''}
-        {/each}
+        {state.exam.section.map((sec) => sec.no).join(', ')}
       </span>
 
       <button class="text-blue-600" on:click="{() => submitData()}"> OK </button>
