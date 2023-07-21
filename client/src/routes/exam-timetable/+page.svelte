@@ -599,14 +599,10 @@
         <div class="w-full space-y-2 border-b p-4">
           <div class="mb-2 space-y-2 text-sm">
             <div class="flex gap-2">
-              <span
-                class="flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
-              >
+              <span class="flex items-center rounded bg-primary px-2 py-1 font-semibold text-white">
                 {exam.section[0]?.subject.code ?? ''}
               </span>
-              <span
-                class="flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
-              >
+              <span class="flex items-center rounded bg-primary px-2 py-1 font-semibold text-white">
                 {exam.section[0]?.subject.name ?? ''}
               </span>
             </div>

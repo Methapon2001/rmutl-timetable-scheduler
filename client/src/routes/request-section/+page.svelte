@@ -136,7 +136,7 @@
             `${window.location.origin}/request-section-form?key=${data.requestSectionStatus.data.key}`,
           );
 
-          toast.success("Link Copied")
+          toast.success('Link Copied');
         }}"
       >
         Copy Form Link
@@ -160,7 +160,7 @@
     <tbody>
       {#if data.requestSection.data.length == 0}
         <tr>
-          <td class="text-secondary text-center" colspan="5">No records found.</td>
+          <td class="text-center text-secondary" colspan="5">No records found.</td>
         </tr>
       {/if}
 
