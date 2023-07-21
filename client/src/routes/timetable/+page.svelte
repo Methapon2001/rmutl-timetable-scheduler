@@ -170,20 +170,6 @@
     state.overlapInstructor = overlapInstructor;
     state.overlapRoom = overlapRoom;
     state.overlapSubject = overlapSubject;
-
-    // if (state.isOverlap) {
-    //   if (state.overlapRoom.length > 0)
-    //     toast.error('Overlap Room: ' + state.overlapRoom[0].section?.room?.name ?? '');
-    //   if (state.overlapInstructor.length > 0)
-    //     toast.error(
-    //       'Overlap Instructor: ' +
-    //         state.overlapInstructor[0].section?.instructor.map((inst) => inst.name).toString()!,
-    //     );
-    //   if (state.overlapGroup.length > 0)
-    //     toast.error('Overlap Group: ' + state.overlapGroup[0].section?.group?.name ?? '');
-    //   if (state.overlapSubject.length > 0)
-    //     toast.error('Overlap Subject: ' + state.overlapSubject[0].section?.subject.name ?? '');
-    // }
   }
 
   async function submitData() {
