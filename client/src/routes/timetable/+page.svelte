@@ -186,28 +186,30 @@
     // }
   }
 
-  async function handleKeydown(e: KeyboardEvent) {
+  async function submitData() {
     let confirmOverlap = false;
 
+    if (!state.section) return;
+    if (state.isOverflow) return alert('Overflowed!!! Not Allowed.');
+    if (state.isOverlap && !state.allowOverlap) return alert('Overlap Detected!!! Not Allowed.');
+    if (state.isOverlap) confirmOverlap = confirm('Overlap Detected!!! Do you want to continue?');
+    if (state.isOverlap && !confirmOverlap) return;
+
+    await createScheduler({
+      weekday: state.weekday,
+      start: state.period,
+      end: state.period + state.size - 1,
+      sectionId: state.section.id,
+      publish: false,
+    });
+
+    resetState();
+  }
+
+  async function handleKeydown(e: KeyboardEvent) {
     switch (e.key) {
       case 'Enter':
-        if (!state.section) return;
-        if (state.isOverflow) return alert('Overflowed!!! Not Allowed.');
-        if (state.isOverlap && !state.allowOverlap)
-          return alert('Overlap Detected!!! Not Allowed.');
-        if (state.isOverlap)
-          confirmOverlap = confirm('Overlap Detected!!! Do you want to continue?');
-        if (state.isOverlap && !confirmOverlap) return;
-
-        await createScheduler({
-          weekday: state.weekday,
-          start: state.period,
-          end: state.period + state.size - 1,
-          sectionId: state.section.id,
-          publish: false,
-        });
-
-        resetState();
+        submitData();
         break;
       case 'Escape':
         resetState();
@@ -777,12 +779,12 @@
         pov = pov === 'group' ? 'instructor' : 'group';
         resetState();
       }}"
-      class="rounded border bg-slate-900 px-8 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
+      class="rounded border bg-slate-900 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
     >
       View: <span class="capitalize">{pov}</span>
     </button>
     <button
-      class="rounded border bg-slate-900 px-8 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
+      class="rounded border bg-slate-900 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
       on:click="{() => {
         showState = true;
         resetState();
@@ -791,13 +793,13 @@
       Generate
     </button>
     <button
-      class="rounded border bg-slate-900 px-8 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
+      class="rounded border bg-slate-900 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
       on:click="{() => exportPDF()}"
     >
       Export PDF
     </button>
     <button
-      class="rounded border bg-slate-900 px-8 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
+      class="rounded border bg-slate-900 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
       on:click="{() => {
         exportSchedule('group');
         exportSchedule('instructor');
@@ -812,15 +814,17 @@
       class="flex justify-between gap-2 overflow-hidden rounded border border-primary bg-light font-semibold shadow"
     >
       <span class="bg-primary px-3 py-2 font-semibold text-white">Selected</span>
-      <span class="truncate px-4 py-2">
+      <span class="truncate py-2">
         {state.section?.subject.code ?? ''}
         {state.section?.subject.name ?? ''}
       </span>
-      <span class="px-4 py-2">{state.section?.group?.name ?? ''}</span>
-      <span class="whitespace-nowrap px-4 py-2">SEC {state.section?.no ?? ''}</span>
-      <span class="whitespace-nowrap px-4 py-2 capitalize"
+      <span class="py-2">{state.section?.group?.name ?? ''}</span>
+      <span class="whitespace-nowrap py-2">SEC {state.section?.no ?? ''}</span>
+      <span class="whitespace-nowrap py-2 capitalize"
         >{state.section?.type} {state.section?.lab ?? ''}</span
       >
+      <button class="text-blue-600" on:click="{() => submitData()}"> OK </button>
+      <button class="text-red-600" on:click="{() => resetState()}"> Cancel </button>
     </div>
   {/if}
 
