@@ -143,21 +143,25 @@
     // }
   }
 
+  async function submitData() {
+    if (!state.exam) return;
+    if (state.isOverlap) return alert('Overlap Detected!!! Not Allowed.');
+
+    await createSchedulerExam({
+      weekday: state.weekday,
+      start: state.period,
+      end: state.period + state.size - 1,
+      examId: state.exam.id,
+      publish: true,
+    });
+
+    resetState();
+  }
+
   async function handleKeydown(e: KeyboardEvent) {
     switch (e.key) {
       case 'Enter':
-        if (!state.exam) return;
-        if (state.isOverlap) return alert('Overlap Detected!!! Not Allowed.');
-
-        await createSchedulerExam({
-          weekday: state.weekday,
-          start: state.period,
-          end: state.period + state.size - 1,
-          examId: state.exam.id,
-          publish: true,
-        });
-
-        resetState();
+        await submitData();
         break;
       case 'Escape':
         resetState();
@@ -648,12 +652,12 @@
         pov = pov === 'group' ? 'instructor' : 'group';
         resetState();
       }}"
-      class="w-48 rounded border bg-slate-900 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
+      class="rounded border bg-slate-900 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
     >
       View: <span class="capitalize">{pov}</span>
     </button>
     <button
-      class="rounded border bg-slate-900 px-8 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
+      class="rounded border bg-slate-900 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
       on:click="{() => {
         showState = true;
         resetState();
@@ -662,13 +666,13 @@
       Generate
     </button>
     <button
-      class="rounded border bg-slate-900 px-8 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
+      class="rounded border bg-slate-900 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
       on:click="{() => exportPDF()}"
     >
       Export PDF
     </button>
     <button
-      class="rounded border bg-slate-900 px-8 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
+      class="rounded border bg-slate-900 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
       on:click="{() => {
         exportSchedule('group', true);
         exportSchedule('instructor', true);
@@ -680,19 +684,22 @@
   </div>
   {#if state.exam}
     <div
-      class="flex justify-between gap-2 overflow-hidden rounded border border-primary bg-light font-semibold shadow"
+      class="flex justify-between gap-2 overflow-hidden rounded border border-primary bg-light pr-2 font-semibold shadow"
     >
       <span class="bg-primary px-3 py-2 font-semibold text-white">Selected</span>
-      <span class="truncate px-4 py-2">
+      <span class="truncate py-2">
         {state.exam?.section[0]?.subject.code ?? ''}
         {state.exam?.section[0]?.subject.name ?? ''}
       </span>
-      <span class="px-4 py-2">
+      <span class=" py-2">
         SEC
         {#each state.exam.section as sec}
           {sec.no ?? ''}
         {/each}
       </span>
+
+      <button class="text-blue-600" on:click="{() => submitData()}"> OK </button>
+      <button class="text-red-600" on:click="{() => resetState()}"> Cancel </button>
     </div>
   {/if}
 </div>

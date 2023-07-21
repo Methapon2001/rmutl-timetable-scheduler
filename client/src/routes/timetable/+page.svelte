@@ -811,7 +811,7 @@
   </div>
   {#if state.section}
     <div
-      class="flex justify-between gap-2 overflow-hidden rounded border border-primary bg-light font-semibold shadow"
+      class="flex justify-between gap-2 overflow-hidden rounded border border-primary bg-light pr-2 font-semibold shadow"
     >
       <span class="bg-primary px-3 py-2 font-semibold text-white">Selected</span>
       <span class="truncate py-2">
