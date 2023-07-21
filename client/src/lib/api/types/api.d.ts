@@ -179,12 +179,12 @@ declare namespace API {
     createdAt: string;
   };
 
-  type RequestSection ={
+  type RequestSection = {
     id: string;
     number: number;
     subject: Omit<API.Subject, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>;
     requester: Omit<API.Instructor, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>;
     openedRequestSection: Omit<API.OpenedRequestSection, 'createdAt'>;
     createdAt: string;
-  }
+  };
 }
