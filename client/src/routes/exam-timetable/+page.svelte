@@ -15,6 +15,7 @@
   import viewport from '$lib/utils/useViewportAction';
   import { exportSchedule } from '$lib/api/export-data';
   import { publishExam } from '$lib/api/publish';
+  import ExamNewForm from '../exam/ExamForm.svelte';
 
   export let data: PageData;
 
@@ -35,6 +36,39 @@
   onDestroy(() => {
     ws.close();
   });
+
+  const sectionOptions = async () => {
+    return (await data.lazy.section).data.map((section) => ({
+      label: `${section.subject.code} ${section.subject.name} Sec ${section.no}`,
+      value: section.id,
+      detail: section,
+    }));
+  };
+
+  const instructorOptions = async () => {
+    return (await data.lazy.instructor).data.map((instructor) => ({
+      label: instructor.name,
+      value: instructor.id,
+    }));
+  };
+
+  const roomOptions = async () => {
+    return (await data.lazy.room).data.map((room) => ({
+      label: `${room.building.code}-${room.name} (${room.type
+        .charAt(0)
+        .toLocaleUpperCase()}${room.type.slice(1)})`,
+      value: room.id,
+      detail: room,
+    }));
+  };
+
+  const formOptions = async () => {
+    return {
+      section: await sectionOptions(),
+      instructor: await instructorOptions(),
+      room: await roomOptions(),
+    };
+  };
 
   let schedulerExam: ComponentProps<Table>['data'];
 
@@ -345,6 +379,7 @@
   });
 
   let tableSelectState: string;
+  let newState = false;
 </script>
 
 <svelte:window on:keydown="{handleKeydown}" />
@@ -640,6 +675,9 @@
           </button>
         </div>
       {/each}
+      <div class="p-4">
+        <button class="button" on:click="{() => (newState = !newState)}">Add Exam</button>
+      </div>
     </div>
   </div>
 </div>
@@ -720,6 +758,25 @@
       Generate
     </button>
   </div>
+</Modal>
+
+<Modal bind:open="{newState}">
+  {#if newState}
+    <div id="new" class="p-4">
+      <h1 class="mb-4 block text-center text-2xl font-bold">New Exam</h1>
+      <div class="mx-auto max-w-screen-md">
+        {#await formOptions()}
+          Loading...
+        {:then options}
+          <ExamNewForm
+            sectionOptions="{options.section}"
+            instructorOptions="{options.instructor}"
+            roomOptions="{options.room}"
+          />
+        {/await}
+      </div>
+    </div>
+  {/if}
 </Modal>
 
 <style lang="postcss">

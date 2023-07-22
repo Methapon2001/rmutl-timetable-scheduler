@@ -21,6 +21,39 @@ export const load = (async ({ fetch, parent, depends }) => {
     ).then((res) => res.json());
   };
 
+  const requestSection = async () => {
+    const res = await fetch(`${PUBLIC_API_HOST}/api/section?limit=9999`);
+    const body = await res.json();
+    return body as {
+      data: API.Section[];
+      limit: number;
+      offset: number;
+      total: number;
+    };
+  };
+
+  const requestInstructor = async () => {
+    const res = await fetch(`${PUBLIC_API_HOST}/api/instructor?limit=9999`);
+    const body = await res.json();
+    return body as {
+      data: API.Instructor[];
+      limit: number;
+      offset: number;
+      total: number;
+    };
+  };
+
+  const requestRoom = async () => {
+    const res = await fetch(`${PUBLIC_API_HOST}/api/room?limit=9999`);
+    const body = await res.json();
+    return body as {
+      data: API.Room[];
+      limit: number;
+      offset: number;
+      total: number;
+    };
+  };
+
   return {
     schedulerExam: schedulerExamData() as Promise<{
       data: API.SchedulerExam[];
@@ -34,5 +67,10 @@ export const load = (async ({ fetch, parent, depends }) => {
       offset: number;
       total: number;
     }>,
+    lazy: {
+      section: requestSection(),
+      instructor: requestInstructor(),
+      room: requestRoom(),
+    },
   };
 }) satisfies PageLoad;
