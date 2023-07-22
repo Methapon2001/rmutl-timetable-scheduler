@@ -438,7 +438,6 @@
               use:viewport
               on:enterViewport="{() => {
                 tableSelectState = g.id;
-                console.log(tableSelectState);
               }}"
             >
               <div class="mb-2 flex justify-between">
@@ -503,7 +502,6 @@
               use:viewport
               on:enterViewport="{() => {
                 tableSelectState = i.id;
-                console.log(tableSelectState);
               }}"
             >
               <div class="mb-2 flex justify-between">
