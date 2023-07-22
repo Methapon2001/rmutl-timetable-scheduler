@@ -58,6 +58,7 @@
     overlapGroup?: ScheduleExamData[];
     overlapSection?: ScheduleExamData[];
   };
+  export let noDelete = false;
 
   export let group: API.SchedulerExam['exam']['section'][number]['group'] | undefined = undefined; // eslint-disable-line no-undef
   export let room: API.SchedulerExam['exam']['room'] | undefined = undefined; // eslint-disable-line no-undef
@@ -201,7 +202,7 @@
               <p class="block">{item.exam.section[0].subject.name}</p>
             </div>
           </div>
-          {#if selectable}
+          {#if selectable && !noDelete}
             <div class="pointer-events-auto p-1 pl-0">
               <button
                 class="rounded bg-red-600 p-0.5 text-white"

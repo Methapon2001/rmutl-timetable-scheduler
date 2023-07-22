@@ -520,6 +520,7 @@
                 bind:state="{state}"
                 on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
                 selectable="{true}"
+                noDelete="{pub}"
                 group="{g}"
               />
             </div>
@@ -584,6 +585,7 @@
                 bind:state="{state}"
                 on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
                 selectable="{true}"
+                noDelete="{pub}"
                 instructor="{i}"
               />
             </div>
