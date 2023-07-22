@@ -138,7 +138,7 @@
       start: state.period,
       end: state.period + state.size - 1,
       examId: state.exam.id,
-      publish: true,
+      publish: false,
     });
 
     resetState();
@@ -180,9 +180,21 @@
       return;
     }
 
+    let inputPrompt = 0;
+    if (exam.section[0]?.subject.lecture === 0) {
+      inputPrompt = Number(
+        prompt('This subject does not have lecture hour. \nPlease input exam hour: '),
+      );
+    } else {
+      inputPrompt = exam.section[0]?.subject.lecture;
+    }
+
+    if (inputPrompt === 0) return;
+
     state.selected = true;
     state.exam = exam;
-    state.size = exam.section[0]?.subject.exam * 2;
+
+    state.size = inputPrompt * 2;
 
     handleDataChange();
 
