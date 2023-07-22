@@ -482,7 +482,7 @@
           {/each}
         </div>
       </div>
-      <div class="main-table-container">
+      <div class="main-table-container pb-16">
         {#if data.section.total === 0}
           <div class="p-8 text-center">
             <h1 class="mb-4 text-5xl font-extrabold">No Data</h1>
