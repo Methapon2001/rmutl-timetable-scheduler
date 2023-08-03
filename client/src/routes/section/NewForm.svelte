@@ -88,7 +88,10 @@
   }
 
   function removeSection(index: number) {
-    if (form.data.section.length == 1) return;
+    if (form.data.section.length == 1) {
+      toast.error('Cannot remove minimum requirement.');
+      return;
+    }
 
     const subject = subjectOptions.find((opt) => form.data.subjectId === opt.value)?.detail;
 

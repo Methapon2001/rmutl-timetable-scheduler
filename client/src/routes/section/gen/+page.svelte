@@ -188,7 +188,10 @@
     const stateData = sectionState[stateIdx].subjectSection[subjectSectionIdx];
     const stateDataLength = sectionState[stateIdx].subjectSection[subjectSectionIdx].section.length;
 
-    if (stateDataLength === 1) return;
+    if (stateDataLength === 1) {
+      toast.error('Cannot remove minimum requirement.');
+      return;
+    }
 
     const subject = subjectMap[stateData.subjectId];
 
