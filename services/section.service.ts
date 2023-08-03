@@ -28,28 +28,9 @@ const subjectSelect: Prisma.SubjectSelect = {
   exam: true,
 };
 
-const courseDetailSelect: Prisma.CourseDetailSelect = {
-  id: true,
-  type: true,
-  subject: {
-    select: subjectSelect,
-  },
-};
-
-const courseSelect: Prisma.CourseSelect = {
-  id: true,
-  name: true,
-  detail: {
-    select: courseDetailSelect,
-  },
-};
-
 const groupSelect: Prisma.GroupSelect = {
   id: true,
   name: true,
-  course: {
-    select: courseSelect,
-  },
 };
 
 const buildingSelect: Prisma.BuildingSelect = {
@@ -250,6 +231,7 @@ export async function requestSection(
       search: string;
       limit: number;
       offset: number;
+      exam_filtered: number;
     } & Pick<
       Section,
       | "groupId"
@@ -263,13 +245,18 @@ export async function requestSection(
   reply: FastifyReply
 ) {
   const { id } = request.params;
-  const { limit, offset, search, ...where } = request.query;
+  const { limit, offset, search, exam_filtered, ...where } = request.query;
 
   if (search) {
     return await searchSection(request, reply);
   }
 
   const sectionWhere: Prisma.SectionWhereInput = where;
+
+  if (exam_filtered) {
+    sectionWhere.exam = { none: {} };
+    sectionWhere.parent = null;
+  }
 
   const section = id
     ? await prisma.section.findUnique({

@@ -45,6 +45,17 @@ export const load = (async ({ fetch, parent, depends, url }) => {
     };
   };
 
+  const requestSectionExamFiltered = async () => {
+    const res = await fetch(`${PUBLIC_API_HOST}/api/section?limit=9999&exam_filtered=1`);
+    const body = await res.json();
+    return body as {
+      data: API.Section[];
+      limit: number;
+      offset: number;
+      total: number;
+    };
+  };
+
   const requestInstructor = async () => {
     const res = await fetch(`${PUBLIC_API_HOST}/api/instructor?limit=9999`);
     const body = await res.json();
@@ -71,6 +82,7 @@ export const load = (async ({ fetch, parent, depends, url }) => {
     exam: requestExam(),
     lazy: {
       section: requestSection(),
+      sectionExamFiltered: requestSectionExamFiltered(),
       instructor: requestInstructor(),
       room: requestRoom(),
     },

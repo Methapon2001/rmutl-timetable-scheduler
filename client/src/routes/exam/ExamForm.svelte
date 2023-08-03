@@ -25,6 +25,13 @@
     detail: API.Section; // eslint-disable-line no-undef
   }[];
 
+  export let sectionExamFilteredOptions: {
+    label: string;
+    value: string;
+    disabled?: boolean;
+    detail: API.Section; // eslint-disable-line no-undef
+  }[];
+
   export let instructorOptions: {
     label: string;
     value: string;
@@ -48,6 +55,13 @@
   export let callback: () => void = function () {
     // do nothing.
   };
+
+  const selectExamSection = edit
+    ? sectionOptions
+    : [
+        ...sectionOptions.filter((opt) => editData.section.some((secId) => secId === opt.value)),
+        ...sectionExamFilteredOptions,
+      ];
 
   let form: {
     data: z.infer<typeof schema>;
@@ -165,10 +179,10 @@
       class:invalid="{form.error && getZodErrorMessage(form.error, ['section']).length > 0}"
     >
       <Select
-        options="{sectionOptions.filter((option) => {
+        options="{selectExamSection.filter((option) => {
           if (form.data.section.length !== 0) {
             return (
-              sectionOptions.find((opt) => form.data.section[0] == opt.detail.id)?.detail.subject
+              selectExamSection.find((opt) => form.data.section[0] == opt.detail.id)?.detail.subject
                 .name == option.detail.subject.name
             );
           }

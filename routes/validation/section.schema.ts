@@ -17,6 +17,7 @@ export default {
       parentId: { type: "string" },
       limit: { type: "number", default: 20 },
       offset: { type: "number", default: 0 },
+      exam_filtered: { type: "number", default: 0 },
     },
   },
   bodyCreate: {
