@@ -56,7 +56,7 @@
   {#if data.session}
     <ul data-sveltekit-preload-data="off">
       {#if data.session.user.role == 'admin'}
-        <li><a class:active="{route == '/profile'}" href="{'/profile'}" role="button">User</a></li>
+        <li><a class:active="{route == '/user'}" href="{'/user'}" role="button">User</a></li>
       {/if}
       {#each [{ path: '/logout', text: 'Logout' }] as { path, text }}
         <li><a class:active="{route == path}" href="{path}" role="button">{text}</a></li>
