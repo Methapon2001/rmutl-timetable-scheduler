@@ -4,6 +4,7 @@
   import Select from '$lib/components/Select.svelte';
   import { createSection } from '$lib/api/section';
   import toast from 'svelte-french-toast';
+  import CrossIcon from '$lib/icons/CrossIcon.svelte';
 
   export let data: PageData;
 
@@ -171,6 +172,43 @@
 
     return ret;
   });
+
+  function addSection(stateIdx: number, subjectSectionIdx: number) {
+    sectionState[stateIdx].subjectSection[subjectSectionIdx].section = [
+      ...sectionState[stateIdx].subjectSection[subjectSectionIdx].section,
+      {
+        roomId: '',
+        instructor: [],
+        capacity: 0,
+      },
+    ];
+  }
+
+  function removeSection(stateIdx: number, subjectSectionIdx: number, sectionIdx: number) {
+    const stateData = sectionState[stateIdx].subjectSection[subjectSectionIdx];
+    const stateDataLength = sectionState[stateIdx].subjectSection[subjectSectionIdx].section.length;
+
+    if (stateDataLength === 1) return;
+
+    const subject = subjectMap[stateData.subjectId];
+
+    if (subject && subject.lecture !== 0 && stateDataLength === 1) {
+      toast.error('Cannot remove minimum requirement.');
+      return;
+    }
+    if (subject && subject.lab !== 0 && subject.lecture === 0 && stateDataLength === 1) {
+      toast.error('Cannot remove minimum requirement.');
+      return;
+    }
+    if (subject && subject.lab !== 0 && subject.lecture !== 0 && stateDataLength === 2) {
+      toast.error('Cannot remove minimum requirement.');
+      return;
+    }
+
+    sectionState[stateIdx].subjectSection[subjectSectionIdx].section = sectionState[
+      stateIdx
+    ].subjectSection[subjectSectionIdx].section.filter((_, idx) => idx !== sectionIdx);
+  }
 </script>
 
 <svelte:head>
@@ -296,7 +334,14 @@
             {subjectMap[subjectSec.subjectId].name}
           </h1>
           {#each subjectSec.section as _, secIdx}
-            <div class="space-y-4 rounded border p-4">
+            <div class="relative space-y-4 rounded border p-4">
+              <button
+                type="button"
+                class="absolute right-0 top-0 p-3"
+                on:click="{() => removeSection(sectionIdx, subjectSecIdx, secIdx)}"
+              >
+                <CrossIcon />
+              </button>
               <span class="text-center text-lg font-semibold"
                 >Section <span class="capitalize">{secIdx == 0 ? subjectSec.type : 'lab'}</span
                 ></span
@@ -352,6 +397,12 @@
               </section>
             </div>
           {/each}
+
+          <button
+            type="button"
+            class="button w-full"
+            on:click="{() => addSection(sectionIdx, subjectSecIdx)}">Add section</button
+          >
         {/each}
       {/each}
 

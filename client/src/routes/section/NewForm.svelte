@@ -92,13 +92,18 @@
 
     const subject = subjectOptions.find((opt) => form.data.subjectId === opt.value)?.detail;
 
-    if (subject && subject.lecture !== 0 && form.data.section.length === 1) return;
-
-    if (subject && subject.lab !== 0 && subject.lecture === 0 && form.data.section.length === 1)
+    if (subject && subject.lecture !== 0 && form.data.section.length === 1) {
+      toast.error('Cannot remove minimum requirement.');
       return;
-
-    if (subject && subject.lab !== 0 && subject.lecture !== 0 && form.data.section.length === 2)
+    }
+    if (subject && subject.lab !== 0 && subject.lecture === 0 && form.data.section.length === 1) {
+      toast.error('Cannot remove minimum requirement.');
       return;
+    }
+    if (subject && subject.lab !== 0 && subject.lecture !== 0 && form.data.section.length === 2) {
+      toast.error('Cannot remove minimum requirement.');
+      return;
+    }
 
     form.data.section = form.data.section.filter((_, idx) => idx != index);
   }
