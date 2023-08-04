@@ -18,7 +18,6 @@ const subjectSelect: Prisma.SubjectSelect = {
   credit: true,
   lecture: true,
   lab: true,
-  exam: true,
   learn: true,
   createdAt: true,
   createdBy: {
@@ -63,7 +62,6 @@ export async function requestSubject(
       | "lecture"
       | "lab"
       | "learn"
-      | "exam"
       | "createdByUserId"
       | "updatedByUserId"
     >;

@@ -79,7 +79,6 @@ model Subject {
   credit  Int
   lecture Int
   lab     Int
-  exam    Int
   learn   Int
 
   createdByUserId String

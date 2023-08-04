@@ -15,7 +15,6 @@
     lecture: z.number().min(0),
     lab: z.number().min(0),
     learn: z.number().min(0),
-    exam: z.number().min(0),
   });
 
   const newSchema = schema.omit({
@@ -31,7 +30,6 @@
     lecture: 0,
     lab: 0,
     learn: 0,
-    exam: 0,
   };
 
   export let callback: () => void = function () {
@@ -50,7 +48,6 @@
       lecture: 0,
       lab: 0,
       learn: 0,
-      exam: 0,
     },
     error: undefined,
   };
@@ -82,7 +79,6 @@
         lecture: 0,
         lab: 0,
         learn: 0,
-        exam: 0,
       };
 
       await invalidate('data:subject');
@@ -118,7 +114,6 @@
         lecture: 0,
         lab: 0,
         learn: 0,
-        exam: 0,
       };
 
       await invalidate('data:subject');
@@ -269,28 +264,6 @@
     </div>
     <div class="col-span-4 col-start-3 text-red-600">
       {form.error ? getZodErrorMessage(form.error, ['learn']) : ''}
-    </div>
-  </section>
-
-  <section id="input-exam" class="grid grid-cols-6">
-    <div class="col-span-2 flex items-center">
-      <label for="" class="font-semibold">
-        Exam <span class="text-red-600">*</span>
-      </label>
-    </div>
-    <div class="col-span-4">
-      <input
-        type="number"
-        class="input text-center
-        {form.error && getZodErrorMessage(form.error, ['exam']).length > 0
-          ? 'border border-red-600'
-          : ''}"
-        bind:value="{form.data.exam}"
-        use:blurOnEscape
-      />
-    </div>
-    <div class="col-span-4 col-start-3 text-red-600">
-      {form.error ? getZodErrorMessage(form.error, ['exam']) : ''}
     </div>
   </section>
 

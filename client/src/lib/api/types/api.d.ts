@@ -29,7 +29,6 @@ declare namespace API {
     credit: number;
     lecture: number;
     lab: number;
-    exam: number;
     learn: number;
     createdAt: string;
     createdBy: Omit<API.User, 'createdAt' | 'updatedAt'>;

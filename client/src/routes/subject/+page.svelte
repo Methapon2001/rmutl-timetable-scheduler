@@ -29,7 +29,6 @@
     lecture: number;
     lab: number;
     learn: number;
-    exam: number;
   };
 
   function showEdit(subject: {
@@ -40,7 +39,6 @@
     lecture: number;
     lab: number;
     learn: number;
-    exam: number;
   }) {
     editState = true;
     editData = subject;
@@ -116,7 +114,6 @@
         <th>Lecture</th>
         <th>Lab</th>
         <th>Learn</th>
-        <th>Exam</th>
         <th>Created</th>
         <th>Updated</th>
         <th>•••</th>
@@ -136,7 +133,6 @@
           <td class="text-center">{subject.lecture}</td>
           <td class="text-center">{subject.lab}</td>
           <td class="text-center">{subject.learn}</td>
-          <td class="text-center">{subject.exam}</td>
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(subject.createdAt).toLocaleDateString()}</p>
             <p class="text-dark">{new Date(subject.createdAt).toLocaleTimeString()}</p>
