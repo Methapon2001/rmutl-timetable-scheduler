@@ -19,7 +19,6 @@ const subjectSelect: Prisma.SubjectSelect = {
   lecture: true,
   lab: true,
   learn: true,
-  exam: true,
 };
 
 // const courseDetailSelect: Prisma.CourseDetailSelect = {

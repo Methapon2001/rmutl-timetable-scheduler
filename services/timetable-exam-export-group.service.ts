@@ -20,7 +20,6 @@ const subjectSelect = {
   lecture: true,
   lab: true,
   learn: true,
-  exam: true,
 };
 
 const groupSelect = {

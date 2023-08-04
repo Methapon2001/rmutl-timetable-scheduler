@@ -96,7 +96,6 @@ const subjectSelect: Prisma.SubjectSelect = {
   credit: true,
   lecture: true,
   lab: true,
-  exam: true,
 };
 
 const instructorSelect: Prisma.InstructorSelect = {

@@ -20,7 +20,6 @@ const subjectSelect = {
   lecture: true,
   lab: true,
   learn: true,
-  exam: true,
 };
 
 const courseSelect = {
@@ -406,7 +405,9 @@ export async function exportRoomSchedule(
         .number(vProcessed.section.subject.lab)
         .style(styleCenter);
       ws.cell(3 + idx, 50)
-        .number(vProcessed.section.subject.lecture + vProcessed.section.subject.lab)
+        .number(
+          vProcessed.section.subject.lecture + vProcessed.section.subject.lab
+        )
         .style(styleCenter);
 
       total.lecture += vProcessed.section.subject.lecture;
@@ -453,7 +454,9 @@ export async function exportRoomSchedule(
     });
 
     ws.cell(15, 32).number(total.lecture).style(styleCenter);
-    ws.cell(15, 33).number(total.lab / 3).style(styleCenter);
+    ws.cell(15, 33)
+      .number(total.lab / 3)
+      .style(styleCenter);
     ws.cell(15, 34)
       .number(total.lecture + total.lab / 3)
       .style(styleCenter);
