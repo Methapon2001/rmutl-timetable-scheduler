@@ -119,6 +119,22 @@ export async function createScheduler(
   request: FastifyRequest<{ Body: Scheduler }>,
   reply: FastifyReply
 ) {
+  if (
+    request.body.weekday === "wed" &&
+    request.body.start <= 18 &&
+    request.body.end >= 15
+  ) {
+    return reply.status(400).send({
+      message: "This period is preserved for activity.",
+    });
+  }
+
+  if (request.body.start > request.body.end) {
+    return reply.status(400).send({
+      message: "End period must be greater than start period.",
+    });
+  }
+
   const scheduler = await prisma.scheduler.create({
     data: {
       ...request.body,

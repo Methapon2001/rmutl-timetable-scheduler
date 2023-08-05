@@ -330,6 +330,22 @@ export async function exportInstructorSchedule(
       sun: 6,
     };
 
+    ws.cell(
+      18 + maxOverlap * weekdayMap["wed"],
+      4 + (15 - 1) * 2,
+      18 + maxOverlap * weekdayMap["wed"] + maxOverlap - 1,
+      3 + 18 * 2,
+      true
+    )
+      .string("Activity")
+      .style({
+        ...styleBorder,
+        alignment: {
+          wrapText: true,
+          ...styleCenter.alignment,
+        },
+      });
+
     Object.values(weekdayMap).forEach((vWeekday) => {
       ws.cell(
         18 + maxOverlap * vWeekday,

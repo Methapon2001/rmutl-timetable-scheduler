@@ -128,6 +128,14 @@
     </div>
   {/if}
 
+  <div
+    class="pointer-events-none absolute z-10 w-full border bg-gray-300 text-xs font-bold"
+    style:grid-row="{weekdayMapRow['wed']}"
+    style:grid-column="18/22"
+    style:height="100%"
+  >
+    <div class="flex items-center justify-center">Activity</div>
+  </div>
   {#each processedData as item}
     {@const overlapMaxOffset =
       Math.max(

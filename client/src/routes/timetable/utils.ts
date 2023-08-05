@@ -33,8 +33,14 @@ export function checkOverlap(
       item.period < current.period + current.size,
   );
 
+  let activityOverlap = false;
+
+  if (current.weekday === 'wed' && 19 > current.period && 15 < current.period + current.size) {
+    activityOverlap = true;
+  }
+
   return {
-    isOverlap: overlap.length > 0,
+    isOverlap: overlap.length > 0 || activityOverlap,
     allowOverlap:
       overlap.length > 0
         ? !overlap.some((obj) => {
@@ -46,6 +52,8 @@ export function checkOverlap(
               ) !== -1
             );
           })
+        : activityOverlap
+        ? false
         : true,
     overlapInstructor:
       overlap.length > 0 && overlapData
