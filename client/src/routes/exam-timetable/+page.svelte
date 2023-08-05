@@ -45,6 +45,14 @@
     }));
   };
 
+  const sectionExamFilteredOptions = async () => {
+    return (await data.lazy.sectionExamFiltered).data.map((section) => ({
+      label: `${section.subject.code} ${section.subject.name} Sec ${section.no}`,
+      value: section.id,
+      detail: section,
+    }));
+  };
+
   const instructorOptions = async () => {
     return (await data.lazy.instructor).data.map((instructor) => ({
       label: instructor.name,
@@ -65,6 +73,7 @@
   const formOptions = async () => {
     return {
       section: await sectionOptions(),
+      sectionExamFiltered: await sectionExamFilteredOptions(),
       instructor: await instructorOptions(),
       room: await roomOptions(),
     };
@@ -770,6 +779,7 @@
         {:then options}
           <ExamNewForm
             sectionOptions="{options.section}"
+            sectionExamFilteredOptions="{options.sectionExamFiltered}"
             instructorOptions="{options.instructor}"
             roomOptions="{options.room}"
           />

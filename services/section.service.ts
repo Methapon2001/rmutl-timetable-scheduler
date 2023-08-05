@@ -516,6 +516,23 @@ export async function deleteSection(
   });
 }
 
+export async function resetSection(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const { id: userId } = request.user;
+
+  await prisma.section.deleteMany({
+    where: {
+      createdByUserId: userId,
+    },
+  });
+
+  return reply.status(200).send({
+    message: "Success.",
+  });
+}
+
 export async function searchSection(
   request: FastifyRequest<{
     Querystring: { search: string; limit: number; offset: number };

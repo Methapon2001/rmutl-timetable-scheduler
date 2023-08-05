@@ -245,3 +245,20 @@ export async function deleteScheduler(
     data: scheduler,
   });
 }
+
+export async function resetScheduler(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const { id: userId } = request.user;
+
+  await prisma.scheduler.deleteMany({
+    where: {
+      createdByUserId: userId,
+    },
+  });
+
+  return reply.status(200).send({
+    message: "Success.",
+  });
+}

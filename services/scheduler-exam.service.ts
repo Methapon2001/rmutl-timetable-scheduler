@@ -233,3 +233,20 @@ export async function deleteSchedulerExam(
     data: schedulerExam,
   });
 }
+
+export async function resetSchedulerExam(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const { id: userId } = request.user;
+
+  await prisma.schedulerExam.deleteMany({
+    where: {
+      createdByUserId: userId,
+    },
+  });
+
+  return reply.status(200).send({
+    message: "Success.",
+  });
+}

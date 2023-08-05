@@ -396,3 +396,17 @@ export async function searchExam(
     total: count,
   });
 }
+
+export async function resetExam(request: FastifyRequest, reply: FastifyReply) {
+  const { id: userId } = request.user;
+
+  await prisma.exam.deleteMany({
+    where: {
+      createdByUserId: userId,
+    },
+  });
+
+  return reply.status(200).send({
+    message: "Success.",
+  });
+}
