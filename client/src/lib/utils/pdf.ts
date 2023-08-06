@@ -1339,7 +1339,7 @@ export function drawScheduleExam(
         doc.text(
           `SEC ${sectionNo}`,
           cords[0] + cords[2] / 2,
-          cords[1] + vAlignTextCenter(cords[2] / 2, doc) + cords[3] / 12,
+          cords[1] + cords[3] / 1.75,
           {
             align: 'center',
           },
@@ -1347,7 +1347,7 @@ export function drawScheduleExam(
         doc.text(
           `${v.exam.room?.building.code}-${v.exam.room?.name}`,
           cords[0] + cords[2] / 2,
-          cords[1] + vAlignTextCenter(cords[2] / 2, doc) + cords[3] / 3,
+          cords[1] + cords[3] / 1.25,
           {
             align: 'center',
           },
