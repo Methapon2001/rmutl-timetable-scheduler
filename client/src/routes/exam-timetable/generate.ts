@@ -75,7 +75,7 @@ export async function generate(
   });
 
   exam.forEach((sec) => {
-    const size = sec.section[0].subject.exam * 2;
+    const size = sec.section[0].subject.lecture * 2;
 
     for (const day of weekday) {
       for (let i = rangeStart; i <= rangeEnd - size + 1; i++) {
@@ -114,6 +114,7 @@ export async function generate(
     if (schedule[i].id !== 'generated') continue;
 
     const ret = await createSchedulerExam({
+      publish: false,
       examId: schedule[i].exam.id,
       start: schedule[i].period,
       end: schedule[i].period + schedule[i].size - 1,
