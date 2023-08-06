@@ -4,6 +4,7 @@
   import { PUBLIC_API_WS } from '$env/static/public';
   import { invalidate } from '$app/navigation';
   import { createPDF, drawDetailTable, drawSchedule } from '$lib/utils/pdf';
+  import { resetData } from '$lib/api/reset';
   import { createScheduler } from '$lib/api/scheduler';
   import { processOverlaps } from '$lib/utils/table';
   import { checkOverlap } from './utils';
@@ -793,6 +794,18 @@
       }}"
     >
       Export Excel
+    </button>
+    <button
+      class="rounded border bg-red-600 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-red-700"
+      on:click="{async () => {
+        const flag = confirm('Are you sure? This action cannot be undone.');
+
+        if (flag) {
+          await resetData('scheduler');
+        }
+      }}"
+    >
+      Reset
     </button>
   </div>
   {#if state.section}

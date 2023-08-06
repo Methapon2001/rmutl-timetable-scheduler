@@ -16,6 +16,7 @@
   import { exportSchedule } from '$lib/api/export-data';
   import { publishExam } from '$lib/api/publish';
   import ExamNewForm from '../exam/ExamForm.svelte';
+  import { resetData } from '$lib/api/reset';
 
   export let data: PageData;
 
@@ -725,6 +726,18 @@
       }}"
     >
       Export Excel
+    </button>
+    <button
+      class="rounded border bg-red-600 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-red-700"
+      on:click="{async () => {
+        const flag = confirm('Are you sure? This action cannot be undone.');
+
+        if (flag) {
+          await resetData('schedulerExam');
+        }
+      }}"
+    >
+      Reset
     </button>
   </div>
   {#if state.exam}

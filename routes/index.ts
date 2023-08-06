@@ -16,3 +16,4 @@ export { default as publishRoute } from "./publish.route";
 export { default as requestSectionRoute } from "./request-section.route";
 export { default as timetableExportRoute } from "./timetable-export.route";
 export { default as timetableExamExportRoute } from "./timetable-exam-export.route";
+export { default as resetRoute } from "./reset.route";
