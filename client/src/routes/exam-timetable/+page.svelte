@@ -325,7 +325,7 @@
       drawLayout();
 
       docScheduleExam.assignSchedule(filtered, 'room', r);
-      docScheduleExamDetail.setHeader(r.name);
+      docScheduleExamDetail.setHeader(`${r.building.code}-${r.name}`);
       docScheduleExamDetail.addDetail(filtered, 'room', r);
 
       doc.addPage();
