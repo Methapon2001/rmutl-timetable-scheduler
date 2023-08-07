@@ -499,7 +499,7 @@ export async function deleteSection(
         no: section.no,
         type: "lab",
         lab: {
-          gt: section.lab!,
+          gt: section.lab ?? undefined,
         },
         subjectId: section.subject?.id,
       },
