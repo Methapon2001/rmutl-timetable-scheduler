@@ -288,7 +288,7 @@ model Scheduler {
   publish Boolean @default(false)
 
   sectionId String
-  section   Section @relation(fields: [sectionId], references: [id])
+  section   Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
 
   createdByUserId String
   createdBy       User     @relation("SchedulerCreatedBy", fields: [createdByUserId], references: [id])
@@ -336,7 +336,7 @@ model SchedulerExam {
   publish Boolean @default(false)
 
   examId String
-  exam   Exam   @relation(fields: [examId], references: [id])
+  exam   Exam   @relation(fields: [examId], references: [id], onDelete: Cascade)
 
   createdByUserId String
   createdBy       User     @relation("SchedulerExamCreatedBy", fields: [createdByUserId], references: [id])
