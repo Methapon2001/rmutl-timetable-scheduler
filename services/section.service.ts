@@ -528,6 +528,14 @@ export async function resetSection(
     },
   });
 
+  await prisma.exam.deleteMany({
+    where: {
+      section: {
+        none: {},
+      },
+    },
+  });
+
   return reply.status(200).send({
     message: "Success.",
   });
