@@ -228,7 +228,7 @@
         <div class="group relative flex h-full w-full items-center text-center text-xs">
           <div class="flex-grow">
             {#if !item._overlap}
-              {item.exam.section[0].subject.code}_SEC <!-- sec no loop thru -->
+              {item.exam.section[0]?.subject.code}_SEC <!-- sec no loop thru -->
             {/if}
           </div>
         </div>
