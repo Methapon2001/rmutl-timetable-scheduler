@@ -9,6 +9,7 @@
   import Pagination from '$lib/components/Pagination.svelte';
   import Exam from './ExamForm.svelte';
   import toast from 'svelte-french-toast';
+  import { resetData } from '$lib/api/reset';
 
   const handleSearch = debounce(async (text: string) => {
     const url = new URL(window.location.toString());
@@ -244,6 +245,21 @@
       {/each}
     </tbody>
   </table>
+</div>
+
+<div class="w-full flex justify-end p-3">
+  <button
+      class="rounded border bg-red-600 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-red-700"
+      on:click="{async () => {
+        const flag = confirm('Are you sure? The record that using this data will also be deleted.');
+
+        if (flag) {
+          await resetData('exam');
+        }
+      }}"
+    >
+      Reset
+    </button>
 </div>
 
 <div id="pagination">
