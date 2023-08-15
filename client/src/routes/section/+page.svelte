@@ -248,7 +248,7 @@
           <td class="fit-width text-center">
             <div class="space-x-4 whitespace-nowrap">
               <button
-                class="action-button text-blue-600 text-blue-600 disabled:text-secondary"
+                class="action-button text-blue-600 disabled:text-secondary"
                 disabled="{data.session?.user.id != section.createdBy.id &&
                   data.session?.user.role != 'admin'}"
                 on:click="{() =>
@@ -272,7 +272,7 @@
                 Edit
               </button>
               <button
-                class="action-button text-blue-600 text-red-600 disabled:text-secondary"
+                class="action-button text-red-600 disabled:text-secondary"
                 disabled="{data.session?.user.id != section.createdBy.id &&
                   data.session?.user.role != 'admin'}"
                 on:click="{() => handleDelete({ id: section.id })}"
