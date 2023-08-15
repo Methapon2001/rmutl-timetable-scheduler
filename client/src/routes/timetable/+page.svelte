@@ -804,7 +804,7 @@
 
             {#each section.child as child}
               <button
-                class="grid w-full grid-cols-4 flex-row rounded border capitalize outline-none"
+                class="grid w-full grid-cols-5 flex-row rounded border capitalize outline-none"
                 class:bg-white="{state.section?.id !== child.id}"
                 class:bg-green-600="{state.section?.id === child.id}"
                 class:text-white="{state.section?.id === child.id}"
@@ -828,6 +828,36 @@
                     <small>{instructor.name}</small><br />
                   {/each}
                 </div>
+                <div
+                class="flex h-full w-full items-center justify-center rounded-l border-r font-semibold"
+              >
+                <button
+                  class="disabled:!text-secondary !text-blue-500 underline"
+                  disabled="{(data.session?.user.id != section.createdBy.id &&
+                    data.session?.user.role != 'admin') ||
+                    (getUsedHour(child) > 0 &&
+                      getUsedHour(child) < getRequiredHour(child) &&
+                      state.section?.id != child.id) ||
+                    getLeftOverHours(child) == 0}"
+                  on:click|stopPropagation="{() =>
+                    showEdit(
+                      {
+                        id: child.id,
+                        alt: child.alt ?? '',
+                        groupId: child.group?.id ?? '',
+                        roomId: child.room?.id ?? '',
+                        instructor: child.instructor,
+                        capacity: child.capacity,
+                      },
+                      {
+                        no: child.no,
+                        type: child.type,
+                        lab: child.lab,
+                        subject: child.subject,
+                      },
+                    )}">Edit</button
+                >
+              </div>
               </button>
             {/each}
           </div>
