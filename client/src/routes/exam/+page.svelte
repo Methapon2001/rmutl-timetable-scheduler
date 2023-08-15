@@ -223,6 +223,8 @@
             <div class="space-x-4 whitespace-nowrap">
               <button
                 class="action-button text-blue-600"
+                disabled="{data.session?.user.id != exam.createdBy.id &&
+                  data.session?.user.role != 'admin'}"
                 on:click="{() =>
                   showEdit({
                     id: exam.id,
@@ -235,6 +237,8 @@
               </button>
               <button
                 class="action-button text-red-600"
+                disabled="{data.session?.user.id != exam.createdBy.id &&
+                  data.session?.user.role != 'admin'}"
                 on:click="{() => handleDelete({ id: exam.id })}"
               >
                 Delete

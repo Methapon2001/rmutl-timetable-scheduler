@@ -7,6 +7,7 @@
   import { invalidate } from '$app/navigation';
   import toast from 'svelte-french-toast';
   import Modal from '$lib/components/Modal.svelte';
+  import ModalCenter from '$lib/components/ModalCenter.svelte';
   import { checkOverlap } from './utils';
   import Table from './Table.svelte';
   import { generate } from './generate';
@@ -16,6 +17,7 @@
   import { exportSchedule } from '$lib/api/export-data';
   import { publishExam } from '$lib/api/publish';
   import ExamNewForm from '../exam/ExamForm.svelte';
+  import ShowRoom from './ShowRoom.svelte';
   import { resetData } from '$lib/api/reset';
 
   export let data: PageData;
@@ -390,6 +392,32 @@
 
   let tableSelectState: string;
   let newState = false;
+  let editState = false;
+  let editData: {
+    id: string;
+    roomId: string;
+    section: string[];
+    instructor: string[];
+  };
+
+  function showEdit(exam: {
+    id: string;
+    section: {
+      id: string;
+    }[];
+    instructor: {
+      id: string;
+    }[];
+    roomId: string;
+  }) {
+    editState = true;
+    editData = {
+      ...exam,
+      section: exam.section.map((sec) => sec.id),
+      instructor: exam.instructor.map((inst) => inst.id),
+    };
+  }
+  let showRoomState = false;
 </script>
 
 <svelte:window on:keydown="{handleKeydown}" />
@@ -446,8 +474,11 @@
         <div class="table-small-container border-b">
           {#each room.filter((obj) => !state.selected || obj.id === state.exam?.room?.id) as r (r.id)}
             <div id="room-{r.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
-              <h6 class="text-center font-semibold">Room - {r.building.code}-{r.name}</h6>
-              <Table
+              <div class="mb-2 flex justify-between">
+                <h6 class="text-center font-semibold">Room - {r.building.code}-{r.name} <span class="capitalize">({r.type})</span></h6>
+                <button class="rounded bg-primary px-2 font-semibold text-white" on:click="{() => showRoomState = true}">View All</button>
+              </div>
+                <Table
                 bind:data="{schedulerExam}"
                 bind:state="{state}"
                 on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
@@ -664,7 +695,7 @@
             </div>
           </div>
           <button
-            class="grid w-full grid-cols-4 flex-row rounded border text-left font-semibold capitalize outline-none"
+            class="grid w-full grid-cols-5 flex-row rounded border text-left font-semibold capitalize outline-none"
             class:bg-white="{state.exam?.id !== exam.id}"
             class:bg-green-600="{state.exam?.id === exam.id}"
             class:text-white="{state.exam?.id === exam.id}"
@@ -682,6 +713,22 @@
                 <small class="block">{inst.name}</small>
               {/each}
             </div>
+            <div
+                class="flex h-full w-full items-center justify-center rounded-l border-r font-semibold"
+              >
+              <button class="!text-blue-500 disabled:!text-secondary underline"
+              disabled="{data.session?.user.id != exam.createdBy.id &&
+                data.session?.user.role != 'admin' || schedulerExam.findIndex((sched) => exam.id == sched.exam.id) !==
+              -1}"
+              on:click|stopPropagation="{() =>
+                showEdit({
+                  id: exam.id,
+                  section: exam.section,
+                  instructor: exam.instructor,
+                  roomId: exam.room?.id ?? '',
+                })}"
+              >Edit</button>
+          </div>
           </button>
         </div>
       {/each}
@@ -800,6 +847,35 @@
       </div>
     </div>
   {/if}
+</Modal>
+
+<ModalCenter bind:open="{showRoomState}">
+  {#await data.lazy.room}
+  Loading...
+{:then roomData}
+  <ShowRoom 
+    scheduler="{schedulerExam}"
+    room="{roomData.data}"
+  />
+  {/await}
+</ModalCenter>
+
+<Modal bind:open="{editState}">
+  <div id="edit" class="p-4">
+    <h1 class="mb-4 block text-center text-2xl font-bold">Edit Exam</h1>
+    {#await formOptions()}
+      Loading...
+    {:then options}
+      <ExamNewForm
+        sectionOptions="{options.section}"
+        sectionExamFilteredOptions="{options.sectionExamFiltered}"
+        instructorOptions="{options.instructor}"
+        roomOptions="{options.room}"
+        editData="{editData}"
+        edit="{true}"
+      />
+    {/await}
+  </div>
 </Modal>
 
 <style lang="postcss">

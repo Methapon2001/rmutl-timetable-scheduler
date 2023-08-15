@@ -11,12 +11,15 @@
   import toast from 'svelte-french-toast';
   import Table from './Table.svelte';
   import Modal from '$lib/components/Modal.svelte';
+  import ModalCenter from '$lib/components/ModalCenter.svelte';
   import GenerateModal from './GenerateModal.svelte';
   import FilterIcon from '$lib/icons/FilterIcon.svelte';
   import Filter from './Filter.svelte';
   import { publish } from '$lib/api/publish';
   import viewport from '$lib/utils/useViewportAction';
   import SectionNewForm from '../section/NewForm.svelte';
+  import SectionEditForm from '../section/EditForm.svelte';
+  import ShowRoom from './ShowRoom.svelte';
   import { exportSchedule } from '$lib/api/export-data';
 
   export let data: PageData;
@@ -411,6 +414,51 @@
   });
 
   let newState = false;
+  let editState = false;
+  let editData: {
+    id: string;
+    alt: string;
+    groupId: string;
+    roomId: string;
+    instructor: string[];
+    capacity: number;
+  };
+
+  let showData: {
+    no: number;
+    lab: number | null;
+    subject: { name: string };
+    type: string;
+  };
+
+  function showEdit(
+    editSectionData: {
+      id: string;
+      alt: string;
+      groupId: string;
+      roomId: string;
+      instructor: {
+        id: string;
+      }[];
+      capacity: number;
+    },
+    showSectionData: {
+      no: number;
+      type: string;
+      lab: number | null;
+      subject: { name: string };
+    },
+  ) {
+    editState = true;
+    editData = {
+      ...editSectionData,
+      instructor: editSectionData.instructor.map((inst) => inst.id),
+    };
+    showData = showSectionData;
+  }
+
+  let showRoomState = false;
+
   let tableSelectState: string;
 </script>
 
@@ -429,7 +477,7 @@
                   {#if data.scheduler.data.some((sched) => sched.section.instructor.some((inst) => inst.id === i.id) && sched.publish === true)}
                     <span class="rounded bg-green-600 px-2 font-semibold text-white">Public</span>
                   {:else}
-                    <span class="rounded bg-secondary px-2 font-semibold text-white">Private</span>
+                    <span class="bg-secondary rounded px-2 font-semibold text-white">Private</span>
                   {/if}
                 </div>
                 <Table
@@ -450,7 +498,7 @@
                   {#if data.scheduler.data.some((sched) => sched.section.group && sched.section.group.id === g.id && sched.publish === true)}
                     <span class="rounded bg-green-600 px-2 font-semibold text-white">Public</span>
                   {:else}
-                    <span class="rounded bg-secondary px-2 font-semibold text-white">Private</span>
+                    <span class="bg-secondary rounded px-2 font-semibold text-white">Private</span>
                   {/if}
                 </div>
                 <Table
@@ -469,7 +517,8 @@
           {#each room.filter((obj) => !state.selected || obj.id === state.section?.room?.id) as r (r.id)}
             <div id="room-{r.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
               <div class="mb-2 flex justify-between">
-                <h6 class="text-center font-semibold">Room - {r.building.code}-{r.name}</h6>
+                <h6 class="text-center font-semibold">Room - {r.building.code}-{r.name} <span class="capitalize">({r.type})</span></h6>
+                <button class="rounded bg-primary px-2 font-semibold text-white" on:click="{() => showRoomState = true}">View All</button>
               </div>
               <Table
                 bind:data="{scheduler}"
@@ -487,7 +536,7 @@
         {#if data.section.total === 0}
           <div class="p-8 text-center">
             <h1 class="mb-4 text-5xl font-extrabold">No Data</h1>
-            <h2 class="text-3xl text-secondary">
+            <h2 class="text-secondary text-3xl">
               No section created.<br />Must have section data in order for timetable to show.
             </h2>
           </div>
@@ -513,7 +562,7 @@
                 {#if pub}
                   <span class="rounded bg-green-600 px-2 font-semibold text-white">Public</span>
                 {:else}
-                  <span class="rounded bg-secondary px-2 font-semibold text-white">Private</span>
+                  <span class="bg-secondary rounded px-2 font-semibold text-white">Private</span>
                 {/if}
               </div>
               <Table
@@ -578,7 +627,7 @@
                 {#if data.scheduler.data.some((sched) => sched.section.instructor.some((inst) => inst.id === i.id) && sched.publish === true)}
                   <span class="rounded bg-green-600 px-2 font-semibold text-white">Public</span>
                 {:else}
-                  <span class="rounded bg-secondary px-2 font-semibold text-white">Private</span>
+                  <span class="bg-secondary rounded px-2 font-semibold text-white">Private</span>
                 {/if}
               </div>
               <Table
@@ -647,7 +696,7 @@
     </div>
   </div>
   <div>
-    <div class="section-selector border-l bg-light">
+    <div class="section-selector bg-light border-l">
       <div class="relative m-4 mb-0 grid grid-cols-4 items-center gap-4">
         <input
           type="text"
@@ -656,7 +705,7 @@
           bind:value="{searchText}"
         />
         <button
-          class="input flex !w-full items-center justify-center bg-white text-secondary shadow"
+          class="input text-secondary flex !w-full items-center justify-center bg-white shadow"
           on:click="{() => (showFilter = !showFilter)}"
         >
           <FilterIcon />
@@ -671,12 +720,12 @@
             <div class="mb-2 space-y-2 text-sm">
               <div class="flex gap-2">
                 <span
-                  class="flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
+                  class="bg-primary flex items-center rounded px-2 py-1 font-semibold text-white"
                 >
                   {section.subject.code}
                 </span>
                 <span
-                  class="flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
+                  class="bg-primary flex items-center rounded px-2 py-1 font-semibold text-white"
                 >
                   {section.subject.name}
                 </span>
@@ -684,19 +733,19 @@
 
               <div class="flex gap-2">
                 <span
-                  class="flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
+                  class="bg-primary flex items-center rounded px-2 py-1 font-semibold text-white"
                 >
                   SEC {section.no}
                 </span>
                 <span
-                  class="flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
+                  class="bg-primary flex items-center rounded px-2 py-1 font-semibold text-white"
                 >
                   {section.group?.name ?? 'Any'}
                 </span>
               </div>
             </div>
             <button
-              class="grid w-full grid-cols-4 flex-row rounded border capitalize outline-none"
+              class="grid w-full grid-cols-5 flex-row rounded border capitalize outline-none"
               class:bg-white="{state.section?.id !== section.id}"
               class:bg-green-600="{state.section?.id === section.id}"
               class:text-white="{state.section?.id === section.id}"
@@ -719,6 +768,37 @@
                 {#each section.instructor as instructor}
                   <small class="block">{instructor.name}</small>
                 {/each}
+              </div>
+
+              <div
+                class="flex h-full w-full items-center justify-center rounded-l border-r font-semibold"
+              >
+                <button
+                  class="disabled:!text-secondary !text-blue-500 underline"
+                  disabled="{(data.session?.user.id != section.createdBy.id &&
+                    data.session?.user.role != 'admin') ||
+                    (getUsedHour(section) > 0 &&
+                      getUsedHour(section) < getRequiredHour(section) &&
+                      state.section?.id != section.id) ||
+                    getLeftOverHours(section) == 0}"
+                  on:click|stopPropagation="{() =>
+                    showEdit(
+                      {
+                        id: section.id,
+                        alt: section.alt ?? '',
+                        groupId: section.group?.id ?? '',
+                        roomId: section.room?.id ?? '',
+                        instructor: section.instructor,
+                        capacity: section.capacity,
+                      },
+                      {
+                        no: section.no,
+                        type: section.type,
+                        lab: section.lab,
+                        subject: section.subject,
+                      },
+                    )}">Edit</button
+                >
               </div>
             </button>
 
@@ -810,7 +890,7 @@
   </div>
   {#if state.section}
     <div
-      class="flex justify-between gap-2 overflow-hidden rounded border border-primary bg-light pr-2 font-semibold shadow"
+      class="border-primary bg-light flex justify-between gap-2 overflow-hidden rounded border pr-2 font-semibold shadow"
     >
       <span class="bg-primary px-3 py-2 font-semibold text-white">Selected</span>
       <span class="truncate py-2">
@@ -828,7 +908,7 @@
   {/if}
 
   <div class="alloc-control">
-    <div class="grid grid-cols-6 rounded bg-primary font-semibold text-white">
+    <div class="bg-primary grid grid-cols-6 rounded font-semibold text-white">
       <div class="col-span-5 flex items-center px-4 py-2">
         <input
           class="w-full"
@@ -873,6 +953,36 @@
       </div>
     </div>
   {/if}
+</Modal>
+
+<ModalCenter bind:open="{showRoomState}">
+  {#await data.lazy.room}
+  Loading...
+{:then roomData}
+  <ShowRoom 
+    scheduler="{scheduler}"
+    room="{roomData.data}"
+  />
+  {/await}
+</ModalCenter>
+
+<Modal bind:open="{editState}">
+  <div id="edit" class="p-4">
+    <h1 class="mb-4 block text-center text-2xl font-bold">Edit Section</h1>
+    {#await formOptions()}
+      Loading...
+    {:then options}
+      <SectionEditForm
+        groupOptions="{options.group}"
+        roomOptions="{options.room}"
+        instructorOptions="{options.instructor}"
+        edit="{true}"
+        editData="{editData}"
+        showData="{showData}"
+        callback="{() => (editState = false)}"
+      />
+    {/await}
+  </div>
 </Modal>
 
 <style lang="postcss">
