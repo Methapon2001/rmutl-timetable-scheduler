@@ -178,7 +178,7 @@
   <section id="input-compulsory" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
       <label for="" class="font-semibold">
-        Compulsory <span class="text-red-600">*</span>
+        Compulsory
       </label>
     </div>
     <div
@@ -199,7 +199,7 @@
   <section id="input-elective" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
       <label for="" class="font-semibold">
-        Elective <span class="text-red-600">*</span>
+        Elective
       </label>
     </div>
     <div

@@ -218,7 +218,7 @@
   <section id="input-alt" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
       <label for="" class="font-semibold">
-        Alternate Section No. <span class="text-red-600">*</span>
+        Alternate Section No.
       </label>
     </div>
     <div class="col-span-4">
