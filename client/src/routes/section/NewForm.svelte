@@ -238,7 +238,7 @@
   <section id="input-group" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
       <label for="group" class="font-semibold">
-        Group <span class="text-red-600">*</span>
+        Group 
       </label>
     </div>
     <div
@@ -312,7 +312,7 @@
         <section id="input-instructor" class="grid grid-cols-6">
           <div class="col-span-2 flex items-center">
             <label for="instructor" class="font-semibold">
-              Instructor <span class="text-red-600">*</span>
+              Instructor
             </label>
           </div>
           <div
