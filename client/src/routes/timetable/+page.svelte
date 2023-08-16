@@ -92,7 +92,7 @@
     };
   });
 
-  let instructor = Object.values(
+  $: instructor = Object.values(
     data.section.data.reduce<
       Record<string, Omit<API.Instructor, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>> // eslint-disable-line no-undef
     >((acc, curr) => {
@@ -103,7 +103,7 @@
     }, {}),
   );
 
-  let room = Object.values(
+  $: room = Object.values(
     data.section.data.reduce<
       Record<string, Omit<API.Room, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>> // eslint-disable-line no-undef
     >((acc, curr) => {
@@ -114,7 +114,7 @@
     }, {}),
   );
 
-  let group = Object.values(
+  $: group = Object.values(
     data.section.data.reduce<
       Record<string, Omit<API.Group, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>> // eslint-disable-line no-undef
     >((acc, curr) => {
@@ -379,14 +379,14 @@
   const filterList = [
     {
       group: 'Group',
-      options: group.map((grp) => ({
+      options: group?.map((grp) => ({
         value: grp.name,
         label: grp.name,
       })),
     },
     {
       group: 'Instructor',
-      options: instructor.map((inst) => ({
+      options: instructor?.map((inst) => ({
         value: inst.name,
         label: inst.name,
       })),
@@ -517,8 +517,13 @@
           {#each room.filter((obj) => !state.selected || obj.id === state.section?.room?.id) as r (r.id)}
             <div id="room-{r.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
               <div class="mb-2 flex justify-between">
-                <h6 class="text-center font-semibold">Room - {r.building.code}-{r.name} <span class="capitalize">({r.type})</span></h6>
-                <button class="rounded bg-primary px-2 font-semibold text-white" on:click="{() => showRoomState = true}">View All</button>
+                <h6 class="text-center font-semibold">
+                  Room - {r.building.code}-{r.name} <span class="capitalize">({r.type})</span>
+                </h6>
+                <button
+                  class="bg-primary rounded px-2 font-semibold text-white"
+                  on:click="{() => (showRoomState = true)}">View All</button
+                >
               </div>
               <Table
                 bind:data="{scheduler}"
@@ -530,6 +535,14 @@
               />
             </div>
           {/each}
+          {#if !state.section?.room}
+            <div class="flex h-full w-full items-center justify-center">
+              <button
+                class="bg-primary rounded p-2 font-semibold text-white"
+                on:click="{() => (showRoomState = true)}">Select Room</button
+              >
+            </div>
+          {/if}
         </div>
       </div>
       <div class="main-table-container pb-16">
@@ -747,10 +760,10 @@
             <button
               class="grid w-full grid-cols-5 flex-row rounded border capitalize outline-none"
               class:bg-white="{state.section?.id !== section.id}"
-              class:bg-green-600="{state.section?.id === section.id}"
-              class:text-white="{state.section?.id === section.id}"
+              class:bg-green-400="{state.section?.id === section.id}"
+              class:line-through="{getLeftOverHours(section) == 0}"
               class:text-red-600="{getLeftOverHours(section) == 0}"
-              class:text-indigo-600="{getUsedHour(section) > 0 &&
+              class:text-yellow-500="{getUsedHour(section) > 0 &&
                 getUsedHour(section) < getRequiredHour(section) &&
                 state.section?.id != section.id}"
               on:click="{() => handleSelectSection(section)}"
@@ -766,7 +779,7 @@
               <div class="col-span-3 w-full pl-3 text-left font-semibold">
                 {#if section.instructor.length == 0}<small>Not assigned</small>{/if}
                 {#each section.instructor as instructor}
-                  <small class="block">{instructor.name}</small>
+                  <small>{instructor.name}</small><br/>
                 {/each}
               </div>
 
@@ -781,7 +794,7 @@
                       getUsedHour(section) < getRequiredHour(section) &&
                       state.section?.id != section.id) ||
                     getLeftOverHours(section) == 0}"
-                  on:click|stopPropagation="{() =>
+                  on:click|stopPropagation="{() => {
                     showEdit(
                       {
                         id: section.id,
@@ -797,7 +810,9 @@
                         lab: section.lab,
                         subject: section.subject,
                       },
-                    )}">Edit</button
+                    );
+                    invalidate('data:scheduler');
+                  }}"><small>Edit</small></button
                 >
               </div>
             </button>
@@ -806,10 +821,10 @@
               <button
                 class="grid w-full grid-cols-5 flex-row rounded border capitalize outline-none"
                 class:bg-white="{state.section?.id !== child.id}"
-                class:bg-green-600="{state.section?.id === child.id}"
-                class:text-white="{state.section?.id === child.id}"
+                class:bg-green-400="{state.section?.id === child.id}"
                 class:text-red-600="{getLeftOverHours(child) == 0}"
-                class:text-indigo-700="{getUsedHour(child) > 0 &&
+                class:line-through="{getLeftOverHours(child) == 0}"
+                class:text-yellow-500="{getUsedHour(child) > 0 &&
                   getUsedHour(child) < getRequiredHour(child) &&
                   state.section?.id != child.id}"
                 on:click="{() => handleSelectSection({ ...child, child: [] })}"
@@ -825,39 +840,41 @@
                 <div class="col-span-3 w-full pl-3 text-left font-semibold">
                   {#if section.instructor.length == 0}<small>Not assigned</small>{/if}
                   {#each child.instructor as instructor}
-                    <small>{instructor.name}</small><br />
+                    <small>{instructor.name}</small><br/>
                   {/each}
                 </div>
                 <div
-                class="flex h-full w-full items-center justify-center rounded-l border-r font-semibold"
-              >
-                <button
-                  class="disabled:!text-secondary !text-blue-500 underline"
-                  disabled="{(data.session?.user.id != section.createdBy.id &&
-                    data.session?.user.role != 'admin') ||
-                    (getUsedHour(child) > 0 &&
-                      getUsedHour(child) < getRequiredHour(child) &&
-                      state.section?.id != child.id) ||
-                    getLeftOverHours(child) == 0}"
-                  on:click|stopPropagation="{() =>
-                    showEdit(
-                      {
-                        id: child.id,
-                        alt: child.alt ?? '',
-                        groupId: child.group?.id ?? '',
-                        roomId: child.room?.id ?? '',
-                        instructor: child.instructor,
-                        capacity: child.capacity,
-                      },
-                      {
-                        no: child.no,
-                        type: child.type,
-                        lab: child.lab,
-                        subject: child.subject,
-                      },
-                    )}">Edit</button
+                  class="flex h-full w-full items-center justify-center rounded-l border-r font-semibold"
                 >
-              </div>
+                  <button
+                    class="disabled:!text-secondary !text-blue-500 underline"
+                    disabled="{(data.session?.user.id != section.createdBy.id &&
+                      data.session?.user.role != 'admin') ||
+                      (getUsedHour(child) > 0 &&
+                        getUsedHour(child) < getRequiredHour(child) &&
+                        state.section?.id != child.id) ||
+                      getLeftOverHours(child) == 0}"
+                    on:click|stopPropagation="{() => {
+                      showEdit(
+                        {
+                          id: child.id,
+                          alt: child.alt ?? '',
+                          groupId: child.group?.id ?? '',
+                          roomId: child.room?.id ?? '',
+                          instructor: child.instructor,
+                          capacity: child.capacity,
+                        },
+                        {
+                          no: child.no,
+                          type: child.type,
+                          lab: child.lab,
+                          subject: child.subject,
+                        },
+                      );
+                      invalidate('data:scheduler');
+                    }}"><small>Edit</small></button
+                  >
+                </div>
               </button>
             {/each}
           </div>
@@ -912,6 +929,7 @@
 
         if (flag) {
           await resetData('scheduler');
+          invalidate("data:scheduler")
         }
       }}"
     >
@@ -987,12 +1005,14 @@
 
 <ModalCenter bind:open="{showRoomState}">
   {#await data.lazy.room}
-  Loading...
-{:then roomData}
-  <ShowRoom 
-    scheduler="{scheduler}"
-    room="{roomData.data}"
-  />
+    Loading...
+  {:then roomData}
+    <ShowRoom
+      scheduler="{scheduler}"
+      room="{roomData.data}"
+      state="{state}"
+      bind:open="{showRoomState}"
+    />
   {/await}
 </ModalCenter>
 

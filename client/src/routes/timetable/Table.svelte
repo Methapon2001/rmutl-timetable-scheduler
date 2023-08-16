@@ -59,6 +59,7 @@
     overlapGroup?: ScheduleData[];
   };
   export let noDelete = false;
+  export let forceVisual = false;
 
   export let group: API.Scheduler['section']['group'] | undefined = undefined; // eslint-disable-line no-undef
   export let room: API.Scheduler['section']['room'] | undefined = undefined; // eslint-disable-line no-undef
@@ -67,7 +68,7 @@
   $: visualize =
     (room && room.id) === state.section?.room?.id ||
     (group && group?.id === state.section?.group?.id) ||
-    state.section?.instructor.findIndex((inst) => inst.id === instructor?.id) != -1;
+    state.section?.instructor.findIndex((inst) => inst.id === instructor?.id) != -1 || forceVisual;
 
   $: localData =
     room || group || instructor

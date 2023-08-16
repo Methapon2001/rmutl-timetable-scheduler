@@ -48,7 +48,7 @@ export const editSection = async (data: {
   id: string;
   groupId: string | null;
   roomId: string | null;
-  instructor: {
+  instructor?: {
     id: string;
   }[];
 }): Promise<API.Section> => {
