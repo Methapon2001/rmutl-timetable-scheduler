@@ -23,6 +23,20 @@ export async function createInfo(
       current: false,
     },
   });
+
+  const exist = await prisma.info.findFirst({
+    where: {
+      year: request.body.year,
+      semester: request.body.semester,
+    },
+  });
+
+  if (exist) {
+    return reply.code(400).send({
+      message: "Year and semester already exist.",
+    });
+  }
+
   const info = await prisma.info.create({
     data: {
       ...request.body,
