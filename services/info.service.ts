@@ -103,6 +103,21 @@ export async function updateInfo(
 ) {
   const { id } = request.params;
 
+  const exist = await prisma.info.findFirst({
+    where: {
+      NOT: {
+        id: id,
+      },
+      year: request.body.year,
+      semester: request.body.semester,
+    },
+  });
+
+  if (exist) {
+    return reply.code(400).send({
+      message: "Year and semester already exist.",
+    });
+  }
   const info = await prisma.info.update({
     where: {
       id: id,
