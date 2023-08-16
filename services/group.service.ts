@@ -106,6 +106,8 @@ export async function requestGroup(
       search: string;
       limit: number;
       offset: number;
+      year: number;
+      semester: number;
     } & Pick<
       Group,
       "name" | "courseId" | "createdByUserId" | "updatedByUserId"

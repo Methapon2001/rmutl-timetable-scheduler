@@ -169,6 +169,8 @@ export async function requestScheduler(
       limit: number;
       offset: number;
       groupId: string;
+      year: number;
+      semester: number;
     } & Pick<Scheduler, "publish" | "createdByUserId" | "updatedByUserId">;
   }>,
   reply: FastifyReply

@@ -244,6 +244,8 @@ export async function requestSection(
       limit: number;
       offset: number;
       exam_filtered: number;
+      year: number;
+      semester: number;
     } & Pick<
       Section,
       | "groupId"
