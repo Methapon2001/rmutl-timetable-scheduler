@@ -112,6 +112,9 @@ export async function exportGroupSchedule(
   const data = await prisma.scheduler.findMany({
     select: schedulerSelect,
     where: {
+      info: {
+        current: true,
+      },
       createdByUserId: req.user.id,
     },
   });
