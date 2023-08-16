@@ -32,6 +32,11 @@
   }
 
   $: route = $page.route.id;
+
+  let year = data.info.data.find((inf) => inf.current)?.year;
+  let semester = data.info.data.find((inf) => inf.current)?.semester;
+
+  let currentInfo = `${semester}/${year}`;
 </script>
 
 <svelte:window bind:innerWidth="{innerWidth}" />
@@ -84,6 +89,15 @@
   >
     <MenuIcon />
   </button>
+
+  <div>
+    <span class="rounded bg-primary px-4 py-1 font-semibold text-white">Info</span>
+    <select name="info" id="info" bind:value="{currentInfo}" class="rounded border px-4 py-1">
+      {#each data.info.data as info}
+        <option value="{`${info.semester}/${info.year}`}">{info.semester}/{info.year}</option>
+      {/each}
+    </select>
+  </div>
 
   <a id="user" href="/profile" role="button">
     {data.session?.user.username ?? 'Guest'}
@@ -160,6 +174,7 @@
     box-shadow: var(--shadow);
     display: flex;
     align-items: center;
+    justify-content: space-between;
     position: sticky;
     top: 0px;
     height: 4rem;
@@ -184,7 +199,6 @@
   }
 
   header #user {
-    margin-left: auto;
     text-transform: capitalize;
     user-select: none;
     font-weight: 600;
