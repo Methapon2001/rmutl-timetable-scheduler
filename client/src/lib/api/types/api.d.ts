@@ -186,4 +186,11 @@ declare namespace API {
     openedRequestSection: Omit<API.OpenedRequestSection, 'createdAt'>;
     createdAt: string;
   };
+
+  type Info = {
+    id: string;
+    year: number;
+    semester: number;
+    current: boolean;
+  };
 }
