@@ -98,6 +98,19 @@ export async function updateInfo(
     },
   });
 
+  if (request.body.current === true) {
+    await prisma.info.updateMany({
+      where: {
+        NOT: {
+          id: id,
+        },
+      },
+      data: {
+        current: false,
+      },
+    });
+  }
+
   reply.status(200).send({
     data: info,
   });
