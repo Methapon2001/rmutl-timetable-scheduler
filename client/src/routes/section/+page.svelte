@@ -294,6 +294,7 @@
 
         if (flag) {
           await resetData('section');
+          invalidate("data:section");
         }
       }}"
     >

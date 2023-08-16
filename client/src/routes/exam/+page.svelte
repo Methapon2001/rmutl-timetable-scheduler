@@ -259,6 +259,7 @@
 
         if (flag) {
           await resetData('exam');
+          invalidate("data:exam");
         }
       }}"
     >
