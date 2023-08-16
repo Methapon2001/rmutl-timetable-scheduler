@@ -229,6 +229,9 @@ model Group {
   planId String
   plan   Plan   @relation(fields: [planId], references: [id])
 
+  info   Info   @relation(fields: [infoId], references: [id])
+  infoId String
+
   createdByUserId String
   createdBy       User     @relation("GroupCreatedBy", fields: [createdByUserId], references: [id])
   createdAt       DateTime @default(now())
@@ -262,6 +265,9 @@ model Section {
   parent   Section?  @relation("AssociatedSection", fields: [parentId], references: [id], onDelete: Cascade)
   child    Section[] @relation("AssociatedSection")
 
+  info   Info   @relation(fields: [infoId], references: [id])
+  infoId String
+
   createdByUserId String
   createdBy       User     @relation("SectionCreatedBy", fields: [createdByUserId], references: [id])
   createdAt       DateTime @default(now())
@@ -289,6 +295,9 @@ model Scheduler {
 
   sectionId String
   section   Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  info   Info   @relation(fields: [infoId], references: [id])
+  infoId String
 
   createdByUserId String
   createdBy       User     @relation("SchedulerCreatedBy", fields: [createdByUserId], references: [id])
@@ -371,4 +380,15 @@ model RequestSection {
 
   openedRequestSection   OpenedRequestSection @relation(fields: [openedRequestSectionId], references: [id], onDelete: Cascade)
   openedRequestSectionId String
+}
+
+model Info {
+  id       String  @id @default(nanoid(16))
+  year     Int
+  semester Int
+  current  Boolean
+
+  group     Group[]
+  section   Section[]
+  scheduler Scheduler[]
 }

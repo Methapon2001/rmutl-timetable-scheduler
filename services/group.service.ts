@@ -73,9 +73,21 @@ export async function createGroup(
   request: FastifyRequest<{ Body: Group }>,
   reply: FastifyReply
 ) {
+  const info = await prisma.info.findFirst({
+    where: {
+      current: true,
+    },
+  });
+
+  if (!info) {
+    return reply.code(400).send({
+      message: "Must set year and semester before add this data.",
+    });
+  }
   const group = await prisma.group.create({
     data: {
       ...request.body,
+      infoId: info.id,
       createdByUserId: request.user.id,
       updatedByUserId: request.user.id,
     },

@@ -160,6 +160,18 @@ export async function createSection(
       ? request.body.no
       : await nextSectionNo(request.body.subjectId);
 
+  const info = await prisma.info.findFirst({
+    where: {
+      current: true,
+    },
+  });
+
+  if (!info) {
+    return reply.code(400).send({
+      message: "Must set year and semester before add this data.",
+    });
+  }
+
   const data = request.body.section.map((val, idx) => {
     return {
       type: idx == 0 ? request.body.type : "lab",
@@ -179,6 +191,7 @@ export async function createSection(
       instructor: {
         connect: val.instructor,
       },
+      infoId: info.id,
       createdByUserId: request.user.id,
       updatedByUserId: request.user.id,
     };
