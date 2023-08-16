@@ -145,6 +145,11 @@
   async function handleSubmit() {
     form.error = undefined;
 
+    if (capacityExceedFlag == true) {
+      capacityExceedFlag = false;
+      return;
+    }
+
     const result = schema
       .transform((val) => {
         return {
@@ -189,68 +194,11 @@
       toast.error('Fail to create Section!');
     }
   }
+
+  let capacityExceedFlag = false;
 </script>
 
 <form on:submit|preventDefault="{() => handleSubmit()}" class="space-y-4">
-  <section id="input-manual" class="grid grid-cols-6">
-    <div class="col-span-2 flex items-center">
-      <label for="" class="font-semibold">
-        Section No. <span class="text-red-600">*</span>
-      </label>
-    </div>
-    <div class="col-span-4">
-      <div>
-        <label><input type="radio" bind:group="{form.data.manual}" value="{false}" /> Auto</label>
-      </div>
-      <div class="flex items-center gap-4">
-        <label class="whitespace-nowrap">
-          <input type="radio" bind:group="{form.data.manual}" value="{true}" /> Manual
-        </label>
-        <input
-          type="number"
-          class="input w-fit text-center"
-          bind:value="{form.data.no}"
-          disabled="{!form.data.manual}"
-        />
-      </div>
-    </div>
-  </section>
-  <section id="input-alt" class="grid grid-cols-6">
-    <div class="col-span-2 flex items-center">
-      <label for="" class="font-semibold">
-        Alternate Section No.
-      </label>
-    </div>
-    <div class="col-span-4">
-      <input
-        type="text"
-        class="input
-          {form.error && getZodErrorMessage(form.error, ['alt']).length > 0
-          ? 'border border-red-600'
-          : ''}"
-        bind:value="{form.data.alt}"
-      />
-    </div>
-    <div class="col-span-4 col-start-3 text-red-600">
-      {form.error ? getZodErrorMessage(form.error, ['alt']) : ''}
-    </div>
-  </section>
-  <section id="input-group" class="grid grid-cols-6">
-    <div class="col-span-2 flex items-center">
-      <label for="group" class="font-semibold">
-        Group 
-      </label>
-    </div>
-    <div
-      class="col-span-4"
-      class:invalid="{form.error && getZodErrorMessage(form.error, ['groupId']).length > 0}"
-    >
-      <Select options="{groupOptions}" bind:value="{form.data.groupId}" />
-    </div>
-    <div class="col-span-4 col-start-3 text-red-600">
-      {form.error ? getZodErrorMessage(form.error, ['groupId']) : ''}
-    </div>
-  </section>
   <section id="input-subject" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
       <label for="subject" class="font-semibold">
@@ -263,6 +211,7 @@
     >
       <Select
         options="{subjectOptions}"
+        placeholder="Select Subject"
         bind:value="{form.data.subjectId}"
         on:change="{() => handleChange()}"
       />
@@ -272,6 +221,67 @@
     </div>
   </section>
   {#if form.data.subjectId != ''}
+    <section id="input-manual" class="grid grid-cols-6">
+      <div class="col-span-2 flex items-center">
+        <label for="" class="font-semibold">
+          Section No. <span class="text-red-600">*</span>
+        </label>
+      </div>
+      <div class="col-span-4">
+        <div>
+          <label><input type="radio" bind:group="{form.data.manual}" value="{false}" /> Auto</label>
+        </div>
+        <div class="flex items-center gap-4">
+          <label class="whitespace-nowrap">
+            <input type="radio" bind:group="{form.data.manual}" value="{true}" /> Manual
+          </label>
+          <input
+            type="number"
+            class="input w-fit text-center"
+            bind:value="{form.data.no}"
+            disabled="{!form.data.manual}"
+          />
+        </div>
+      </div>
+    </section>
+    <section id="input-alt" class="grid grid-cols-6">
+      <div class="col-span-2 flex items-center">
+        <label for="" class="font-semibold"> Alternate Section No. </label>
+      </div>
+      <div class="col-span-4">
+        <input
+          placeholder="1, 2, 3, 4 or 1 2 3 4 (Optional)"
+          type="text"
+          class="input
+          {form.error && getZodErrorMessage(form.error, ['alt']).length > 0
+            ? 'border border-red-600'
+            : ''}"
+          bind:value="{form.data.alt}"
+        />
+      </div>
+      <div class="col-span-4 col-start-3 text-red-600">
+        {form.error ? getZodErrorMessage(form.error, ['alt']) : ''}
+      </div>
+    </section>
+    <section id="input-group" class="grid grid-cols-6">
+      <div class="col-span-2 flex items-center">
+        <label for="group" class="font-semibold"> Group </label>
+      </div>
+      <div
+        class="col-span-4"
+        class:invalid="{form.error && getZodErrorMessage(form.error, ['groupId']).length > 0}"
+      >
+        <Select
+          placeholder="Not Specified (Optional)"
+          options="{groupOptions}"
+          bind:value="{form.data.groupId}"
+        />
+      </div>
+      <div class="col-span-4 col-start-3 text-red-600">
+        {form.error ? getZodErrorMessage(form.error, ['groupId']) : ''}
+      </div>
+    </section>
+
     {#each form.data.section as _, sectionIdx}
       <div class="relative space-y-4 rounded border p-3">
         <button
@@ -282,13 +292,11 @@
           <CrossIcon />
         </button>
         <h2 class="font-2xl text-center font-semibold capitalize">
-          Section {sectionIdx + 1} ({sectionIdx == 0 ? form.data.type : 'lab'})
+          {sectionIdx == 0 ? form.data.type : `lab ${sectionIdx}`}
         </h2>
         <section id="input-room" class="grid grid-cols-6">
           <div class="col-span-2 flex items-center">
-            <label for="room" class="font-semibold">
-              Room <span class="text-red-600">*</span>
-            </label>
+            <label for="room" class="font-semibold"> Room </label>
           </div>
           <div
             class="col-span-4"
@@ -296,6 +304,7 @@
               getZodErrorMessage(form.error, ['section', sectionIdx, 'roomId']).length > 0}"
           >
             <Select
+              placeholder="Not Specified (Optional)"
               options="{roomOptions.filter(
                 (opt) =>
                   opt.detail.type == 'both' ||
@@ -311,9 +320,7 @@
         </section>
         <section id="input-instructor" class="grid grid-cols-6">
           <div class="col-span-2 flex items-center">
-            <label for="instructor" class="font-semibold">
-              Instructor
-            </label>
+            <label for="instructor" class="font-semibold"> Instructor </label>
           </div>
           <div
             class="col-span-4"
@@ -321,6 +328,7 @@
               getZodErrorMessage(form.error, ['section', sectionIdx, 'instructor']).length > 0}"
           >
             <Select
+              placeholder="Not Specified (Optional)"
               options="{instructorOptions}"
               bind:value="{form.data.section[sectionIdx].instructor}"
               multiple
@@ -346,6 +354,25 @@
                 ? 'border border-red-600'
                 : ''}"
               bind:value="{form.data.section[sectionIdx].capacity}"
+              on:change="{() => {
+                if (sectionIdx != 0) {
+                  let max = form.data.section[0].capacity;
+                  let sum = form.data.section.reduce(
+                    (acc, curr, idx) => (idx > 0 ? acc + curr.capacity : 0),
+                    0,
+                  );
+
+                  if (sum > max) {
+                    form.data.section[sectionIdx].capacity -= sum - max;
+                    toast.error(
+                      'Total lab capacity must not exceed lecture / main section capacity.',
+                    );
+                    capacityExceedFlag = true;
+                  } else {
+                    capacityExceedFlag = false;
+                  }
+                }
+              }}"
             />
           </div>
           <div class="col-span-4 col-start-3 text-red-600">
@@ -354,7 +381,12 @@
         </section>
       </div>
     {/each}
-    <button type="button" class="button w-full" on:click="{() => addSection()}">Add section</button>
+
+    {#if subjectOptions.find((opt) => form.data.subjectId === opt.value)?.detail.lab !== 0}
+      <button type="button" class="button w-full" on:click="{() => addSection()}"
+        >Add section</button
+      >
+    {/if}
   {/if}
   <button type="submit" class="button w-full">Save</button>
 </form>
