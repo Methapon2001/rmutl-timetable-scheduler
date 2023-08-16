@@ -118,6 +118,7 @@
     <div class="col-span-4">
       <input
         type="text"
+        placeholder="Instructor Name"
         class="input text-center
         {form.error && getZodErrorMessage(form.error, ['name']).length > 0
           ? 'border border-red-600'

@@ -141,6 +141,7 @@
     <div class="col-span-4">
       <input
         type="text"
+        placeholder="Group Name"
         class="input
               {form.error && getZodErrorMessage(form.error, ['name']).length > 0
           ? 'border border-red-600'

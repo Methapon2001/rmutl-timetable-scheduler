@@ -143,6 +143,7 @@
     <div class="col-span-4">
       <input
         type="text"
+        placeholder="Subject Code"
         class="input text-center
         {form.error && getZodErrorMessage(form.error, ['code']).length > 0
           ? 'border border-red-600'
@@ -166,6 +167,7 @@
     <div class="col-span-4">
       <input
         type="text"
+        placeholder="Subject Name"
         class="input text-center
         {form.error && getZodErrorMessage(form.error, ['name']).length > 0
           ? 'border border-red-600'
