@@ -4,6 +4,7 @@ import { PUBLIC_API_HOST } from '$env/static/public';
 
 export const ssr = false;
 export const prerender = true;
+export const trailingSlash = 'always';
 
 export const load = (async ({ fetch }) => {
   let userSession: API.Session | null = null;
