@@ -106,7 +106,7 @@
     <select
       name="info"
       id="info"
-      class="rounded border px-4 py-1"
+      class="rounded border px-4 py-1 text-center"
       bind:value="{selectedInfo}"
       on:change="{setInfo}"
     >
