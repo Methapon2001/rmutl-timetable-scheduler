@@ -117,16 +117,6 @@
       while (offsetList.includes(j)) j++;
 
       processed[i]._offset = j;
-
-      // for (let k = 0; k < processed.length; k++) {
-      //   if (processed[k]._overlap || processed[i].weekday != processed[k].weekday || i == k)
-      //     continue;
-
-      //   if (processed[i].section.subject.id == processed[k].section.subject.id) {
-      //     processed[k]._overlap = true;
-      //     processed[k]._offset = j;
-      //   }
-      // }
     }
 
     return processed;
@@ -142,106 +132,110 @@
   }
 </script>
 
-<div class="relative grid w-full bg-white" class:small="{small}" class:disabled="{!visualize}">
-  <div class="col-span-3 select-none bg-slate-100 font-semibold capitalize"><!--Period--></div>
-  {#each { length: 25 } as _, period}
-    <div class="flex flex-col items-center bg-slate-100 font-semibold">
-      <small>{period + 1}</small>
-      <small class="text-secondary" hidden="{small}"
-        >{8 + Math.floor(period / 2)}:{period % 2 === 0 ? '0' : '3'}0</small
-      >
-    </div>
-  {/each}
-
-  {#each Object.keys(weekdayMapRow) as weekday}
-    <div
-      class="col-span-3 select-none bg-slate-100 font-semibold capitalize"
-      class:text-sm="{small}"
-    >
-      {weekday}
-    </div>
-    {#each { length: 25 } as _, period}
-      <button
-        class="transition-none hover:bg-slate-100"
-        on:click="{() => handleClick(weekday, period + 1)}"></button>
+<div class="w-full overflow-y-hidden overflow-x-scroll">
+  <div class="relative grid w-full bg-white" class:small="{small}" class:disabled="{!visualize}">
+    <div class="col-span-3 select-none bg-slate-100 font-semibold capitalize"><!--Period--></div>
+    {#each { length: 50 } as _, period}
+      <div class="flex flex-col items-center bg-slate-100 font-semibold">
+        <small>{period + 1}</small>
+        <small class="text-secondary" hidden="{small}"
+          >{8 + Math.floor(period / 4)}:{['0', '15', '30', '45'][period % 4]}</small
+        >
+      </div>
     {/each}
-  {/each}
 
-  {#if selectable && state.selected && visualize}
-    <div
-      class="pointer-events-none absolute z-30 w-full {state.isOverlap || state.isOverflow
-        ? 'bg-red-600/70'
-        : 'bg-green-600/70'}"
-      style:grid-row="{weekdayMapRow[state.weekday]}"
-      style:grid-column="{`${state.period + 3}/${state.period + state.size + 3}`}"
-    >
-      <div class="h-full w-full"></div>
-    </div>
-  {/if}
+    {#each Object.keys(weekdayMapRow) as weekday}
+      <div
+        class="col-span-3 select-none bg-slate-100 font-semibold capitalize"
+        class:text-sm="{small}"
+      >
+        {weekday}
+      </div>
+      {#each { length: 50 } as _, period}
+        <button
+          class="transition-none hover:bg-slate-100"
+          on:click="{() => handleClick(weekday, period + 1)}"></button>
+      {/each}
+    {/each}
 
-  {#each processedData as item}
-    {@const overlapMaxOffset = Math.max(...processedData.map((obj) => obj._offset)) + 1}
-    <div
-      class="pointer-events-none absolute z-10 w-full border bg-blue-300 text-xs font-bold"
-      style:grid-row="{weekdayMapRow[item.weekday]}"
-      style:grid-column="{`${item.period + 3}/${item.period + item.size + 3}`}"
-      style:height="{item._overlap ? `${(100 / overlapMaxOffset).toPrecision(6)}%` : '100%'}"
-      style:top="{item._overlap
-        ? `${((item._offset * 100) / overlapMaxOffset).toPrecision(6)}%`
-        : '0%'}"
-    >
-      {#if !small}
-        <div class="relative flex h-full w-full items-center text-center">
-          <div class="flex h-full flex-grow items-center overflow-hidden">
-            <div class="w-full">
-              {#if !item._overlap}
-                <h6 class="block overflow-hidden font-bold">
-                  {item.exam.section[0].subject.code}_SEC <!-- sec no loop thru -->
-                </h6>
-              {/if}
-              <p class="block">{item.exam.section[0].subject.name}</p>
+    {#if selectable && state.selected && visualize}
+      <div
+        class="pointer-events-none absolute z-30 w-full {state.isOverlap || state.isOverflow
+          ? 'bg-red-600/70'
+          : 'bg-green-600/70'}"
+        style:grid-row="{weekdayMapRow[state.weekday]}"
+        style:grid-column="{`${state.period + 3}/${state.period + state.size + 3}`}"
+      >
+        <div class="h-full w-full"></div>
+      </div>
+    {/if}
+
+    {#each processedData as item}
+      {@const overlapMaxOffset = Math.max(...processedData.map((obj) => obj._offset)) + 1}
+      <div
+        class="pointer-events-none absolute z-10 w-full border bg-blue-300 text-xs font-bold"
+        style:grid-row="{weekdayMapRow[item.weekday]}"
+        style:grid-column="{`${item.period + 3}/${item.period + item.size + 3}`}"
+        style:height="{item._overlap ? `${(100 / overlapMaxOffset).toPrecision(6)}%` : '100%'}"
+        style:top="{item._overlap
+          ? `${((item._offset * 100) / overlapMaxOffset).toPrecision(6)}%`
+          : '0%'}"
+      >
+        {#if !small}
+          <div class="relative flex h-full w-full items-center text-center">
+            <div class="flex h-full flex-grow items-center overflow-hidden">
+              <div class="w-full">
+                {#if !item._overlap}
+                  <h6 class="block overflow-hidden font-bold">
+                    {item.exam.section[0].subject.code}_SEC <!-- sec no loop thru -->
+                  </h6>
+                {/if}
+                <p class="block">{item.exam.section[0].subject.name}</p>
+              </div>
             </div>
-          </div>
-          {#if selectable && !noDelete}
-            <div class="pointer-events-auto p-1 pl-0">
-              <button
-                class="rounded bg-red-600 p-0.5 text-white"
-                on:click="{async () => {
-                  await deleteSchedulerExam({ id: item.id });
-                  await invalidate('data:scheduler');
+            {#if selectable && !noDelete}
+              <div class="pointer-events-auto p-1 pl-0">
+                <button
+                  class="rounded bg-red-600 p-0.5 text-white"
+                  on:click="{async () => {
+                    await deleteSchedulerExam({ id: item.id });
+                    await invalidate('data:scheduler');
 
-                  state = {
-                    period: item.period,
-                    size: item.size,
-                    weekday: item.weekday,
-                    exam: item.exam,
-                    selected: false,
-                  };
-                }}"
-              >
-                <CrossIcon height="{18}" width="{18}" />
-              </button>
-            </div>
-          {/if}
-        </div>
-      {:else}
-        <div class="group relative flex h-full w-full items-center text-center text-xs">
-          <div class="flex-grow">
-            {#if !item._overlap}
-              {item.exam.section[0]?.subject.code}_SEC <!-- sec no loop thru -->
+                    state = {
+                      period: item.period,
+                      size: item.size,
+                      weekday: item.weekday,
+                      exam: item.exam,
+                      selected: false,
+                    };
+                  }}"
+                >
+                  <CrossIcon height="{18}" width="{18}" />
+                </button>
+              </div>
             {/if}
           </div>
-        </div>
-      {/if}
-    </div>
-  {/each}
+        {:else}
+          <div class="group relative flex h-full w-full items-center text-center text-xs">
+            <div class="flex-grow">
+              {#if !item._overlap}
+                {item.exam.section[0]?.subject.code}_SEC <!-- sec no loop thru -->
+              {/if}
+            </div>
+          </div>
+          30
+        {/if}
+      </div>
+    {/each}
+  </div>
 </div>
 
 <style lang="postcss">
   .grid {
     border-width: 1px 0 0 1px;
-    grid-template-columns: repeat(28, minmax(0, 1fr));
+    grid-template-columns: repeat(53, minmax(0, 1fr));
     height: 480px;
+    width: 175%;
   }
 
   .grid > * {
