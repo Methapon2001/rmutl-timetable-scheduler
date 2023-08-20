@@ -18,7 +18,7 @@
     await invalidate('data:exam');
   }, 300);
 
-  const sectionOptions = async () => {
+  $: sectionOptions = async () => {
     return (await data.lazy.section).data.map((section) => ({
       label: `${section.subject.code} ${section.subject.name} Sec ${section.no}`,
       value: section.id,
@@ -26,7 +26,7 @@
     }));
   };
 
-  const sectionExamFilteredOptions = async () => {
+  $: sectionExamFilteredOptions = async () => {
     return (await data.lazy.sectionExamFiltered).data.map((section) => ({
       label: `${section.subject.code} ${section.subject.name} Sec ${section.no}`,
       value: section.id,
@@ -51,7 +51,7 @@
     }));
   };
 
-  const formOptions = async () => {
+  $: formOptions = async () => {
     return {
       section: await sectionOptions(),
       sectionExamFiltered: await sectionExamFilteredOptions(),
@@ -145,6 +145,7 @@
           sectionExamFilteredOptions="{options.sectionExamFiltered}"
           instructorOptions="{options.instructor}"
           roomOptions="{options.room}"
+          callback="{() => invalidate('data:exam')}"
         />
       {/await}
     </div>
@@ -251,20 +252,20 @@
   </table>
 </div>
 
-<div class="w-full flex justify-end p-3">
+<div class="flex w-full justify-end p-3">
   <button
-      class="rounded border bg-red-600 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-red-700"
-      on:click="{async () => {
-        const flag = confirm('Are you sure? The record that using this data will also be deleted.');
+    class="rounded border bg-red-600 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-red-700"
+    on:click="{async () => {
+      const flag = confirm('Are you sure? The record that using this data will also be deleted.');
 
-        if (flag) {
-          await resetData('exam');
-          invalidate("data:exam");
-        }
-      }}"
-    >
-      Reset
-    </button>
+      if (flag) {
+        await resetData('exam');
+        invalidate('data:exam');
+      }
+    }}"
+  >
+    Reset
+  </button>
 </div>
 
 <div id="pagination">

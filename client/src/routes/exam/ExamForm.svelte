@@ -57,7 +57,11 @@
   };
 
   const selectExamSection = edit
-    ? sectionOptions
+    ? sectionOptions.filter(
+        (opt) =>
+          editData.section.some((secId) => secId === opt.value) ||
+          sectionExamFilteredOptions.some((sec) => sec.value === opt.value),
+      )
     : [
         ...sectionOptions.filter((opt) => editData.section.some((secId) => secId === opt.value)),
         ...sectionExamFilteredOptions,
@@ -186,7 +190,6 @@
                 .name == option.detail.subject.name
             );
           }
-
           return true;
         })}"
         bind:value="{form.data.section}"
