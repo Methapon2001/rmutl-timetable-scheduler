@@ -36,7 +36,7 @@
   } = {
     data: {
       id: '',
-      year: 2565,
+      year: new Date().getFullYear() + 543,
       semester: 1,
       current: false,
     },
@@ -64,7 +64,7 @@
     if (ret) {
       form.data = {
         id: '',
-        year: 2656,
+        year: new Date().getFullYear() + 543,
         semester: 1,
         current: false,
       };
@@ -153,7 +153,7 @@
       <input
         type="number"
         placeholder="Info Semester"
-        max=3
+        max="3"
         class="input text-center
           {form.error && getZodErrorMessage(form.error, ['semester']).length > 0
           ? 'border border-red-600'
