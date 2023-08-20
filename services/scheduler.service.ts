@@ -176,7 +176,7 @@ export async function requestScheduler(
   reply: FastifyReply
 ) {
   const { id } = request.params;
-  const { limit, offset, groupId, ...where } = request.query;
+  const { limit, offset, year, semester, groupId, ...where } = request.query;
 
   const schedulerWhere: Prisma.SchedulerWhereInput = where;
 
@@ -191,6 +191,10 @@ export async function requestScheduler(
         select: schedulerSelect,
         where: {
           ...schedulerWhere,
+          info: {
+            year,
+            semester,
+          },
           section: {
             groupId: groupId,
           },
@@ -205,7 +209,16 @@ export async function requestScheduler(
   const count = id
     ? undefined
     : await prisma.scheduler.count({
-        where: schedulerWhere,
+        where: {
+          ...schedulerWhere,
+          info: {
+            year,
+            semester,
+          },
+          section: {
+            groupId: groupId,
+          },
+        },
       });
 
   reply.status(200).send({

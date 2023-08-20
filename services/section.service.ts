@@ -259,7 +259,8 @@ export async function requestSection(
   reply: FastifyReply
 ) {
   const { id } = request.params;
-  const { limit, offset, search, exam_filtered, ...where } = request.query;
+  const { limit, offset, search, year, semester, exam_filtered, ...where } =
+    request.query;
 
   if (search) {
     return await searchSection(request, reply);
@@ -281,7 +282,13 @@ export async function requestSection(
       })
     : await prisma.section.findMany({
         select: sectionSelect,
-        where: sectionWhere,
+        where: {
+          ...sectionWhere,
+          info: {
+            year,
+            semester,
+          },
+        },
         orderBy: [
           {
             createdAt: "asc",
@@ -305,7 +312,13 @@ export async function requestSection(
   const count = id
     ? undefined
     : await prisma.section.count({
-        where: sectionWhere,
+        where: {
+          ...sectionWhere,
+          info: {
+            year,
+            semester,
+          },
+        },
       });
 
   reply.status(200).send({
