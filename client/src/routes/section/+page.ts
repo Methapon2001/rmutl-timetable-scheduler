@@ -1,8 +1,11 @@
 import type { PageLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { PUBLIC_API_HOST } from '$env/static/public';
+import { info } from '$lib/stores';
 
 const api = new URL(`${PUBLIC_API_HOST}/api/section`);
+let currentInfo: API.Info | undefined = undefined;
+info.subscribe((v) => (currentInfo = v));
 
 export const load = (async ({ fetch, parent, depends, url }) => {
   const { session } = await parent();
@@ -23,6 +26,11 @@ export const load = (async ({ fetch, parent, depends, url }) => {
   api.searchParams.set('limit', String(20));
   api.searchParams.set('offset', String((+(page ?? 1) - 1) * 20));
 
+  if (currentInfo !== undefined) {
+    api.searchParams.set('semester', currentInfo.semester.toString());
+    api.searchParams.set('year', currentInfo.year.toString());
+  }
+
   const requestSection = async () => {
     const res = await fetch(api);
     const body = await res.json();
@@ -35,7 +43,11 @@ export const load = (async ({ fetch, parent, depends, url }) => {
   };
 
   const requestGroup = async () => {
-    const res = await fetch(`${PUBLIC_API_HOST}/api/group?limit=9999`);
+    const res = await fetch(
+      `${PUBLIC_API_HOST}/api/group?limit=9999${
+        currentInfo ? `&year=${currentInfo.year}&semester=${currentInfo.semester}` : ''
+      }`,
+    );
     const body = await res.json();
     return body as {
       data: API.Group[];
