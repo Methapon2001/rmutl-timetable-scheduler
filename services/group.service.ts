@@ -116,7 +116,7 @@ export async function requestGroup(
   reply: FastifyReply
 ) {
   const { id } = request.params;
-  const { limit, offset, search, ...where } = request.query;
+  const { limit, offset, search, semester, year, ...where } = request.query;
 
   if (search) {
     return await searchGroup(request, reply);
@@ -133,7 +133,13 @@ export async function requestGroup(
       })
     : await prisma.group.findMany({
         select: groupSelect,
-        where: groupWhere,
+        where: {
+          ...groupWhere,
+          info: {
+            year: year,
+            semester: semester,
+          },
+        },
         orderBy: {
           createdAt: "asc",
         },
@@ -144,7 +150,13 @@ export async function requestGroup(
   const count = id
     ? undefined
     : await prisma.group.count({
-        where: groupWhere,
+        where: {
+          ...groupWhere,
+          info: {
+            year: year,
+            semester: semester,
+          },
+        },
       });
 
   reply.status(200).send({

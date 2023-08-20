@@ -5,6 +5,8 @@
   import { clickOutside } from '$lib/utils/directives';
   import MenuIcon from '$lib/icons/MenuIcon.svelte';
   import { Toaster } from 'svelte-french-toast';
+  import { invalidateAll } from '$app/navigation';
+  import { info } from '$lib/stores';
 
   export let data: LayoutData;
 
@@ -33,10 +35,18 @@
 
   $: route = $page.route.id;
 
-  let year = data.info.data.find((inf) => inf.current)?.year;
-  let semester = data.info.data.find((inf) => inf.current)?.semester;
+  let currentInfo = data.info.data.find((inf) => inf.current);
+  let selectedInfo = currentInfo ? `${currentInfo.semester}/${currentInfo.year}` : '';
+  setInfo();
 
-  let currentInfo = `${semester}/${year}`;
+  async function setInfo() {
+    $info = data.info.data.find((inf) => {
+      const [semester, year] = selectedInfo.split('/');
+      return +semester === inf.semester && +year === inf.year;
+    });
+    console.log($info);
+    await invalidateAll();
+  }
 </script>
 
 <svelte:window bind:innerWidth="{innerWidth}" />
@@ -93,10 +103,20 @@
 
   <div>
     <span class="rounded bg-primary px-4 py-1 font-semibold text-white">Info</span>
-    <select name="info" id="info" bind:value="{currentInfo}" class="rounded border px-4 py-1">
-      {#each data.info.data as info}
-        <option value="{`${info.semester}/${info.year}`}">{info.semester}/{info.year}</option>
-      {/each}
+    <select
+      name="info"
+      id="info"
+      class="rounded border px-4 py-1"
+      bind:value="{selectedInfo}"
+      on:change="{setInfo}"
+    >
+      {#key data.info}
+        {#each data.info.data as inf}
+          <option value="{`${inf.semester}/${inf.year}`}"
+            >{inf.semester}/{inf.year} {inf.current ? '(Current)' : ''}</option
+          >
+        {/each}
+      {/key}
     </select>
   </div>
 
