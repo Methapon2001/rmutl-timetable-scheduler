@@ -91,7 +91,7 @@ export async function generate(
 
         if (isOverlap) continue;
 
-        if (!isCurrentRegGood(sec, day, i, size, 2, schedule, { maxPerDay: option.maxPerDay }))
+        if (!isCurrentRegGood(sec, day, i, size, 12, schedule, { maxPerDay: option.maxPerDay }))
           continue;
 
         schedule = [

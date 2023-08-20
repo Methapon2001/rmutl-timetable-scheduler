@@ -139,7 +139,7 @@
       <div class="flex flex-col items-center bg-slate-100 font-semibold">
         <small>{period + 1}</small>
         <small class="text-secondary" hidden="{small}"
-          >{8 + Math.floor(period / 4)}:{['0', '15', '30', '45'][period % 4]}</small
+          >{8 + Math.floor(period / 4)}:{['00', '15', '30', '45'][period % 4]}</small
         >
       </div>
     {/each}
@@ -234,7 +234,7 @@
   .grid {
     border-width: 1px 0 0 1px;
     grid-template-columns: repeat(53, minmax(0, 1fr));
-    height: 480px;
+    height: 481px;
     width: 175%;
   }
 
