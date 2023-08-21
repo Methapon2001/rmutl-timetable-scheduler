@@ -39,7 +39,7 @@
     size: number;
   }[];
 
-  export let room: API.Room[];
+  export let room: API.Room[]; // eslint-disable-line no-undef
   export let open: boolean;
 
   async function handleSubmit(roomId: string) {
@@ -54,7 +54,7 @@
     }
 
     open = !open;
-    await invalidate("data:scheduler");
+    await invalidate('data:scheduler');
   }
 </script>
 
@@ -65,11 +65,11 @@
     <div id="room-{r.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
       <div class="mb-2 flex justify-between">
         <h6 class="text-center font-semibold">
-          Room - {r.building.code}-{r.name} <span class="capitalize">({r.type})<span>
+          Room - {r.building.code}-{r.name} <span class="capitalize">({r.type})<span> </span></span>
         </h6>
         {#if state.section}
           <button
-            class="bg-primary disabled:bg-secondary rounded px-2 text-white"
+            class="rounded bg-primary px-2 text-white disabled:bg-secondary"
             on:click="{() => handleSubmit(r.id)}"
             disabled="{state.section?.room?.id == r.id}">Change</button
           >
