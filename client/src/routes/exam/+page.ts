@@ -1,8 +1,11 @@
 import type { PageLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { PUBLIC_API_HOST } from '$env/static/public';
+import { info } from '$lib/stores';
 
 const api = new URL(`${PUBLIC_API_HOST}/api/exam`);
+let currentInfo: API.Info | undefined = undefined;
+info.subscribe((v) => (currentInfo = v));
 
 export const load = (async ({ fetch, parent, depends, url }) => {
   const { session } = await parent();
@@ -35,7 +38,11 @@ export const load = (async ({ fetch, parent, depends, url }) => {
   };
 
   const requestSection = async () => {
-    const res = await fetch(`${PUBLIC_API_HOST}/api/section?limit=9999`);
+    const res = await fetch(
+      `${PUBLIC_API_HOST}/api/section?limit=9999${
+        currentInfo ? `&year=${currentInfo.year}&semester=${currentInfo.semester}` : ''
+      }`,
+    );
     const body = await res.json();
     return body as {
       data: API.Section[];
@@ -46,7 +53,11 @@ export const load = (async ({ fetch, parent, depends, url }) => {
   };
 
   const requestSectionExamFiltered = async () => {
-    const res = await fetch(`${PUBLIC_API_HOST}/api/section?limit=9999&exam_filtered=1`);
+    const res = await fetch(
+      `${PUBLIC_API_HOST}/api/section?limit=9999&exam_filtered=1${
+        currentInfo ? `&year=${currentInfo.year}&semester=${currentInfo.semester}` : ''
+      }`,
+    );
     const body = await res.json();
     return body as {
       data: API.Section[];

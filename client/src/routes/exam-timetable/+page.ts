@@ -14,14 +14,18 @@ export const load = (async ({ fetch, parent, depends }) => {
   if (!session) throw redirect(302, '/login?redirect=/exam-timetable');
 
   const schedulerExamData = async () => {
-    return await fetch(`${PUBLIC_API_HOST}/api/scheduler-exam?limit=9999`).then((res) =>
-      res.json(),
-    );
+    return await fetch(
+      `${PUBLIC_API_HOST}/api/scheduler-exam?limit=9999${
+        currentInfo ? `&year=${currentInfo.year}&semester=${currentInfo.semester}` : ''
+      }`,
+    ).then((res) => res.json());
   };
 
   const examData = async () => {
     return await fetch(
-      `${PUBLIC_API_HOST}/api/exam?limit=9999&createdByUserId=${session.user.id}`,
+      `${PUBLIC_API_HOST}/api/exam?limit=9999&createdByUserId=${session.user.id}${
+        currentInfo ? `&year=${currentInfo.year}&semester=${currentInfo.semester}` : ''
+      }`,
     ).then((res) => res.json());
   };
 
