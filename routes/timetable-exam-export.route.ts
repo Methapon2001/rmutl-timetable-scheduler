@@ -1,22 +1,22 @@
 import { FastifyInstance } from "fastify";
 import { auth } from "../hooks/auth.hook";
-import { exportGroupScheduleExam } from "../services/timetable-exam-export-group.service";
-import { exportInstructorScheduleExam } from "../services/timetable-exam-export-instructor.service";
-import { exportRoomScheduleExam } from "../services/timetable-exam-export-room.service";
+import { exportScheduleExam } from "../services/timetable-exam-export.service";
 
 export default async (server: FastifyInstance) => {
-  server.get("/timetable-exam/export/group", {
+  server.get("/timetable-exam/export", {
     onRequest: auth(),
-    handler: exportGroupScheduleExam,
-  });
-
-  server.get("/timetable-exam/export/instructor", {
-    onRequest: auth(),
-    handler: exportInstructorScheduleExam,
-  });
-
-  server.get("/timetable-exam/export/room", {
-    onRequest: auth(),
-    handler: exportRoomScheduleExam,
+    handler: exportScheduleExam,
+    schema: {
+      querystring: {
+        type: "object",
+        required: ['year', "semester", "midtermDate", "finalDate"],
+        properties: {
+          year: {type: "number"},
+          semester: {type: "number"},
+          midtermDate: { type: "string" },
+          finalDate: { type: "string"},
+        }
+      }
+    }
   });
 };
