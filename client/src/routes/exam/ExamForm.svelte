@@ -216,7 +216,7 @@
         options="{instructorOptions}"
         bind:value="{form.data.instructor}"
         multiple
-        placeholder="Select instructor"
+        placeholder="Not Specifed (Optional)"
       />
     </div>
     <div class="col-span-4 col-start-3 text-red-600">
@@ -232,7 +232,7 @@
       class="col-span-4"
       class:invalid="{form.error && getZodErrorMessage(form.error, ['roomId']).length > 0}"
     >
-      <Select options="{roomOptions}" bind:value="{form.data.roomId}" placeholder="Select room" />
+      <Select options="{roomOptions}" bind:value="{form.data.roomId}" placeholder="Not Specifed (Optional)" />
     </div>
     <div class="col-span-4 col-start-3 text-red-600">
       {form.error ? getZodErrorMessage(form.error, ['roomId']) : ''}
