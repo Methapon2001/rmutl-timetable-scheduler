@@ -1161,9 +1161,9 @@ export function drawSchedule(
   };
 }
 
-export function createPDF() {
+export function createPDF(orient: "landscape" | "portrait" = "landscape") {
   const doc = new jsPDF({
-    orientation: 'landscape',
+    orientation: orient,
     unit: 'mm',
   });
 

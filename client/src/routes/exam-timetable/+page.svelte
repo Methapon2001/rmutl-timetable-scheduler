@@ -13,12 +13,14 @@
   import { generate } from './generate';
   import Filter from './Filter.svelte';
   import FilterIcon from '$lib/icons/FilterIcon.svelte';
-  import { exportSchedule } from '$lib/api/export-data';
+  import { exportScheduleExam } from '$lib/api/export-data';
   import ExamNewForm from '../exam/ExamForm.svelte';
   import ShowRoom from './ShowRoom.svelte';
   import { resetData } from '$lib/api/reset';
   import viewport from '$lib/utils/useViewportAction';
   import ShowInstructor from './ShowInstructor.svelte';
+  import autoTable from 'jspdf-autotable';
+  import { publishExam } from '$lib/api/publish';
 
   export let data: PageData;
 
@@ -82,6 +84,10 @@
     };
   };
 
+  $: isPublish = data.schedulerExam.data.some((sched) => {
+    return sched.createdBy.id === data.session?.user.id && sched.publish === true;
+  });
+
   let schedulerExam: ComponentProps<Table>['data'];
 
   $: schedulerExam = data.schedulerExam.data.map((obj) => {
@@ -102,7 +108,7 @@
       .filter((a, idx, arr) => arr.findIndex((b) => b.id === a.id) === idx);
   }, []);
 
-  let room = data.exam.data.reduce<
+  $: room = data.exam.data.reduce<
     Omit<API.Room, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>[] // eslint-disable-line no-undef
   >((acc, curr) => {
     return acc
@@ -110,7 +116,7 @@
       .filter((a, idx, arr) => arr.findIndex((b) => b.id === a.id) === idx);
   }, []);
 
-  let group = data.exam.data.reduce<
+  $: group = data.exam.data.reduce<
     Omit<API.Group, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>[] // eslint-disable-line no-undef
   >((acc, curr) => {
     let grp = curr.section
@@ -203,6 +209,11 @@
 
   // eslint-disable-next-line no-undef
   function handleSelectExam(exam: API.SchedulerExam['exam']) {
+    if (isPublish) {
+      toast.error('Data is published, Cannot edit.');
+      return;
+    }
+
     if (schedulerExam.findIndex((schedule) => schedule.exam.id === exam.id) !== -1) return;
 
     if (!exam.instructor && !exam.section.filter(() => group != null)) {
@@ -255,95 +266,110 @@
     }
   }
 
-  function exportPDF() {
-    const doc = createPDF();
+  async function exportPDF() {
+    const midDay = new Date(midDateExam).getDay();
+    const finalDay = new Date(finalDateExam).getDay();
 
-    const { width: pageWidth, height: pageHeight } = doc.internal.pageSize;
+    if (midDay !== 1 || finalDay !== 1) {
+      toast.error('Date select must be on monday.');
+      return;
+    }
 
-    const pageGap = 3;
+    const doc = createPDF('portrait');
 
-    let docScheduleExam: ReturnType<typeof drawScheduleExam>;
-    let docScheduleExamDetail: ReturnType<typeof drawExamDetailTable>;
-
-    const drawLayout = () => {
-      docScheduleExam = drawScheduleExam(
-        doc,
-        pageGap,
-        105,
-        pageWidth - pageGap * 2,
-        pageHeight - 105 - pageGap,
-        {
-          period: 25,
-          fontSize: 12,
-          borderWidth: 0.3,
-          colHeaderWidth: 15,
-          rowHeaderHeight: 12,
-        },
-      );
-
-      docScheduleExamDetail = drawExamDetailTable(
-        doc,
-        pageGap,
-        pageGap,
-        pageWidth - pageGap * 2,
-        105 - pageGap,
-        {
-          period: 25,
-          fontSize: 12,
-          borderWidth: 0.3,
-          rowHeaderHeight: 14,
-        },
-        docScheduleExam,
-      );
+    const weekdayMapNum = {
+      mon: 0,
+      tue: 1,
+      wed: 2,
+      thu: 3,
+      fri: 4,
+      sat: 5,
+      sun: 6,
     };
 
-    group.forEach((grp) => {
-      const filtered = schedulerExam.filter(
-        (sched) => sched.exam.section.findIndex((sec) => sec.group?.id === grp.id) !== -1,
-      );
+    const midTimestamp = new Date(midDateExam).getTime();
+    const finalTimestamp = new Date(finalDateExam).getTime();
+    const dayTimestamp = 86400000;
 
-      if (filtered.length === 0) return;
+    const monthName = [
+      'ม.ค.',
+      'ก.พ.',
+      'มี.ค.',
+      'เม.ย.',
+      'พ.ค.',
+      'มิ.ย.',
+      'ก.ค.',
+      'ส.ค.',
+      'ก.ย.',
+      'ต.ค.',
+      'พ.ย.',
+      'ธ.ค.',
+    ];
 
-      drawLayout();
+    let pdfData = schedulerExam.map((sched) => [
+      sched.exam.section[0]?.subject.code + ' ' + sched.exam.section[0]?.subject.name,
+      new Date(midTimestamp + dayTimestamp * weekdayMapNum[sched.weekday]).getDate() +
+        ' ' +
+        monthName[new Date(midTimestamp + dayTimestamp * weekdayMapNum[sched.weekday]).getMonth()] +
+        ' ' +
+        new Date(midTimestamp + dayTimestamp * weekdayMapNum[sched.weekday]).getFullYear() +
+        '\n' +
+        (8 +
+          Math.floor((sched.period - 1) / 4) +
+          ':' +
+          ['00', '15', '30', '45'][(sched.period - 1) % 4] +
+          ' น.') +
+        ' - ' +
+        (8 +
+          Math.floor((sched.period - 1 + sched.size) / 4) +
+          ':' +
+          ['00', '15', '30', '45'][(sched.period - 1 + sched.size) % 4]) +
+        ' น.',
+      new Date(finalTimestamp + dayTimestamp * weekdayMapNum[sched.weekday]).getDate() +
+        ' ' +
+        monthName[
+          new Date(finalTimestamp + dayTimestamp * weekdayMapNum[sched.weekday]).getMonth()
+        ] +
+        ' ' +
+        new Date(finalTimestamp + dayTimestamp * weekdayMapNum[sched.weekday]).getFullYear() +
+        '\n' +
+        (8 +
+          Math.floor((sched.period - 1) / 4) +
+          ':' +
+          ['00', '15', '30', '45'][(sched.period - 1) % 4] +
+          ' น.') +
+        ' - ' +
+        (8 +
+          Math.floor((sched.period - 1 + sched.size) / 4) +
+          ':' +
+          ['00', '15', '30', '45'][(sched.period - 1 + sched.size) % 4]) +
+        ' น.',
+      sched.exam.room?.building.code + '-' + sched.exam.room?.name,
+      sched.exam.instructor.map((inst) => inst.name).join('\n'),
+    ]);
 
-      docScheduleExam.assignSchedule(filtered, 'group', grp);
-      docScheduleExamDetail.setHeader(grp.name);
-      docScheduleExamDetail.addDetail(filtered, 'group', grp);
-
-      doc.addPage();
+    autoTable(doc, {
+      head: [
+        [
+          'Subject',
+          'Midterm',
+          'Final',
+          'Room',
+          'Instructor',
+        ],
+      ],
+      headStyles: {
+        fontStyle: 'bold',
+      },
+      body: pdfData,
+      styles: {
+        font: 'THSarabun',
+        fontSize: 12,
+      },
     });
 
-    instructor.forEach((inst) => {
-      const filtered = schedulerExam.filter(
-        (sched) => sched.exam.instructor.findIndex((ins) => ins.id === inst.id) !== -1,
-      );
-
-      if (filtered.length === 0) return;
-
-      drawLayout();
-
-      docScheduleExam.assignSchedule(filtered, 'instructor', inst);
-      docScheduleExamDetail.setHeader(inst.name);
-      docScheduleExamDetail.addDetail(filtered, 'instructor', inst);
-
-      doc.addPage();
-    });
-
-    room.forEach((r) => {
-      const filtered = schedulerExam.filter((sched) => sched.exam.room?.id === r.id);
-
-      if (filtered.length === 0) return;
-
-      drawLayout();
-
-      docScheduleExam.assignSchedule(filtered, 'room', r);
-      docScheduleExamDetail.setHeader(`${r.building.code}-${r.name}`);
-      docScheduleExamDetail.addDetail(filtered, 'room', r);
-
-      doc.addPage();
-    });
-    doc.deletePage(doc.getNumberOfPages());
     doc.output('dataurlnewwindow');
+    showExportState = false;
   }
 
   let showFilter = false;
@@ -352,7 +378,7 @@
   const filterList = [
     {
       group: 'Group',
-      options: group.map((grp) => ({
+      options: group?.map((grp) => ({
         value: grp.name,
         label: grp.name,
       })),
@@ -420,6 +446,9 @@
   let showRoomState = false;
   let showInstructorState = false;
 
+  let midDateExam: string;
+  let finalDateExam: string;
+  let showExportState = false;
 </script>
 
 <svelte:window on:keydown="{handleKeydown}" />
@@ -443,6 +472,7 @@
                 bind:state="{state}"
                 on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
                 small="{true}"
+                noDelete="{isPublish}"
                 selectable="{true}"
                 instructor="{i}"
               />
@@ -454,17 +484,13 @@
             <div id="group-{g.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
               <div class="mb-2 flex justify-between">
                 <h6 class="font-semibold">Group - {g.name}</h6>
-                {#if data.schedulerExam.data.some((sched) => sched.exam.section.some((sec) => sec.group && sec.group.id === g.id) && sched.publish === true)}
-                  <span class="rounded bg-green-600 px-2 font-semibold text-white">Public</span>
-                {:else}
-                  <span class="bg-secondary rounded px-2 font-semibold text-white">Private</span>
-                {/if}
               </div>
               <Table
                 bind:data="{schedulerExam}"
                 bind:state="{state}"
                 on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
                 small="{true}"
+                noDelete="{isPublish}"
                 selectable="{true}"
                 group="{g}"
               />
@@ -506,6 +532,7 @@
               bind:state="{state}"
               on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
               selectable="{true}"
+              noDelete="{isPublish}"
               room="{r}"
             />
           </div>
@@ -610,7 +637,11 @@
         </div>
       {/each}
       <div class="p-4">
-        <button class="button disabled:bg-secondary disabled:border-secondary disabled:cursor-not-allowed" disabled="{!data.lazy.info?.current}" on:click="{() => (newState = !newState)}">Add Exam</button>
+        <button
+          class="button disabled:bg-secondary disabled:border-secondary disabled:cursor-not-allowed"
+          disabled="{!data.lazy.info?.current}"
+          on:click="{() => (newState = !newState)}">Add Exam</button
+        >
       </div>
     </div>
   </div>
@@ -637,19 +668,26 @@
     </button>
     <button
       class="rounded border bg-slate-900 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
-      on:click="{() => exportPDF()}"
+      on:click="{() => (showExportState = true)}"
     >
-      Export PDF
+      Export
     </button>
     <button
-      class="rounded border bg-slate-900 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
-      on:click="{() => {
-        exportSchedule('group', true);
-        exportSchedule('instructor', true);
-        exportSchedule('room', true);
+      class="rounded border px-4 py-2 font-semibold text-white outline-none transition duration-150"
+      class:bg-blue-600="{!isPublish}"
+      class:focus:bg-blue-700="{!isPublish}"
+      class:bg-green-600="{isPublish}"
+      class:focus:bg-green-700="{isPublish}"
+      on:click="{async () => {
+        const flag = confirm('Are you sure?.');
+
+        if (flag) {
+          await publishExam(!isPublish);
+          await invalidate('data:scheduler');
+        }
       }}"
     >
-      Export Excel
+      {!isPublish ? 'Publish' : 'Unpublish'}
     </button>
     <button
       class="rounded border bg-red-600 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-red-700"
@@ -673,7 +711,7 @@
         {state.exam?.section[0]?.subject.code ?? ''}
         {state.exam?.section[0]?.subject.name ?? ''}
       </span>
-      <span class=" py-2 whitespace-nowrap">
+      <span class=" whitespace-nowrap py-2">
         SEC
         {state.exam.section.map((sec) => sec.no).join(', ')}
       </span>
@@ -768,6 +806,57 @@
     {/await}
   </div>
 </Modal>
+
+<ModalCenter bind:open="{showExportState}">
+  <div id="show-modal" class="my-8 space-y-4 p-4">
+    <h1 class="text-center text-2xl font-bold">Export</h1>
+    <section id="input-group" class="grid grid-cols-8">
+      <div class="col-span-4 flex items-center">
+        <label for="" class="font-semibold">Midterm Exam Start Date </label>
+      </div>
+      <div class="col-span-4">
+        <input
+          class="rounded border p-2"
+          type="date"
+          bind:value="{midDateExam}"
+          on:change="{() => console.log(new Date(midDateExam).getDate())}"
+        />
+      </div>
+    </section>
+
+    <section id="input-group" class="grid grid-cols-8">
+      <div class="col-span-4 flex items-center">
+        <label for="" class="font-semibold">Final Exam Start Date </label>
+      </div>
+      <div class="col-span-4">
+        <input
+          class="rounded border p-2"
+          type="date"
+          bind:value="{finalDateExam}"
+          on:change="{() => console.log(new Date(finalDateExam).getDate())}"
+        />
+      </div>
+    </section>
+    <section class="grid grid-cols-2 gap-4">
+      <button
+        class="rounded border bg-slate-900 px-8 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
+        on:click="{() => {
+          exportPDF();
+        }}"
+      >
+        Export PDF
+      </button>
+      <button
+        class="rounded border bg-slate-900 px-8 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
+        on:click="{() => {
+          exportScheduleExam(midDateExam, finalDateExam);
+        }}"
+      >
+        Export Excel
+      </button>
+    </section>
+  </div>
+</ModalCenter>
 
 <style lang="postcss">
   .table-small-container {
