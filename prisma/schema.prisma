@@ -324,6 +324,9 @@ model Exam {
   roomId String?
   room   Room?   @relation(fields: [roomId], references: [id])
 
+  info   Info   @relation(fields: [infoId], references: [id])
+  infoId String
+
   createdByUserId String
   createdBy       User     @relation("ExamCreatedBy", fields: [createdByUserId], references: [id])
   createdAt       DateTime @default(now())
@@ -343,6 +346,9 @@ model SchedulerExam {
   start   Int
   end     Int
   publish Boolean @default(false)
+
+  info   Info   @relation(fields: [infoId], references: [id])
+  infoId String
 
   examId String
   exam   Exam   @relation(fields: [examId], references: [id], onDelete: Cascade)
@@ -388,7 +394,9 @@ model Info {
   semester Int
   current  Boolean
 
-  group     Group[]
-  section   Section[]
-  scheduler Scheduler[]
+  group         Group[]
+  section       Section[]
+  scheduler     Scheduler[]
+  exam          Exam[]
+  schedulerExam SchedulerExam[]
 }

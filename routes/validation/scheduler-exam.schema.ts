@@ -21,6 +21,8 @@ export default {
       updatedByUserId: { type: "string" },
       limit: { type: "number", default: 20 },
       offset: { type: "number", default: 0 },
+      year: { type: "number" },
+      semester: { type: "number" },
     },
   },
   body: {

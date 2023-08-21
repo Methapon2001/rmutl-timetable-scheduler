@@ -117,6 +117,18 @@ export async function createExam(
   }>,
   reply: FastifyReply
 ) {
+  const info = await prisma.info.findFirst({
+    where: {
+      current: true,
+    },
+  });
+
+  if (!info) {
+    return reply.code(400).send({
+      message: "Must set year and semester before add this data.",
+    });
+  }
+
   const { roomId, instructor, section } = request.body;
 
   const exam = await prisma.exam.create({
@@ -127,6 +139,7 @@ export async function createExam(
       instructor: {
         connect: instructor,
       },
+      infoId: info.id,
       roomId: roomId,
       createdByUserId: request.user.id,
       updatedByUserId: request.user.id,
@@ -146,12 +159,14 @@ export async function requestExam(
       search: string;
       limit: number;
       offset: number;
+      year: number;
+      semester: number;
     } & Pick<Exam, "roomId" | "createdByUserId" | "updatedByUserId">;
   }>,
   reply: FastifyReply
 ) {
   const { id } = request.params;
-  const { limit, offset, search, ...where } = request.query;
+  const { limit, offset, year, semester, search, ...where } = request.query;
 
   if (search) {
     return await searchExam(request, reply);
@@ -168,7 +183,7 @@ export async function requestExam(
       })
     : await prisma.exam.findMany({
         select: examSelect,
-        where: examWhere,
+        where: { ...examWhere, info: { year, semester } },
         orderBy: {
           createdAt: "asc",
         },
@@ -179,7 +194,7 @@ export async function requestExam(
   const count = id
     ? undefined
     : await prisma.exam.count({
-        where: examWhere,
+        where: { ...examWhere, info: { year, semester } },
       });
 
   reply.status(200).send({

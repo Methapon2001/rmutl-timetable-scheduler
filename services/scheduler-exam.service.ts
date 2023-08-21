@@ -127,9 +127,22 @@ export async function createSchedulerExam(
   request: FastifyRequest<{ Body: SchedulerExam }>,
   reply: FastifyReply
 ) {
+  const info = await prisma.info.findFirst({
+    where: {
+      current: true,
+    },
+  });
+
+  if (!info) {
+    return reply.code(400).send({
+      message: "Must set year and semester before add this data.",
+    });
+  }
+
   const schedulerExam = await prisma.schedulerExam.create({
     data: {
       ...request.body,
+      infoId: info.id,
       createdByUserId: request.user.id,
       updatedByUserId: request.user.id,
     },
@@ -147,12 +160,14 @@ export async function requestSchedulerExam(
     Querystring: {
       limit: number;
       offset: number;
+      year: number;
+      semester: number;
     } & Pick<SchedulerExam, "publish" | "createdByUserId" | "updatedByUserId">;
   }>,
   reply: FastifyReply
 ) {
   const { id } = request.params;
-  const { limit, offset, ...where } = request.query;
+  const { limit, offset, year, semester, ...where } = request.query;
 
   const schedulerExamWhere: Prisma.SchedulerExamWhereInput = where;
 
@@ -167,6 +182,7 @@ export async function requestSchedulerExam(
         select: schedulerExamExamSelect,
         where: {
           ...schedulerExamWhere,
+          info: { year, semester },
         },
         orderBy: {
           createdAt: "asc",
@@ -178,7 +194,7 @@ export async function requestSchedulerExam(
   const count = id
     ? undefined
     : await prisma.schedulerExam.count({
-        where: schedulerExamWhere,
+        where: { ...schedulerExamWhere, info: { year, semester } },
       });
 
   reply.status(200).send({
