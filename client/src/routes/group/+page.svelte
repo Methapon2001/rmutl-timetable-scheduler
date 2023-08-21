@@ -92,7 +92,7 @@
     />
   </div>
 
-  <button type="button" class="button w-full md:w-fit" on:click="{() => (newState = !newState)}">
+  <button type="button" class="button w-full md:w-fit disabled:bg-secondary disabled:border-secondary disabled:cursor-not-allowed" disabled="{!data.lazy.info?.current}" on:click="{() => (newState = !newState)}">
     New Group
   </button>
 </div>
@@ -167,7 +167,7 @@
                 on:click="{() =>
                   showEdit({ ...group, courseId: group.course.id, planId: group.plan.id })}"
                 disabled="{data.session?.user.id != group.createdBy.id &&
-                  data.session?.user.role != 'admin'}"
+                  data.session?.user.role != 'admin' || !data.lazy.info?.current}"
               >
                 Edit
               </button>
@@ -175,7 +175,7 @@
                 class="action-button text-red-600 disabled:text-secondary"
                 on:click="{() => handleDelete({ id: group.id })}"
                 disabled="{data.session?.user.id != group.createdBy.id &&
-                  data.session?.user.role != 'admin'}"
+                  data.session?.user.role != 'admin' || !data.lazy.info?.current}"
               >
                 Delete
               </button>

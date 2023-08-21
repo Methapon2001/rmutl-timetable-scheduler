@@ -70,6 +70,7 @@ export const load = (async ({ fetch, parent, depends, url }) => {
     lazy: {
       course: requestCourse(),
       plan: requestPlan(),
+      info: currentInfo,
     },
   };
 }) satisfies PageLoad;

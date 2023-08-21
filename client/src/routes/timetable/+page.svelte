@@ -485,7 +485,7 @@
                   bind:state="{state}"
                   on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
                   small="{true}"
-                  selectable="{true}"
+                  selectable="{data.lazy.info?.current}"
                   instructor="{i}"
                 />
               </div>
@@ -506,7 +506,7 @@
                   bind:state="{state}"
                   on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
                   small="{true}"
-                  selectable="{true}"
+                  selectable="{data.lazy.info?.current}"
                   group="{g}"
                 />
               </div>
@@ -530,7 +530,7 @@
                 bind:state="{state}"
                 on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
                 small="{true}"
-                selectable="{true}"
+                selectable="{data.lazy.info?.current}"
                 room="{r}"
               />
             </div>
@@ -582,7 +582,7 @@
                 bind:data="{scheduler}"
                 bind:state="{state}"
                 on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
-                selectable="{true}"
+                selectable="{data.lazy.info?.current}"
                 noDelete="{pub}"
                 group="{g}"
               />
@@ -647,7 +647,7 @@
                 bind:data="{scheduler}"
                 bind:state="{state}"
                 on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
-                selectable="{true}"
+                selectable="{data.lazy.info?.current}"
                 noDelete="{pub}"
                 instructor="{i}"
               />
@@ -766,6 +766,7 @@
               class:text-yellow-500="{getUsedHour(section) > 0 &&
                 getUsedHour(section) < getRequiredHour(section) &&
                 state.section?.id != section.id}"
+              disabled="{!data.lazy.info?.current}"
               on:click="{() => handleSelectSection(section)}"
             >
               <div
@@ -779,7 +780,7 @@
               <div class="col-span-3 w-full pl-3 text-left font-semibold">
                 {#if section.instructor.length == 0}<small>Not assigned</small>{/if}
                 {#each section.instructor as instructor}
-                  <small>{instructor.name}</small><br/>
+                  <small>{instructor.name}</small><br />
                 {/each}
               </div>
 
@@ -793,7 +794,7 @@
                     (getUsedHour(section) > 0 &&
                       getUsedHour(section) < getRequiredHour(section) &&
                       state.section?.id != section.id) ||
-                    getLeftOverHours(section) == 0}"
+                    getLeftOverHours(section) == 0 || !data.lazy.info?.current}"
                   on:click|stopPropagation="{() => {
                     showEdit(
                       {
@@ -827,6 +828,7 @@
                 class:text-yellow-500="{getUsedHour(child) > 0 &&
                   getUsedHour(child) < getRequiredHour(child) &&
                   state.section?.id != child.id}"
+                disabled="{!data.lazy.info?.current}"
                 on:click="{() => handleSelectSection({ ...child, child: [] })}"
               >
                 <div
@@ -840,7 +842,7 @@
                 <div class="col-span-3 w-full pl-3 text-left font-semibold">
                   {#if section.instructor.length == 0}<small>Not assigned</small>{/if}
                   {#each child.instructor as instructor}
-                    <small>{instructor.name}</small><br/>
+                    <small>{instructor.name}</small><br />
                   {/each}
                 </div>
                 <div
@@ -853,7 +855,7 @@
                       (getUsedHour(child) > 0 &&
                         getUsedHour(child) < getRequiredHour(child) &&
                         state.section?.id != child.id) ||
-                      getLeftOverHours(child) == 0}"
+                      getLeftOverHours(child) == 0 || !data.lazy.info?.current}"
                     on:click|stopPropagation="{() => {
                       showEdit(
                         {
@@ -881,7 +883,7 @@
         {/if}
       {/each}
       <div class="p-4">
-        <button class="button" on:click="{() => (newState = !newState)}">Add Section</button>
+        <button class="button disabled:bg-secondary disabled:border-secondary disabled:cursor-not-allowed" disabled="{!data.lazy.info?.current}" on:click="{() => (newState = !newState)}">Add Section</button>
       </div>
     </div>
   </div>
@@ -929,7 +931,7 @@
 
         if (flag) {
           await resetData('scheduler');
-          invalidate("data:scheduler")
+          invalidate('data:scheduler');
         }
       }}"
     >
