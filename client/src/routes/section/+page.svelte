@@ -146,7 +146,7 @@
     />
   </div>
 
-  <button type="button" class="button w-full md:w-fit" on:click="{() => (newState = !newState)}">
+  <button type="button" class="button w-full md:w-fit disabled:bg-secondary disabled:border-secondary disabled:cursor-not-allowed" disabled="{!data.lazy.info?.current}" on:click="{() => (newState = !newState)}">
     New Section
   </button>
   <a href="/section/gen" class="button w-full text-center md:w-fit"> Generate Section </a>
@@ -250,7 +250,7 @@
               <button
                 class="action-button text-blue-600 disabled:text-secondary"
                 disabled="{data.session?.user.id != section.createdBy.id &&
-                  data.session?.user.role != 'admin'}"
+                  data.session?.user.role != 'admin' || !data.lazy.info?.current}"
                 on:click="{() =>
                   showEdit(
                     {
@@ -274,7 +274,7 @@
               <button
                 class="action-button text-red-600 disabled:text-secondary"
                 disabled="{data.session?.user.id != section.createdBy.id &&
-                  data.session?.user.role != 'admin'}"
+                  data.session?.user.role != 'admin' || !data.lazy.info?.current}"
                 on:click="{() => handleDelete({ id: section.id })}"
               >
                 Delete

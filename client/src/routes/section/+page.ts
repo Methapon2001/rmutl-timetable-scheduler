@@ -97,6 +97,7 @@ export const load = (async ({ fetch, parent, depends, url }) => {
       room: requestRoom(),
       subject: requestSubject(),
       instructor: requestInstructor(),
+      info: currentInfo,
     },
   };
 }) satisfies PageLoad;
