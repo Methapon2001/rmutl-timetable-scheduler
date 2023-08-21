@@ -8,9 +8,6 @@ const prisma = new PrismaClient({
 export let action = async (
   request: FastifyRequest<{
     Body: {
-      groupId?: string;
-      instructorId?: string;
-      roomId?: string;
       publish: boolean;
       year: number;
       semester: number;
@@ -26,17 +23,6 @@ export let action = async (
 
   const updated = await prisma.scheduler.updateMany({
     where: {
-      section: {
-        groupId: request.body.groupId,
-        instructor: request.body.instructorId
-          ? {
-              some: {
-                id: request.body.instructorId,
-              },
-            }
-          : undefined,
-        roomId: request.body.roomId,
-      },
       info: {
         year: request.body.year ?? info?.year,
         semester: request.body.semester ?? info?.semester,
@@ -56,9 +42,6 @@ export let action = async (
 export const actionPublishExam = async (
   request: FastifyRequest<{
     Body: {
-      groupId?: string;
-      instructorId?: string;
-      roomId?: string;
       publish: boolean;
       year: number;
       semester: number;
@@ -74,23 +57,6 @@ export const actionPublishExam = async (
 
   const updated = await prisma.schedulerExam.updateMany({
     where: {
-      exam: {
-        instructor: request.body.instructorId
-          ? {
-              some: {
-                id: request.body.instructorId,
-              },
-            }
-          : undefined,
-        section: request.body.groupId
-          ? {
-              some: {
-                groupId: request.body.groupId,
-              },
-            }
-          : undefined,
-        roomId: request.body.roomId,
-      },
       info: {
         year: request.body.year ?? info?.year,
         semester: request.body.semester ?? info?.semester,

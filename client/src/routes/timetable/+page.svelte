@@ -39,6 +39,7 @@
   });
 
   onDestroy(() => ws.close());
+
   const groupOptions = async () => {
     return (await data.lazy.group).data.map((group) => ({
       label: group.name,
@@ -79,6 +80,10 @@
       instructor: await instructorOptions(),
     };
   };
+
+  $: isPublish = data.scheduler.data.some((sched) => {
+    return sched.createdBy.id === data.session?.user.id && sched.publish === true;
+  });
 
   let scheduler: ComponentProps<Table>['data'];
 
@@ -234,6 +239,11 @@
 
   // eslint-disable-next-line no-undef
   function handleSelectSection(section: API.Scheduler['section']) {
+    if (isPublish) {
+      toast.error("Data is published, Cannot edit.")
+      return;
+    }
+
     if (!section.instructor && !section.group) {
       toast.error('Section must assign at least one instructor or one group.', {
         duration: 7500,
@@ -460,6 +470,7 @@
   let showRoomState = false;
 
   let tableSelectState: string;
+
 </script>
 
 <svelte:window on:keydown="{handleKeydown}" />
@@ -474,11 +485,6 @@
               <div id="inst-{i.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
                 <div class="mb-2 flex justify-between">
                   <h6 class="font-semibold">Instructor - {i.name}</h6>
-                  {#if data.scheduler.data.some((sched) => sched.section.instructor.some((inst) => inst.id === i.id) && sched.publish === true)}
-                    <span class="rounded bg-green-600 px-2 font-semibold text-white">Public</span>
-                  {:else}
-                    <span class="bg-secondary rounded px-2 font-semibold text-white">Private</span>
-                  {/if}
                 </div>
                 <Table
                   bind:data="{scheduler}"
@@ -495,11 +501,6 @@
               <div id="group-{g.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
                 <div class="mb-2 flex justify-between">
                   <h6 class="font-semibold">Group - {g.name}</h6>
-                  {#if data.scheduler.data.some((sched) => sched.section.group && sched.section.group.id === g.id && sched.publish === true)}
-                    <span class="rounded bg-green-600 px-2 font-semibold text-white">Public</span>
-                  {:else}
-                    <span class="bg-secondary rounded px-2 font-semibold text-white">Private</span>
-                  {/if}
                 </div>
                 <Table
                   bind:data="{scheduler}"
@@ -557,10 +558,6 @@
 
         {#if pov === 'group'}
           {#each group as g (g.id)}
-            {@const pub = data.scheduler.data.some(
-              (sched) =>
-                sched.section.group && sched.section.group.id === g.id && sched.publish === true,
-            )}
             <div
               id="group-{g.id}"
               class="p-4 pr-2"
@@ -572,60 +569,19 @@
             >
               <div class="mb-2 flex justify-between">
                 <h6 class="font-semibold">Group - {g.name}</h6>
-                {#if pub}
-                  <span class="rounded bg-green-600 px-2 font-semibold text-white">Public</span>
-                {:else}
-                  <span class="bg-secondary rounded px-2 font-semibold text-white">Private</span>
-                {/if}
               </div>
               <Table
                 bind:data="{scheduler}"
                 bind:state="{state}"
                 on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
                 selectable="{data.lazy.info?.current}"
-                noDelete="{pub}"
+                noDelete="{isPublish}"
                 group="{g}"
               />
-            </div>
-            <div class="flex justify-end">
-              {#if pub}
-                <button
-                  class="button mr-2"
-                  on:click="{async () => {
-                    await publish({ groupId: g.id }, false);
-                    await invalidate('data:scheduler');
-                  }}"
-                >
-                  Unpublish
-                </button>
-              {:else}
-                <button
-                  class="button mr-2"
-                  on:click="{async () => {
-                    const ret = await publish({ groupId: g.id }, true);
-                    if (ret.count == 0) {
-                      toast.error(
-                        "This table can't be published because there is no data on this table.",
-                        {
-                          duration: 10000,
-                        },
-                      );
-                    } else {
-                      await invalidate('data:scheduler');
-                    }
-                  }}"
-                >
-                  Publish
-                </button>
-              {/if}
             </div>
           {/each}
         {:else}
           {#each instructor as i (i.id)}
-            {@const pub = data.scheduler.data.some(
-              (sched) =>
-                sched.section.instructor.some((inst) => inst.id === i.id) && sched.publish === true,
-            )}
             <div
               id="inst-{i.id}"
               class="p-4 pr-2"
@@ -637,52 +593,15 @@
             >
               <div class="mb-2 flex justify-between">
                 <h6 class="font-semibold">Instructor - {i.name}</h6>
-                {#if data.scheduler.data.some((sched) => sched.section.instructor.some((inst) => inst.id === i.id) && sched.publish === true)}
-                  <span class="rounded bg-green-600 px-2 font-semibold text-white">Public</span>
-                {:else}
-                  <span class="bg-secondary rounded px-2 font-semibold text-white">Private</span>
-                {/if}
               </div>
               <Table
                 bind:data="{scheduler}"
                 bind:state="{state}"
                 on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
                 selectable="{data.lazy.info?.current}"
-                noDelete="{pub}"
+                noDelete="{isPublish}"
                 instructor="{i}"
               />
-            </div>
-            <div class="flex justify-end">
-              {#if pub}
-                <button
-                  class="button mr-2"
-                  on:click="{async () => {
-                    await publish({ instructorId: i.id }, false);
-                    await invalidate('data:scheduler');
-                  }}"
-                >
-                  Unpublish
-                </button>
-              {:else}
-                <button
-                  class="button mr-2"
-                  on:click="{async () => {
-                    const ret = await publish({ instructorId: i.id }, true);
-                    if (ret.count == 0) {
-                      toast.error(
-                        "This table can't be published because there is no data on this table.",
-                        {
-                          duration: 10000,
-                        },
-                      );
-                    } else {
-                      await invalidate('data:scheduler');
-                    }
-                  }}"
-                >
-                  Publish
-                </button>
-              {/if}
             </div>
           {/each}
         {/if}
@@ -794,7 +713,8 @@
                     (getUsedHour(section) > 0 &&
                       getUsedHour(section) < getRequiredHour(section) &&
                       state.section?.id != section.id) ||
-                    getLeftOverHours(section) == 0 || !data.lazy.info?.current}"
+                    getLeftOverHours(section) == 0 ||
+                    !data.lazy.info?.current}"
                   on:click|stopPropagation="{() => {
                     showEdit(
                       {
@@ -855,7 +775,8 @@
                       (getUsedHour(child) > 0 &&
                         getUsedHour(child) < getRequiredHour(child) &&
                         state.section?.id != child.id) ||
-                      getLeftOverHours(child) == 0 || !data.lazy.info?.current}"
+                      getLeftOverHours(child) == 0 ||
+                      !data.lazy.info?.current}"
                     on:click|stopPropagation="{() => {
                       showEdit(
                         {
@@ -883,7 +804,11 @@
         {/if}
       {/each}
       <div class="p-4">
-        <button class="button disabled:bg-secondary disabled:border-secondary disabled:cursor-not-allowed" disabled="{!data.lazy.info?.current}" on:click="{() => (newState = !newState)}">Add Section</button>
+        <button
+          class="button disabled:border-secondary disabled:bg-secondary disabled:cursor-not-allowed"
+          disabled="{!data.lazy.info?.current}"
+          on:click="{() => (newState = !newState)}">Add Section</button
+        >
       </div>
     </div>
   </div>
@@ -923,6 +848,23 @@
       }}"
     >
       Export Excel
+    </button>
+    <button
+      class="rounded border px-4 py-2 font-semibold text-white outline-none transition duration-150"
+      class:bg-blue-600={!isPublish}
+      class:focus:bg-blue-700={!isPublish}
+      class:bg-green-600={isPublish}
+      class:focus:bg-green-700={isPublish}
+      on:click="{async () => {
+        const flag = confirm('Are you sure?.');
+
+        if (flag) {
+          await publish(!isPublish);
+          await invalidate('data:scheduler');
+        }
+      }}"
+    >
+      {!isPublish ? "Publish" : "Unpublish"} 
     </button>
     <button
       class="rounded border bg-red-600 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-red-700"
@@ -998,6 +940,10 @@
             roomOptions="{options.room}"
             subjectOptions="{options.subject}"
             instructorOptions="{options.instructor}"
+            callback={async () => {
+              newState = !newState;
+              await invalidate("data:timetable");
+            }}
           />
         {/await}
       </div>

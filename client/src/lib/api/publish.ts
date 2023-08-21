@@ -2,11 +2,6 @@ import { PUBLIC_API_HOST } from '$env/static/public';
 import { refresh } from './auth';
 
 export const publish = async (
-  data: {
-    groupId?: string;
-    instructorId?: string;
-    roomId?: string;
-  },
   publish: boolean,
 ): Promise<{
   count: number;
@@ -19,7 +14,7 @@ export const publish = async (
       'Content-Type': 'application/json',
       Authorization: `Bearer ${userSession?.token.access}`,
     },
-    body: JSON.stringify({ ...data, publish }),
+    body: JSON.stringify({ publish }),
   });
 
   if (!res.ok) throw res;
@@ -27,11 +22,6 @@ export const publish = async (
   return (await res.json()).data;
 };
 export const publishExam = async (
-  data: {
-    groupId?: string;
-    instructorId?: string;
-    roomId?: string;
-  },
   publish: boolean,
 ): Promise<{
   count: number;
@@ -44,7 +34,7 @@ export const publishExam = async (
       'Content-Type': 'application/json',
       Authorization: `Bearer ${userSession?.token.access}`,
     },
-    body: JSON.stringify({ ...data, publish }),
+    body: JSON.stringify({ publish }),
   });
 
   if (!res.ok) throw res;

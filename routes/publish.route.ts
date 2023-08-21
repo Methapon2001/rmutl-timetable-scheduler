@@ -13,17 +13,14 @@ export default async (server: FastifyInstance) => {
       body: {
         type: "object",
         properties: {
-          roomId: {
-            type: "string",
-          },
-          groupId: {
-            type: "string",
-          },
-          instructorId: {
-            type: "string",
-          },
           publish: {
             type: "boolean",
+          },
+          year: {
+            type: "number",
+          },
+          semester: {
+            type: "number",
           },
         },
       },
@@ -37,17 +34,14 @@ export default async (server: FastifyInstance) => {
       body: {
         type: "object",
         properties: {
-          roomId: {
-            type: "string",
-          },
-          groupId: {
-            type: "string",
-          },
-          instructorId: {
-            type: "string",
-          },
           publish: {
             type: "boolean",
+          },
+          year: {
+            type: "number",
+          },
+          semester: {
+            type: "number",
           },
         },
       },
