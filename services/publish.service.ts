@@ -60,10 +60,18 @@ export const actionPublishExam = async (
       instructorId?: string;
       roomId?: string;
       publish: boolean;
+      year: number;
+      semester: number;
     };
   }>,
   reply: FastifyReply
 ) => {
+  const info = await prisma.info.findFirst({
+    where: {
+      current: true,
+    },
+  });
+
   const updated = await prisma.schedulerExam.updateMany({
     where: {
       exam: {
@@ -82,6 +90,10 @@ export const actionPublishExam = async (
             }
           : undefined,
         roomId: request.body.roomId,
+      },
+      info: {
+        year: request.body.year ?? info?.year,
+        semester: request.body.semester ?? info?.semester,
       },
       createdByUserId: request.user.id,
     },
