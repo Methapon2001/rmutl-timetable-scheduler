@@ -43,6 +43,7 @@
   "type": "module",
   "dependencies": {
     "@sveltejs/adapter-static": "^2.0.2",
-    "eslint-plugin-svelte": "^2.31.0"
+    "eslint-plugin-svelte": "^2.31.0",
+    "jspdf-autotable": "^3.5.31"
   }
 }
