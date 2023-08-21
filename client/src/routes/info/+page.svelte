@@ -34,7 +34,7 @@
   }
 
   async function handleDelete(info: { id: string }) {
-    if (confirm('Are you sure?')) {
+    if (confirm('Are you sure? The records that using this data will also be deleted!')) {
       const ret = await deleteInfo(info).catch((e: Response) => console.error(e));
 
       if (ret) {
@@ -52,7 +52,7 @@
     const ret = await editInfo({
       id: info.id,
       year: info.year,
-      semester: info.year,
+      semester: info.semester,
       current: true,
     }).catch((r: Response) => console.error(r));
 
