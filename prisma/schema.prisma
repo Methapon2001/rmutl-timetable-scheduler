@@ -229,7 +229,7 @@ model Group {
   planId String
   plan   Plan   @relation(fields: [planId], references: [id])
 
-  info   Info   @relation(fields: [infoId], references: [id])
+  info   Info   @relation(fields: [infoId], references: [id], onDelete: Cascade)
   infoId String
 
   createdByUserId String
@@ -265,7 +265,7 @@ model Section {
   parent   Section?  @relation("AssociatedSection", fields: [parentId], references: [id], onDelete: Cascade)
   child    Section[] @relation("AssociatedSection")
 
-  info   Info   @relation(fields: [infoId], references: [id])
+  info   Info   @relation(fields: [infoId], references: [id], onDelete: Cascade)
   infoId String
 
   createdByUserId String
@@ -296,7 +296,7 @@ model Scheduler {
   sectionId String
   section   Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
 
-  info   Info   @relation(fields: [infoId], references: [id])
+  info   Info   @relation(fields: [infoId], references: [id], onDelete: Cascade)
   infoId String
 
   createdByUserId String
@@ -324,7 +324,7 @@ model Exam {
   roomId String?
   room   Room?   @relation(fields: [roomId], references: [id])
 
-  info   Info   @relation(fields: [infoId], references: [id])
+  info   Info   @relation(fields: [infoId], references: [id], onDelete: Cascade)
   infoId String
 
   createdByUserId String
@@ -347,7 +347,7 @@ model SchedulerExam {
   end     Int
   publish Boolean @default(false)
 
-  info   Info   @relation(fields: [infoId], references: [id])
+  info   Info   @relation(fields: [infoId], references: [id], onDelete: Cascade)
   infoId String
 
   examId String
