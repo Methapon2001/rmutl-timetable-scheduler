@@ -110,7 +110,7 @@
       bind:value="{selectedInfo}"
       on:change="{setInfo}"
     >
-      {#key data.info}
+      {#key data.info.total}
         {#each data.info.data as inf}
           <option value="{`${inf.semester}/${inf.year}`}"
             >{inf.semester}/{inf.year} {inf.current ? '(Current)' : ''}</option
