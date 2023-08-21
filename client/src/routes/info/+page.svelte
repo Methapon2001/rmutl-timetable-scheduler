@@ -147,9 +147,9 @@
               <button class="action-button text-green-600 disabled:text-secondary" disabled="{info.current}" on:click="{() => setCurrent(info)}">
                 Set Current
               </button>
-              <button class="action-button text-blue-600" on:click="{() => showEdit(info)}">
+              <!-- <button class="action-button text-blue-600" on:click="{() => showEdit(info)}">
                 Edit
-              </button>
+              </button> -->
               <button
                 class="action-button text-red-600"
                 on:click="{() => handleDelete({ id: info.id })}"
