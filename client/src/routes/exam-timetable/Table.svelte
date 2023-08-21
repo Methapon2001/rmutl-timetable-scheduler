@@ -255,7 +255,8 @@
   }
 
   .grid.small {
-    height: 192px;
+    height: 193px;
+    width: 200%;
   }
 
   .grid.small > * {

@@ -17,6 +17,7 @@
   import ExamNewForm from '../exam/ExamForm.svelte';
   import ShowRoom from './ShowRoom.svelte';
   import { resetData } from '$lib/api/reset';
+  import viewport from '$lib/utils/useViewportAction';
 
   export let data: PageData;
 
@@ -416,8 +417,6 @@
     };
   }
   let showRoomState = false;
-
-  let selectedSectionId: string[] = [];
 </script>
 
 <svelte:window on:keydown="{handleKeydown}" />
@@ -426,8 +425,50 @@
   <div class="flex-grow">
     <div class="relative">
       <div class="z-20 grid grid-cols-2">
-        <div class="table-small-container border-b border-r"></div>
-        <div class="table-small-container border-b"></div>
+        <div class="table-small-container border-b border-r">
+          {#each instructor.filter((obj) => state.exam?.instructor.findIndex((inst) => inst.id == obj.id) !== -1) as i (i.id)}
+            <div id="inst-{i.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
+              <div class="mb-2 flex justify-between">
+                <h6 class="font-semibold">Instructor - {i.name}</h6>
+                {#if data.schedulerExam.data.some((sched) => sched.exam.instructor.some((inst) => inst.id === i.id) && sched.publish === true)}
+                  <span class="rounded bg-green-600 px-2 font-semibold text-white">Public</span>
+                {:else}
+                  <span class="rounded bg-secondary px-2 font-semibold text-white">Private</span>
+                {/if}
+              </div>
+              <Table
+                bind:data="{schedulerExam}"
+                bind:state="{state}"
+                on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
+                small="{true}"
+                selectable="{true}"
+                instructor="{i}"
+              />
+            </div>
+          {/each}
+        </div>
+        <div class="table-small-container border-b">
+          {#each group.filter((obj) => state.exam?.section.findIndex((grp) => grp.id == obj.id) !== -1) as g (g.id)}
+            <div id="group-{g.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
+              <div class="mb-2 flex justify-between">
+                <h6 class="font-semibold">Group - {g.name}</h6>
+                {#if data.schedulerExam.data.some((sched) => sched.exam.section.some((sec) => sec.group && sec.group.id === g.id) && sched.publish === true)}
+                  <span class="rounded bg-green-600 px-2 font-semibold text-white">Public</span>
+                {:else}
+                  <span class="rounded bg-secondary px-2 font-semibold text-white">Private</span>
+                {/if}
+              </div>
+              <Table
+                bind:data="{schedulerExam}"
+                bind:state="{state}"
+                on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
+                small="{true}"
+                selectable="{true}"
+                group="{g}"
+              />
+            </div>
+          {/each}
+        </div>
       </div>
       <div class="main-table-container pb-16">
         {#if data.exam.total === 0}
@@ -440,11 +481,23 @@
         {/if}
 
         {#each room.filter((obj) => !state.selected || obj.id === state.exam?.room?.id) as r (r.id)}
-          <div id="room-{r.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
+          <div
+            id="room-{r.id}"
+            class="p-4 pr-2"
+            style:scrollbar-gutter="stable"
+            use:viewport
+            on:enterViewport="{() => {
+              tableSelectState = r.id;
+            }}"
+          >
             <div class="mb-2 flex justify-between">
               <h6 class="text-center font-semibold">
                 Room - {r.building.code}-{r.name} <span class="capitalize">({r.type})</span>
               </h6>
+              <button
+                class="rounded bg-primary px-2 font-semibold text-white"
+                on:click="{() => (showRoomState = true)}">View All</button
+              >
             </div>
             <Table
               bind:data="{schedulerExam}"
@@ -457,23 +510,13 @@
         {/each}
       </div>
       <div class="absolute bottom-0 left-0 right-0 z-40 flex overflow-x-auto border-t bg-white">
-        {#if pov === 'instructor'}
-          {#each instructor as i (i.id)}
-            <a
-              href="#inst-{i.id}"
-              class="inline-block whitespace-nowrap border-r px-4 py-2 last:border-r-0"
-              class:bg-slate-200="{i.id === tableSelectState}">{i.name}</a
-            >
-          {/each}
-        {:else}
-          {#each group as g (g.id)}
-            <a
-              href="#group-{g.id}"
-              class="inline-block whitespace-nowrap border-r px-4 py-2 last:border-r-0"
-              class:bg-slate-200="{g.id === tableSelectState}">{g.name}</a
-            >
-          {/each}
-        {/if}
+        {#each room as r (r.id)}
+          <a
+            href="#room-{r.id}"
+            class="inline-block whitespace-nowrap border-r px-4 py-2 last:border-r-0"
+            class:bg-slate-200="{r.id === tableSelectState}">{r.building.code}-{r.name}</a
+          >
+        {/each}
       </div>
     </div>
   </div>
@@ -701,7 +744,7 @@
 
 <style lang="postcss">
   .table-small-container {
-    height: calc(193px + 1rem + 1.5rem + 1rem);
+    height: calc(194px + 1rem + 1.5rem + 1rem + 1rem);
     overflow-y: auto;
     scrollbar-gutter: stable;
   }
