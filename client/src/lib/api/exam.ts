@@ -2,7 +2,7 @@ import { PUBLIC_API_HOST } from '$env/static/public';
 import { refresh } from './auth';
 
 export const createExam = async (data: {
-  roomId: string;
+  roomId: string | null;
   section: {
     id: string;
   }[];
@@ -44,7 +44,7 @@ export const deleteExam = async (data: Pick<API.Exam, 'id'>): Promise<API.Exam> 
 
 export const editExam = async (data: {
   id: string;
-  roomId: string;
+  roomId: string | null;
   section: {
     id: string;
   }[];

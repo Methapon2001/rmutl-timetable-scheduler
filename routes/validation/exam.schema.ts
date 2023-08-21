@@ -21,7 +21,7 @@ export default {
   body: {
     type: "object",
     properties: {
-      roomId: { type: "string" },
+      roomId: { type: ["string", "null"] },
       section: {
         type: "array",
         items: {

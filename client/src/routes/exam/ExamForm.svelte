@@ -92,6 +92,7 @@
     const result = newSchema
       .transform((val) => ({
         ...val,
+        roomId: val.roomId.trim() || null,
         section: val.section.map((sec) => ({ id: sec })),
         instructor: val.instructor.map((inst) => ({ id: inst })),
       }))
@@ -132,6 +133,7 @@
     const result = schema
       .transform((val) => ({
         ...val,
+        roomId: val.roomId.trim() || null,
         section: val.section.map((sec) => ({ id: sec })),
         instructor: val.instructor.map((inst) => ({ id: inst })),
       }))
@@ -204,9 +206,7 @@
 
   <section id="input-instructor" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
-      <label for="" class="font-semibold">
-        Instructor <span class="text-red-600">*</span>
-      </label>
+      <label for="" class="font-semibold"> Instructor </label>
     </div>
     <div
       class="col-span-4"
@@ -226,9 +226,7 @@
 
   <section id="input-room" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
-      <label for="" class="font-semibold">
-        Room <span class="text-red-600">*</span>
-      </label>
+      <label for="" class="font-semibold"> Room </label>
     </div>
     <div
       class="col-span-4"
