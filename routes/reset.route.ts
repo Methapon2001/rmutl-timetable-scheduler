@@ -18,6 +18,8 @@ export default async (server: FastifyInstance) => {
       req: FastifyRequest<{
         Querystring: {
           target: "scheduler" | "schedulerExam" | "exam" | "section";
+          year: number;
+          semester: number;
         };
       }>,
       res
@@ -55,6 +57,8 @@ export default async (server: FastifyInstance) => {
             type: "string",
             enum: ["scheduler", "schedulerExam", "exam", "section"],
           },
+          year: { type: "number" },
+          semester: {type: "number"}
         },
       },
     },

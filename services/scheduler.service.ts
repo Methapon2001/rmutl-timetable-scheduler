@@ -275,13 +275,22 @@ export async function deleteScheduler(
 }
 
 export async function resetScheduler(
-  request: FastifyRequest,
+  request: FastifyRequest<{
+    Querystring: {
+      year: number;
+      semester: number;
+    };
+  }>,
   reply: FastifyReply
 ) {
   const { id: userId } = request.user;
 
   await prisma.scheduler.deleteMany({
     where: {
+      info: {
+        year: request.query.year,
+        semester: request.query.semester,
+      },
       createdByUserId: userId,
     },
   });

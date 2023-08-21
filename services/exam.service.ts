@@ -412,11 +412,23 @@ export async function searchExam(
   });
 }
 
-export async function resetExam(request: FastifyRequest, reply: FastifyReply) {
+export async function resetExam(
+  request: FastifyRequest<{
+    Querystring: {
+      year: number;
+      semester: number;
+    };
+  }>,
+  reply: FastifyReply
+) {
   const { id: userId } = request.user;
 
   await prisma.exam.deleteMany({
     where: {
+      info: {
+        year: request.query.year,
+        semester: request.query.semester,
+      },
       createdByUserId: userId,
     },
   });

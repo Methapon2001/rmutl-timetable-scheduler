@@ -251,13 +251,22 @@ export async function deleteSchedulerExam(
 }
 
 export async function resetSchedulerExam(
-  request: FastifyRequest,
+  request: FastifyRequest<{
+    Querystring: {
+      year: number;
+      semester: number;
+    };
+  }>,
   reply: FastifyReply
 ) {
   const { id: userId } = request.user;
 
   await prisma.schedulerExam.deleteMany({
     where: {
+      info: {
+        year: request.query.year,
+        semester: request.query.semester,
+      },
       createdByUserId: userId,
     },
   });

@@ -545,13 +545,22 @@ export async function deleteSection(
 }
 
 export async function resetSection(
-  request: FastifyRequest,
+  request: FastifyRequest<{
+    Querystring: {
+      year: number;
+      semester: number;
+    };
+  }>,
   reply: FastifyReply
 ) {
   const { id: userId } = request.user;
 
   await prisma.section.deleteMany({
     where: {
+      info: {
+        year: request.query.year,
+        semester: request.query.semester,
+      },
       createdByUserId: userId,
     },
   });
