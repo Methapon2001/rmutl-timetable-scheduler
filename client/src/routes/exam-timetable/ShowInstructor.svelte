@@ -41,22 +41,22 @@
     size: number;
   }[];
 
-  export let room: API.Room[]; // eslint-disable-line no-undef
-  export let open: boolean;
+  export let instructor: API.Instructor[]; // eslint-disable-line no-undef
 
-  async function handleSubmit(roomId: string) {
+  let currentInstructor: string[] = state.exam?.instructor.map((inst) => inst.id) ?? [];
+
+  async function handleSubmit() {
     if (state.exam) {
       const ret = await editExam({
         id: state.exam.id,
-        roomId: roomId,
-        instructor: state.exam.instructor,
+        roomId: state.exam.room?.id ?? null,
+        instructor: currentInstructor.map((inst) => ({id: inst})),
         section: state.exam.section,
       }).catch((r: Response) => console.error(r));
 
       if (ret) state.exam = ret;
     }
 
-    open = !open;
     await invalidate('data:schedulerExam');
   }
 </script>
@@ -64,18 +64,12 @@
 <h1 class="my-3 text-center text-xl font-bold">Room List</h1>
 
 <div class="table-small-container border-b">
-  {#each room as r (r.id)}
-    <div id="room-{r.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
+  {#each instructor as i (i.id)}
+    <div id="inst-{i.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
       <div class="mb-2 flex justify-between">
-        <h6 class="text-center font-semibold">
-          Room - {r.building.code}-{r.name} <span class="capitalize">({r.type})</span>
-        </h6>
+        <h6 class="font-semibold">Instructor - {i.name}</h6>
         {#if state.exam}
-          <button
-            class="rounded bg-primary px-2 text-white disabled:bg-secondary"
-            on:click="{() => handleSubmit(r.id)}"
-            disabled="{state.exam?.room?.id == r.id}">Change</button
-          >
+          <input type="checkbox" value="{i.id}" bind:group="{currentInstructor}" on:change="{handleSubmit}"/>
         {/if}
       </div>
       <Table
@@ -84,7 +78,7 @@
         small="{true}"
         forceVisual="{true}"
         selectable="{true}"
-        room="{r}"
+        instructor="{i}"
       />
     </div>
   {/each}

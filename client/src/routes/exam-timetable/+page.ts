@@ -99,6 +99,7 @@ export const load = (async ({ fetch, parent, depends }) => {
       sectionExamFiltered: requestSectionExamFiltered(),
       instructor: requestInstructor(),
       room: requestRoom(),
+      info: currentInfo,
     },
   };
 }) satisfies PageLoad;

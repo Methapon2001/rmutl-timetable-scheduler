@@ -18,6 +18,7 @@
   import ShowRoom from './ShowRoom.svelte';
   import { resetData } from '$lib/api/reset';
   import viewport from '$lib/utils/useViewportAction';
+  import ShowInstructor from './ShowInstructor.svelte';
 
   export let data: PageData;
 
@@ -93,7 +94,7 @@
     };
   });
 
-  let instructor = data.exam.data.reduce<
+  $: instructor = data.exam.data.reduce<
     Omit<API.Instructor, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>[] // eslint-disable-line no-undef
   >((acc, curr) => {
     return acc
@@ -358,7 +359,7 @@
     },
     {
       group: 'Instructor',
-      options: instructor.map((inst) => ({
+      options: instructor?.map((inst) => ({
         value: inst.name,
         label: inst.name,
       })),
@@ -417,6 +418,8 @@
     };
   }
   let showRoomState = false;
+  let showInstructorState = false;
+
 </script>
 
 <svelte:window on:keydown="{handleKeydown}" />
@@ -430,11 +433,10 @@
             <div id="inst-{i.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
               <div class="mb-2 flex justify-between">
                 <h6 class="font-semibold">Instructor - {i.name}</h6>
-                {#if data.schedulerExam.data.some((sched) => sched.exam.instructor.some((inst) => inst.id === i.id) && sched.publish === true)}
-                  <span class="rounded bg-green-600 px-2 font-semibold text-white">Public</span>
-                {:else}
-                  <span class="rounded bg-secondary px-2 font-semibold text-white">Private</span>
-                {/if}
+                <button
+                  class="bg-primary rounded px-2 font-semibold text-white"
+                  on:click="{() => (showInstructorState = true)}">View All</button
+                >
               </div>
               <Table
                 bind:data="{schedulerExam}"
@@ -448,14 +450,14 @@
           {/each}
         </div>
         <div class="table-small-container border-b">
-          {#each group.filter((obj) => state.exam?.section.findIndex((grp) => grp.id == obj.id) !== -1) as g (g.id)}
+          {#each group as g (g.id)}
             <div id="group-{g.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
               <div class="mb-2 flex justify-between">
                 <h6 class="font-semibold">Group - {g.name}</h6>
                 {#if data.schedulerExam.data.some((sched) => sched.exam.section.some((sec) => sec.group && sec.group.id === g.id) && sched.publish === true)}
                   <span class="rounded bg-green-600 px-2 font-semibold text-white">Public</span>
                 {:else}
-                  <span class="rounded bg-secondary px-2 font-semibold text-white">Private</span>
+                  <span class="bg-secondary rounded px-2 font-semibold text-white">Private</span>
                 {/if}
               </div>
               <Table
@@ -474,7 +476,7 @@
         {#if data.exam.total === 0}
           <div class="p-8 text-center">
             <h1 class="mb-4 text-5xl font-extrabold">No Data</h1>
-            <h2 class="text-3xl text-secondary">
+            <h2 class="text-secondary text-3xl">
               No section created.<br />Must have section data in order for timetable to show.
             </h2>
           </div>
@@ -495,7 +497,7 @@
                 Room - {r.building.code}-{r.name} <span class="capitalize">({r.type})</span>
               </h6>
               <button
-                class="rounded bg-primary px-2 font-semibold text-white"
+                class="bg-primary rounded px-2 font-semibold text-white"
                 on:click="{() => (showRoomState = true)}">View All</button
               >
             </div>
@@ -508,6 +510,14 @@
             />
           </div>
         {/each}
+        {#if state.exam?.room}
+          <div class="flex h-full w-full items-center justify-center">
+            <button
+              class="bg-primary rounded p-2 font-semibold text-white"
+              on:click="{() => (showRoomState = true)}">Select Room</button
+            >
+          </div>
+        {/if}
       </div>
       <div class="absolute bottom-0 left-0 right-0 z-40 flex overflow-x-auto border-t bg-white">
         {#each room as r (r.id)}
@@ -521,7 +531,7 @@
     </div>
   </div>
   <div>
-    <div class="section-selector border-l bg-light">
+    <div class="section-selector bg-light border-l">
       <div class="relative m-4 grid grid-cols-4 items-center gap-4">
         <input
           type="text"
@@ -530,7 +540,7 @@
           bind:value="{searchText}"
         />
         <button
-          class="input flex !w-full items-center justify-center bg-white text-secondary shadow"
+          class="input text-secondary flex !w-full items-center justify-center bg-white shadow"
           on:click="{() => (showFilter = !showFilter)}"
         >
           <FilterIcon />
@@ -543,17 +553,17 @@
         <div class="w-full space-y-2 border-b p-4">
           <div class="mb-2 space-y-2 text-sm">
             <div class="flex gap-2">
-              <span class="flex items-center rounded bg-primary px-2 py-1 font-semibold text-white">
+              <span class="bg-primary flex items-center rounded px-2 py-1 font-semibold text-white">
                 {exam.section[0]?.subject.code ?? ''}
               </span>
-              <span class="flex items-center rounded bg-primary px-2 py-1 font-semibold text-white">
+              <span class="bg-primary flex items-center rounded px-2 py-1 font-semibold text-white">
                 {exam.section[0]?.subject.name ?? ''}
               </span>
             </div>
             <div class="flex gap-2">
               {#each exam.section as sec}
                 <span
-                  class="flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
+                  class="bg-primary flex items-center rounded px-2 py-1 font-semibold text-white"
                 >
                   SEC {sec.no}
                 </span>
@@ -566,7 +576,7 @@
             class:bg-green-600="{state.exam?.id === exam.id}"
             class:text-white="{state.exam?.id === exam.id}"
             class:text-red-600="{schedulerExam.findIndex((sched) => exam.id == sched.exam.id) !==
-              -1}"
+              -1 || !data.lazy.info?.current}"
             on:click="{() => handleSelectExam(exam)}"
           >
             <div
@@ -583,7 +593,7 @@
               class="flex h-full w-full items-center justify-center rounded-l border-r font-semibold"
             >
               <button
-                class="!text-blue-500 underline disabled:!text-secondary"
+                class="disabled:!text-secondary !text-blue-500 underline"
                 disabled="{(data.session?.user.id != exam.createdBy.id &&
                   data.session?.user.role != 'admin') ||
                   schedulerExam.findIndex((sched) => exam.id == sched.exam.id) !== -1}"
@@ -600,7 +610,7 @@
         </div>
       {/each}
       <div class="p-4">
-        <button class="button" on:click="{() => (newState = !newState)}">Add Exam</button>
+        <button class="button disabled:bg-secondary disabled:border-secondary disabled:cursor-not-allowed" disabled="{!data.lazy.info?.current}" on:click="{() => (newState = !newState)}">Add Exam</button>
       </div>
     </div>
   </div>
@@ -656,14 +666,14 @@
   </div>
   {#if state.exam}
     <div
-      class="flex justify-between gap-2 overflow-hidden rounded border border-primary bg-light pr-2 font-semibold shadow"
+      class="border-primary bg-light flex justify-between gap-2 overflow-hidden rounded border pr-2 font-semibold shadow"
     >
       <span class="bg-primary px-3 py-2 font-semibold text-white">Selected</span>
       <span class="truncate py-2">
         {state.exam?.section[0]?.subject.code ?? ''}
         {state.exam?.section[0]?.subject.name ?? ''}
       </span>
-      <span class=" py-2">
+      <span class=" py-2 whitespace-nowrap">
         SEC
         {state.exam.section.map((sec) => sec.no).join(', ')}
       </span>
@@ -720,7 +730,24 @@
   {#await data.lazy.room}
     Loading...
   {:then roomData}
-    <ShowRoom scheduler="{schedulerExam}" room="{roomData.data}" />
+    <ShowRoom
+      scheduler="{schedulerExam}"
+      room="{roomData.data}"
+      bind:state="{state}"
+      bind:open="{showRoomState}"
+    />
+  {/await}
+</ModalCenter>
+
+<ModalCenter bind:open="{showInstructorState}">
+  {#await data.lazy.instructor}
+    Loading...
+  {:then instructorData}
+    <ShowInstructor
+      scheduler="{schedulerExam}"
+      instructor="{instructorData.data}"
+      bind:state="{state}"
+    />
   {/await}
 </ModalCenter>
 
@@ -750,7 +777,7 @@
   }
 
   .main-table-container {
-    height: calc(100vh - 4rem - 4rem - (193px + 1rem + 1.5rem + 1rem));
+    height: calc(100vh - 4rem - 4rem - (194px + 1rem + 1.5rem + 1rem + 1rem));
     overflow-y: auto;
   }
 
