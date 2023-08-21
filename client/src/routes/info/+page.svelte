@@ -3,7 +3,7 @@
   import { page } from '$app/stores';
   import { invalidate, invalidateAll } from '$app/navigation';
   import { blurOnEscape } from '$lib/utils/directives';
-  import { deleteInfo } from '$lib/api/info';
+  import { deleteInfo, editInfo } from '$lib/api/info';
   import debounce from '$lib/utils/debounce';
   import Modal from '$lib/components/Modal.svelte';
   import Pagination from '$lib/components/Pagination.svelte';
@@ -44,6 +44,25 @@
       } else {
         toast.error('Failed to delete info!\nThis record is currenly in use.');
       }
+    }
+  }
+
+  async function setCurrent(info: { id: string, year: number, semester: number; }) {
+
+    const ret = await editInfo({
+      id: info.id,
+      year: info.year,
+      semester: info.year,
+      current: true,
+    }).catch((r: Response) => console.error(r));
+
+    if (ret) {
+
+      await invalidate('data:info');
+
+      toast.success('Set Current Complete!');
+    } else {
+      toast.error('Fail to Set Current!');
     }
   }
 </script>
@@ -125,6 +144,9 @@
           >
           <td class="fit-width text-center">
             <div class="space-x-4 whitespace-nowrap">
+              <button class="action-button text-green-600 disabled:text-secondary" disabled="{info.current}" on:click="{() => setCurrent(info)}">
+                Set Current
+              </button>
               <button class="action-button text-blue-600" on:click="{() => showEdit(info)}">
                 Edit
               </button>
