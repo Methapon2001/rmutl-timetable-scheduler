@@ -5,7 +5,6 @@
   import { createSection } from '$lib/api/section';
   import toast from 'svelte-french-toast';
   import CrossIcon from '$lib/icons/CrossIcon.svelte';
-  import {} from 'os';
 
   export let data: PageData;
 
