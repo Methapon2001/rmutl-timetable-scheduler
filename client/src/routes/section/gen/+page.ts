@@ -1,14 +1,24 @@
-import type { PageLoad } from './$types';
-import { redirect } from '@sveltejs/kit';
-import { PUBLIC_API_HOST } from '$env/static/public';
+import type { PageLoad } from "./$types";
+import { redirect } from "@sveltejs/kit";
+import { PUBLIC_API_HOST } from "$env/static/public";
+import { info } from "$lib/stores";
+
+let currentInfo: API.Info | undefined = undefined;
+info.subscribe((v) => (currentInfo = v));
 
 export const load = (async ({ fetch, parent }) => {
   const { session } = await parent();
 
-  if (!session) throw redirect(302, '/login?redirect=/generate-section');
+  if (!session) throw redirect(302, "/login?redirect=/generate-section");
 
   const requestGroup = async () => {
-    const res = await fetch(`${PUBLIC_API_HOST}/api/group?limit=9999`);
+    const res = await fetch(
+      `${PUBLIC_API_HOST}/api/group?limit=9999${
+        currentInfo
+          ? `&year=${currentInfo.year}&semester=${currentInfo.semester}`
+          : ""
+      }`,
+    );
     const body = await res.json();
     return body as {
       data: API.Group[];
