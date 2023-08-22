@@ -535,7 +535,7 @@
               />
             </div>
           {/each}
-          {#if !state.section?.room}
+          {#if state.section && !state.section.room}
             <div class="flex h-full w-full items-center justify-center">
               <button
                 class="bg-primary rounded p-2 font-semibold text-white"
@@ -762,7 +762,7 @@
                   </small>
                 </div>
                 <div class="col-span-3 w-full pl-3 text-left font-semibold">
-                  {#if section.instructor.length == 0}
+                  {#if child.instructor.length == 0}
                     <small>Not assigned</small>
                   {:else}
                     {#each child.instructor as instructor}
@@ -982,7 +982,10 @@
         edit="{true}"
         editData="{editData}"
         showData="{showData}"
-        callback="{() => (editState = false)}"
+        callback="{async () => {
+          editState = false;
+          await invalidate('data:scheduler');
+        }}"
       />
     {/await}
   </div>
