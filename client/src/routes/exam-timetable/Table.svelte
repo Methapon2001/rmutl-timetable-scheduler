@@ -68,7 +68,8 @@
   $: visualize =
     (room && room?.id == state.exam?.room?.id) ||
     state.exam?.section.findIndex((sec) => sec.group && sec.group?.id === group?.id) !== -1 ||
-    state.exam?.instructor.findIndex((inst) => inst.id == instructor?.id) !== -1 || forceVisual;
+    state.exam?.instructor.findIndex((inst) => inst.id == instructor?.id) !== -1 ||
+    forceVisual;
 
   $: localData =
     room || group || instructor
@@ -135,7 +136,9 @@
 
 <div class="w-full overflow-y-hidden overflow-x-scroll">
   <div class="relative grid w-full bg-white" class:small="{small}" class:disabled="{!visualize}">
-    <div class="col-span-3 sticky left-0 select-none bg-slate-100 font-semibold capitalize"><!--Period--></div>
+    <div class="sticky left-0 col-span-3 select-none bg-slate-100 font-semibold capitalize">
+      <!--Period-->
+    </div>
     {#each { length: 50 } as _, period}
       <div class="flex flex-col items-center bg-slate-100 font-semibold">
         <small>{period + 1}</small>
@@ -147,7 +150,7 @@
 
     {#each Object.keys(weekdayMapRow) as weekday}
       <div
-        class="col-span-3 z-40 sticky left-0 select-none bg-slate-100 font-semibold capitalize"
+        class="sticky left-0 z-40 col-span-3 select-none bg-slate-100 font-semibold capitalize"
         class:text-sm="{small}"
       >
         {weekday}
@@ -188,7 +191,9 @@
               <div class="w-full">
                 {#if !item._overlap}
                   <h6 class="block overflow-hidden font-bold">
-                {item.exam.section[0]?.subject.code}_SEC_{item.exam.section.map(v => v.no).join(', ')}
+                    {item.exam.section[0]?.subject.code}_SEC_{item.exam.section
+                      .map((v) => v.no)
+                      .join(', ')}
                   </h6>
                 {/if}
                 <p class="block">{item.exam.section[0].subject.name}</p>
@@ -220,7 +225,9 @@
           <div class="group relative flex h-full w-full items-center text-center text-xs">
             <div class="flex-grow">
               {#if !item._overlap}
-                {item.exam.section[0]?.subject.code}_SEC_{item.exam.section.map(v => v.no).join(', ')}
+                {item.exam.section[0]?.subject.code}_SEC_{item.exam.section
+                  .map((v) => v.no)
+                  .join(', ')}
               {/if}
             </div>
           </div>
