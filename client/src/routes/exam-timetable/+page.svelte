@@ -349,15 +349,7 @@
     ]);
 
     autoTable(doc, {
-      head: [
-        [
-          'Subject',
-          'Midterm',
-          'Final',
-          'Room',
-          'Instructor',
-        ],
-      ],
+      head: [['Subject', 'Midterm', 'Final', 'Room', 'Instructor']],
       headStyles: {
         fontStyle: 'bold',
       },
@@ -537,7 +529,7 @@
             />
           </div>
         {/each}
-        {#if state.exam?.room}
+        {#if state.exam && !state.exam.room}
           <div class="flex h-full w-full items-center justify-center">
             <button
               class="bg-primary rounded p-2 font-semibold text-white"
@@ -802,6 +794,10 @@
         roomOptions="{options.room}"
         editData="{editData}"
         edit="{true}"
+        callback="{async () => {
+          editState = !editState;
+          await invalidate('data:scheduler-exam');
+        }}"
       />
     {/await}
   </div>
