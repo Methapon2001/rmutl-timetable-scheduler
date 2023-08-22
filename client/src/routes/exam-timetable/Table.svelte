@@ -188,7 +188,7 @@
               <div class="w-full">
                 {#if !item._overlap}
                   <h6 class="block overflow-hidden font-bold">
-                    {item.exam.section[0].subject.code}_SEC <!-- sec no loop thru -->
+                {item.exam.section[0]?.subject.code}_SEC_{item.exam.section.map(v => v.no).join(', ')}
                   </h6>
                 {/if}
                 <p class="block">{item.exam.section[0].subject.name}</p>
@@ -220,11 +220,10 @@
           <div class="group relative flex h-full w-full items-center text-center text-xs">
             <div class="flex-grow">
               {#if !item._overlap}
-                {item.exam.section[0]?.subject.code}_SEC <!-- sec no loop thru -->
+                {item.exam.section[0]?.subject.code}_SEC_{item.exam.section.map(v => v.no).join(', ')}
               {/if}
             </div>
           </div>
-          30
         {/if}
       </div>
     {/each}
