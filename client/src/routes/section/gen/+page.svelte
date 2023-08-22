@@ -5,6 +5,7 @@
   import { createSection } from '$lib/api/section';
   import toast from 'svelte-french-toast';
   import CrossIcon from '$lib/icons/CrossIcon.svelte';
+  import {} from 'os';
 
   export let data: PageData;
 
@@ -70,6 +71,7 @@
   let roomOptions = data.room.data.map((room) => ({
     label: `${room.building.code}-${room.name} (${room.type})`,
     value: room.id,
+    detail: room,
   }));
 
   // eslint-disable-next-line no-undef
@@ -358,7 +360,14 @@
                 <div class="col-span-4">
                   <Select
                     name="section-room"
-                    options="{roomOptions}"
+                    options="{roomOptions.filter((opt) => {
+                      return (
+                        opt.detail.type === 'both' ||
+                        (secIdx === 0
+                          ? opt.detail.type === subjectSec.type
+                          : opt.detail.type === 'lab')
+                      );
+                    })}"
                     bind:value="{sectionState[sectionIdx].subjectSection[subjectSecIdx].section[
                       secIdx
                     ].roomId}"
