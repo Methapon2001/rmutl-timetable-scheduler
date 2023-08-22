@@ -240,7 +240,7 @@
   // eslint-disable-next-line no-undef
   function handleSelectSection(section: API.Scheduler['section']) {
     if (isPublish) {
-      toast.error("Data is published, Cannot edit.")
+      toast.error('Data is published, Cannot edit.');
       return;
     }
 
@@ -470,7 +470,6 @@
   let showRoomState = false;
 
   let tableSelectState: string;
-
 </script>
 
 <svelte:window on:keydown="{handleKeydown}" />
@@ -697,10 +696,13 @@
                 </small>
               </div>
               <div class="col-span-3 w-full pl-3 text-left font-semibold">
-                {#if section.instructor.length == 0}<small>Not assigned</small>{/if}
-                {#each section.instructor as instructor}
-                  <small>{instructor.name}</small><br />
-                {/each}
+                {#if section.instructor.length == 0}
+                  <small>Not assigned</small>
+                {:else}
+                  {#each section.instructor as instructor}
+                    <small>{instructor.name}</small><br />
+                  {/each}
+                {/if}
               </div>
 
               <div
@@ -760,10 +762,13 @@
                   </small>
                 </div>
                 <div class="col-span-3 w-full pl-3 text-left font-semibold">
-                  {#if section.instructor.length == 0}<small>Not assigned</small>{/if}
-                  {#each child.instructor as instructor}
-                    <small>{instructor.name}</small><br />
-                  {/each}
+                  {#if section.instructor.length == 0}
+                    <small>Not assigned</small>
+                  {:else}
+                    {#each child.instructor as instructor}
+                      <small>{instructor.name}</small><br />
+                    {/each}
+                  {/if}
                 </div>
                 <div
                   class="flex h-full w-full items-center justify-center rounded-l border-r font-semibold"
@@ -851,10 +856,10 @@
     </button>
     <button
       class="rounded border px-4 py-2 font-semibold text-white outline-none transition duration-150"
-      class:bg-blue-600={!isPublish}
-      class:focus:bg-blue-700={!isPublish}
-      class:bg-green-600={isPublish}
-      class:focus:bg-green-700={isPublish}
+      class:bg-blue-600="{!isPublish}"
+      class:focus:bg-blue-700="{!isPublish}"
+      class:bg-green-600="{isPublish}"
+      class:focus:bg-green-700="{isPublish}"
       on:click="{async () => {
         const flag = confirm('Are you sure?.');
 
@@ -864,7 +869,7 @@
         }
       }}"
     >
-      {!isPublish ? "Publish" : "Unpublish"} 
+      {!isPublish ? 'Publish' : 'Unpublish'}
     </button>
     <button
       class="rounded border bg-red-600 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-red-700"
@@ -940,10 +945,10 @@
             roomOptions="{options.room}"
             subjectOptions="{options.subject}"
             instructorOptions="{options.instructor}"
-            callback={async () => {
+            callback="{async () => {
               newState = !newState;
-              await invalidate("data:timetable");
-            }}
+              await invalidate('data:timetable');
+            }}"
           />
         {/await}
       </div>
