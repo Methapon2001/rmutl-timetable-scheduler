@@ -11,7 +11,6 @@
   import SectionNewForm from './NewForm.svelte';
   import SectionEditForm from './EditForm.svelte';
   import toast from 'svelte-french-toast';
-  
 
   const handleSearch = debounce(async (text: string) => {
     const url = new URL(window.location.toString());
@@ -146,7 +145,12 @@
     />
   </div>
 
-  <button type="button" class="button w-full md:w-fit disabled:bg-secondary disabled:border-secondary disabled:cursor-not-allowed" disabled="{!data.lazy.info?.current}" on:click="{() => (newState = !newState)}">
+  <button
+    type="button"
+    class="button disabled:bg-secondary disabled:border-secondary w-full disabled:cursor-not-allowed md:w-fit"
+    disabled="{!data.lazy.info?.current}"
+    on:click="{() => (newState = !newState)}"
+  >
     New Section
   </button>
   <a href="/section/gen" class="button w-full text-center md:w-fit"> Generate Section </a>
@@ -210,7 +214,7 @@
     <tbody>
       {#if data.section.total == 0}
         <tr>
-          <td class="text-center text-secondary" colspan="11">No records found.</td>
+          <td class="text-secondary text-center" colspan="11">No records found.</td>
         </tr>
       {/if}
       {#each data.section.data as section (section.id)}
@@ -229,7 +233,7 @@
             {section.instructor.length ? '' : '-'}
             {#each section.instructor as instructor (instructor.id)}
               <p>
-                <span class="whitespace-nowrap rounded bg-light-hover px-2"
+                <span class="bg-light-hover whitespace-nowrap rounded px-2"
                   >{instructor.name ?? '-'}</span
                 >
               </p>
@@ -238,19 +242,20 @@
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(section.createdAt).toLocaleDateString()}</p>
             <p class="text-dark">{new Date(section.createdAt).toLocaleTimeString()}</p>
-            <p class="capitalize text-secondary">{section.createdBy.username}</p>
+            <p class="text-secondary capitalize">{section.createdBy.username}</p>
           </td>
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(section.updatedAt).toLocaleDateString()}</p>
             <p class="text-dark">{new Date(section.updatedAt).toLocaleTimeString()}</p>
-            <p class="capitalize text-secondary">{section.updatedBy.username}</p>
+            <p class="text-secondary capitalize">{section.updatedBy.username}</p>
           </td>
           <td class="fit-width text-center">
             <div class="space-x-4 whitespace-nowrap">
               <button
-                class="action-button text-blue-600 disabled:text-secondary"
-                disabled="{data.session?.user.id != section.createdBy.id &&
-                  data.session?.user.role != 'admin' || !data.lazy.info?.current}"
+                class="action-button disabled:text-secondary text-blue-600"
+                disabled="{(data.session?.user.id != section.createdBy.id &&
+                  data.session?.user.role != 'admin') ||
+                  !data.lazy.info?.current}"
                 on:click="{() =>
                   showEdit(
                     {
@@ -272,9 +277,10 @@
                 Edit
               </button>
               <button
-                class="action-button text-red-600 disabled:text-secondary"
-                disabled="{data.session?.user.id != section.createdBy.id &&
-                  data.session?.user.role != 'admin' || !data.lazy.info?.current}"
+                class="action-button disabled:text-secondary text-red-600"
+                disabled="{(data.session?.user.id != section.createdBy.id &&
+                  data.session?.user.role != 'admin') ||
+                  !data.lazy.info?.current}"
                 on:click="{() => handleDelete({ id: section.id })}"
               >
                 Delete
@@ -286,20 +292,20 @@
     </tbody>
   </table>
 </div>
-<div class="w-full flex justify-end p-3">
+<div class="flex w-full justify-end p-3">
   <button
-      class="rounded border bg-red-600 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-red-700"
-      on:click="{async () => {
-        const flag = confirm('Are you sure? The record that using this data will also be deleted.');
+    class="rounded border bg-red-600 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-red-700"
+    on:click="{async () => {
+      const flag = confirm('Are you sure? The record that using this data will also be deleted.');
 
-        if (flag) {
-          await resetData('section');
-          invalidate("data:section");
-        }
-      }}"
-    >
-      Reset
-    </button>
+      if (flag) {
+        await resetData('section');
+        invalidate('data:section');
+      }
+    }}"
+  >
+    Reset
+  </button>
 </div>
 
 <div id="pagination">
