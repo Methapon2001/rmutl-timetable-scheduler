@@ -596,6 +596,8 @@
             class:bg-white="{state.exam?.id !== exam.id}"
             class:bg-green-600="{state.exam?.id === exam.id}"
             class:text-white="{state.exam?.id === exam.id}"
+            class:line-through="{schedulerExam.findIndex((sched) => exam.id == sched.exam.id) !==
+              -1 || !data.lazy.info?.current}"
             class:text-red-600="{schedulerExam.findIndex((sched) => exam.id == sched.exam.id) !==
               -1 || !data.lazy.info?.current}"
             on:click="{() => handleSelectExam(exam)}"
