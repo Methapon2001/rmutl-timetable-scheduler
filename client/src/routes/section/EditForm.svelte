@@ -135,6 +135,7 @@
     <div class="col-span-4">
       <input
         type="text"
+        placeholder="Not Specified (Optional)"
         class="input
           {form.error && getZodErrorMessage(form.error, ['alt']).length > 0
           ? 'border border-red-600'
@@ -149,14 +150,15 @@
   <section id="input-group" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
       <label for="group" class="font-semibold">
-        Group <span class="text-red-600">*</span>
+        Group
       </label>
     </div>
     <div
       class="col-span-4"
       class:invalid="{form.error && getZodErrorMessage(form.error, ['groupId']).length > 0}"
     >
-      <Select options="{groupOptions}" bind:value="{form.data.groupId}" />
+      <Select options="{groupOptions}" 
+      placeholder="Not Specified (Optional)" bind:value="{form.data.groupId}" />
     </div>
     <div class="col-span-4 col-start-3 text-red-600">
       {form.error ? getZodErrorMessage(form.error, ['groupId']) : ''}
@@ -165,7 +167,7 @@
   <section id="input-room" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
       <label for="room" class="font-semibold">
-        Room <span class="text-red-600">*</span>
+        room
       </label>
     </div>
     <div
@@ -175,7 +177,8 @@
       <Select
         options="{roomOptions.filter(
           (opt) => opt.detail.type == 'both' || showData.type == opt.detail.type,
-        )}"
+        )}" 
+      placeholder="Not Specified (Optional)"
         bind:value="{form.data.roomId}"
       />
     </div>
@@ -186,14 +189,15 @@
   <section id="input-instructor" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
       <label for="instructor" class="font-semibold">
-        Instructor <span class="text-red-600">*</span>
+        Instructor
       </label>
     </div>
     <div
       class="col-span-4"
       class:invalid="{form.error && getZodErrorMessage(form.error, ['instructor']).length > 0}"
     >
-      <Select options="{instructorOptions}" bind:value="{form.data.instructor}" multiple />
+      <Select options="{instructorOptions}"
+      placeholder="Not Specified (Optional)" bind:value="{form.data.instructor}" multiple />
     </div>
     <div class="col-span-4 col-start-3 text-red-600">
       {form.error ? getZodErrorMessage(form.error, ['instructor']) : ''}
