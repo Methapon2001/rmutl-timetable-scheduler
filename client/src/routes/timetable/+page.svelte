@@ -241,28 +241,28 @@
   function handleSelectSection(section: API.Scheduler['section']) {
     if (isPublish) {
       toast.error('Data is published, Cannot edit.');
-      return;
+      return false;
     }
 
     if (!section.instructor && !section.group) {
       toast.error('Section must assign at least one instructor or one group.', {
         duration: 7500,
       });
-      return;
+      return false;
     }
 
     if (pov === 'group' && !section.group) {
       toast.error('Selected group pov but section is not assigned to any group.', {
         duration: 7500,
       });
-      return;
+      return false;
     }
 
     if (pov === 'instructor' && section.instructor.length === 0) {
       toast.error('Selected instructor pov but no instructor is assigned to section.', {
         duration: 7500,
       });
-      return;
+      return false;
     }
 
     let left = getLeftOverHours(section);
@@ -286,6 +286,8 @@
         behavior: 'smooth',
       });
     }
+
+    return true;
   }
 
   function exportPDF() {
@@ -386,20 +388,20 @@
   let showFilter = false;
   let filterSelected: string[] = [];
 
-  const filterList = [
+  $: filterList = [
     {
       group: 'Group',
       options: group?.map((grp) => ({
         value: grp.name,
         label: grp.name,
-      })),
+      })) ?? [],
     },
     {
       group: 'Instructor',
       options: instructor?.map((inst) => ({
         value: inst.name,
         label: inst.name,
-      })),
+      })) ?? [],
     },
   ];
 
@@ -688,28 +690,27 @@
               on:click="{() => handleSelectSection(section)}"
             >
               <div
-                class="flex h-full w-full items-center justify-center rounded-l border-r font-semibold"
+                class="flex h-full w-full items-center justify-center rounded-l border-r text-center font-semibold"
               >
                 <small class="block">
                   {section.type}
                   {section.lab ?? ''}
                 </small>
               </div>
-              <div class="col-span-3 w-full pl-3 text-left font-semibold">
+              <div class="col-span-3 flex h-full w-full items-center pl-3 font-semibold">
+              <div class="text-left">
                 {#if section.instructor.length == 0}
                   <small>Not assigned</small>
                 {:else}
                   {#each section.instructor as instructor}
-                    <small>{instructor.name}</small><br />
+                    <small class="block w-full">{instructor.name}</small>
                   {/each}
                 {/if}
+                </div>
               </div>
-
-              <div
-                class="flex h-full w-full items-center justify-center rounded-l border-r font-semibold"
-              >
+              <div class="flex h-full w-full items-center justify-center rounded-l font-semibold">
                 <button
-                  class="disabled:!text-secondary !text-blue-500 underline"
+                  class="disabled:!text-secondary !text-blue-500 underline flex item-scenter justify-center"
                   disabled="{(data.session?.user.id != section.createdBy.id &&
                     data.session?.user.role != 'admin') ||
                     (getUsedHour(section) > 0 &&
@@ -735,8 +736,10 @@
                       },
                     );
                     invalidate('data:scheduler');
-                  }}"><small>Edit</small></button
+                  }}"
                 >
+                  <small>Edit</small>
+                </button>
               </div>
             </button>
 
@@ -753,28 +756,30 @@
                 disabled="{!data.lazy.info?.current}"
                 on:click="{() => handleSelectSection({ ...child, child: [] })}"
               >
-                <div
-                  class="flex h-full w-full items-center justify-center rounded-l border-r font-semibold"
-                >
-                  <small>
-                    {child.type}
-                    {child.lab ?? ''}
-                  </small>
+              <div
+                class="flex h-full w-full items-center justify-center rounded-l border-r text-center font-semibold"
+              >
+                <small class="block">
+                  {child.type}
+                  {child.lab ?? ''}
+                </small>
+              </div>
+              <div class="col-span-3 flex h-full w-full items-center pl-3 font-semibold">
+              <div class="text-left">
+                {#if child.instructor.length == 0}
+                  <small>Not assigned</small>
+                {:else}
+                  {#each child.instructor as instructor}
+                    <small class="block w-full">{instructor.name}</small>
+                  {/each}
+                {/if}
                 </div>
-                <div class="col-span-3 w-full pl-3 text-left font-semibold">
-                  {#if child.instructor.length == 0}
-                    <small>Not assigned</small>
-                  {:else}
-                    {#each child.instructor as instructor}
-                      <small>{instructor.name}</small><br />
-                    {/each}
-                  {/if}
-                </div>
+              </div>
                 <div
                   class="flex h-full w-full items-center justify-center rounded-l border-r font-semibold"
                 >
                   <button
-                    class="disabled:!text-secondary !text-blue-500 underline"
+                    class="disabled:!text-secondary !text-blue-500 underline flex items-center justify-center"
                     disabled="{(data.session?.user.id != section.createdBy.id &&
                       data.session?.user.role != 'admin') ||
                       (getUsedHour(child) > 0 &&
@@ -985,6 +990,14 @@
         callback="{async () => {
           editState = false;
           await invalidate('data:scheduler');
+
+          if (state.section) {
+            const selected = filteredSection.find((sec) => sec.id === state.section?.id);
+
+            if (selected && !handleSelectSection(selected)) {
+              resetState();
+            }
+          }
         }}"
       />
     {/await}

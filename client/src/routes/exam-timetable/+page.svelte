@@ -2,7 +2,7 @@
   import type { PageData } from './$types';
   import { PUBLIC_API_WS } from '$env/static/public';
   import { onMount, type ComponentProps, onDestroy } from 'svelte';
-  import { createPDF, drawScheduleExam, drawExamDetailTable } from '$lib/utils/pdf';
+  import { createPDF } from '$lib/utils/pdf';
   import { createSchedulerExam } from '$lib/api/scheduler-exam';
   import { invalidate } from '$app/navigation';
   import toast from 'svelte-french-toast';
@@ -211,7 +211,7 @@
   function handleSelectExam(exam: API.SchedulerExam['exam']) {
     if (isPublish) {
       toast.error('Data is published, Cannot edit.');
-      return;
+      return false;
     }
 
     if (schedulerExam.findIndex((schedule) => schedule.exam.id === exam.id) !== -1) return;
@@ -220,21 +220,21 @@
       toast.error('Section must assign at least one instructor or one group.', {
         duration: 7500,
       });
-      return;
+      return false;
     }
 
     if (pov === 'group' && !exam.section.filter(() => group != null)) {
       toast.error('Selected group pov but section is not assigned to any group.', {
         duration: 7500,
       });
-      return;
+      return false;
     }
 
     if (pov === 'instructor' && exam.instructor.length === 0) {
       toast.error('Selected instructor pov but no instructor is assigned to section.', {
         duration: 7500,
       });
-      return;
+      return false;
     }
 
     let inputPrompt = 0;
@@ -246,7 +246,7 @@
       inputPrompt = exam.section[0]?.subject.lecture;
     }
 
-    if (inputPrompt === 0) return;
+    if (inputPrompt === 0) return false;
 
     state.selected = true;
     state.exam = exam;
@@ -264,6 +264,8 @@
         behavior: 'smooth',
       });
     }
+
+    return true;
   }
 
   async function exportPDF() {
@@ -367,20 +369,20 @@
   let showFilter = false;
   let filterSelected: string[] = [];
 
-  const filterList = [
+  $: filterList = [
     {
       group: 'Group',
       options: group?.map((grp) => ({
         value: grp.name,
         label: grp.name,
-      })),
+      })) ?? [],
     },
     {
       group: 'Instructor',
       options: instructor?.map((inst) => ({
         value: inst.name,
         label: inst.name,
-      })),
+      })) ?? [],
     },
   ];
 
@@ -599,20 +601,26 @@
             on:click="{() => handleSelectExam(exam)}"
           >
             <div
-              class="flex h-full w-full items-center justify-center rounded-l border-r font-semibold"
+              class="flex h-full w-full items-center justify-center rounded-l border-r text-center font-semibold"
             >
               <small class="block">{exam.room?.building.code ?? ''}-{exam.room?.name ?? ''}</small>
             </div>
-            <div class="col-span-3 w-full pl-3 text-left font-semibold">
-              {#each exam.instructor as inst}
-                <small class="block">{inst.name}</small>
-              {/each}
+            <div class="col-span-3 flex h-full w-full items-center pl-3 font-semibold">
+              <div class="text-left">
+                {#if exam.instructor.length === 0}
+                  <span>Not assigned</span>
+                {:else}
+                  {#each exam.instructor as inst}
+                    <small class="block">{inst.name}</small>
+                  {/each}
+                {/if}
+              </div>
             </div>
             <div
-              class="flex h-full w-full items-center justify-center rounded-l border-r font-semibold"
+              class="flex h-full w-full items-center justify-center rounded-l font-semibold"
             >
               <button
-                class="disabled:!text-secondary !text-blue-500 underline"
+                class="disabled:!text-secondary !text-blue-500 underline flex items-center justify-center"
                 disabled="{(data.session?.user.id != exam.createdBy.id &&
                   data.session?.user.role != 'admin') ||
                   schedulerExam.findIndex((sched) => exam.id == sched.exam.id) !== -1}"
@@ -622,8 +630,10 @@
                     section: exam.section,
                     instructor: exam.instructor,
                     roomId: exam.room?.id ?? '',
-                  })}">Edit</button
+                  })}"
               >
+                <small>Edit</small>
+              </button>
             </div>
           </button>
         </div>
@@ -797,6 +807,14 @@
         callback="{async () => {
           editState = !editState;
           await invalidate('data:scheduler-exam');
+
+          if (state.exam) {
+            const selected = filteredExam.find((val) => val.id === state.exam?.id);
+
+            if (selected && !handleSelectExam(selected)) {
+              resetState();
+            }
+          }
         }}"
       />
     {/await}
