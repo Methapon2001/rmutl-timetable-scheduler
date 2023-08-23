@@ -66,8 +66,8 @@
   export let instructor: API.Scheduler['section']['instructor'][number] | undefined = undefined; // eslint-disable-line no-undef
 
   $: visualize =
-    (room && room.id) === state.section?.room?.id ||
-    (group && group?.id === state.section?.group?.id) ||
+    (room && room.id === state.section?.room?.id) ||
+    (group && group.id === state.section?.group?.id) ||
     state.section?.instructor.findIndex((inst) => inst.id === instructor?.id) != -1 || forceVisual;
 
   $: localData =
