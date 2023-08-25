@@ -472,6 +472,14 @@
               />
             </div>
           {/each}
+          {#if state.exam && !state.exam.instructor.length}
+          <div class="flex h-full w-full items-center justify-center">
+            <button
+              class="bg-primary rounded p-2 font-semibold text-white"
+              on:click="{() => (showInstructorState = true)}">Select Instructor</button
+            >
+          </div>
+        {/if}
         </div>
         <div class="table-small-container border-b">
           {#each group as g (g.id)}
