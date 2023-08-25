@@ -618,7 +618,7 @@
             <div class="col-span-3 flex h-full w-full items-center pl-3 font-semibold">
               <div class="text-left">
                 {#if exam.instructor.length === 0}
-                  <span>Not assigned</span>
+                  <small>Not assigned</small>
                 {:else}
                   {#each exam.instructor as inst}
                     <small class="block">{inst.name}</small>
@@ -660,7 +660,7 @@
 </div>
 <div class="flex h-16 items-center justify-between overflow-hidden border p-4">
   <div class="pov-switch whitespace-nowrap pr-4">
-    <button
+    <!-- <button
       on:click="{() => {
         pov = pov === 'group' ? 'instructor' : 'group';
         resetState();
@@ -668,7 +668,7 @@
       class="rounded border bg-slate-900 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
     >
       View: <span class="capitalize">{pov}</span>
-    </button>
+    </button> -->
     <button
       class="rounded border bg-slate-900 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
       on:click="{() => {
