@@ -57,7 +57,7 @@
     }
 
     open = !open;
-    await invalidate('data:schedulerExam');
+    await invalidate('data:scheduler-exam');
   }
 </script>
 

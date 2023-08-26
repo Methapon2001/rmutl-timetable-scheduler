@@ -57,7 +57,7 @@
       if (ret) state.exam = ret;
     }
 
-    await invalidate('data:schedulerExam');
+    await invalidate('data:scheduler-exam');
   }
 </script>
 
