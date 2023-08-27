@@ -34,16 +34,24 @@ function isCurrentRegGood(
         ) !== -1),
   );
 
+  const roomEntries = schedule.filter(
+    (sched) => sched.weekday === weekday && sched.exam.room?.id === current.room?.id,
+  );
+
   if (entries.length >= maxPerDay) return false;
 
   const currentExtendedStart = period - gap;
   const currentExtendedEnd = period + size + gap;
 
   if (
-    schedule.some(
-      (sched) =>
-        sched.period <= currentExtendedEnd && sched.period + sched.size - 1 >= currentExtendedStart,
-    )
+    entries.some((sched) => {
+      return (
+        sched.period <= currentExtendedEnd && sched.period + sched.size - 1 >= currentExtendedStart
+      );
+    }) ||
+    roomEntries.some((sched) => {
+      return sched.period <= period + size + 1 && sched.period + sched.size - 1 >= period - 1;
+    })
   ) {
     return false;
   }
@@ -68,14 +76,14 @@ export async function generate(
 ) {
   const weekday = option.weekday ?? ['mon', 'tue', 'wed', 'thu', 'fri'];
   const rangeStart = option.period && option.period.length === 2 ? option.period[0] : 1;
-  const rangeEnd = option.period && option.period.length === 2 ? option.period[1] : 18;
+  const rangeEnd = option.period && option.period.length === 2 ? option.period[1] : 50;
 
   exam = exam.filter((sec) => {
     return schedule.findIndex((sched) => sched.exam.id === sec.id) === -1;
   });
 
   exam.forEach((sec) => {
-    const size = sec.section[0].subject.lecture * 2;
+    const size = sec.section[0].subject.lecture * 4;
 
     for (const day of weekday) {
       for (let i = rangeStart; i <= rangeEnd - size + 1; i++) {
@@ -88,7 +96,6 @@ export async function generate(
           },
           schedule,
         );
-
         if (isOverlap) continue;
 
         if (!isCurrentRegGood(sec, day, i, size, 12, schedule, { maxPerDay: option.maxPerDay }))
