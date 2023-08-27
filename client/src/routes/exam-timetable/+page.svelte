@@ -372,17 +372,19 @@
   $: filterList = [
     {
       group: 'Group',
-      options: group?.map((grp) => ({
-        value: grp.name,
-        label: grp.name,
-      })) ?? [],
+      options:
+        group?.map((grp) => ({
+          value: grp.name,
+          label: grp.name,
+        })) ?? [],
     },
     {
       group: 'Instructor',
-      options: instructor?.map((inst) => ({
-        value: inst.name,
-        label: inst.name,
-      })) ?? [],
+      options:
+        instructor?.map((inst) => ({
+          value: inst.name,
+          label: inst.name,
+        })) ?? [],
     },
   ];
 
@@ -473,13 +475,13 @@
             </div>
           {/each}
           {#if state.exam && !state.exam.instructor.length}
-          <div class="flex h-full w-full items-center justify-center">
-            <button
-              class="bg-primary rounded p-2 font-semibold text-white"
-              on:click="{() => (showInstructorState = true)}">Select Instructor</button
-            >
-          </div>
-        {/if}
+            <div class="flex h-full w-full items-center justify-center">
+              <button
+                class="bg-primary rounded p-2 font-semibold text-white"
+                on:click="{() => (showInstructorState = true)}">Select Instructor</button
+              >
+            </div>
+          {/if}
         </div>
         <div class="table-small-container border-b">
           {#each group as g (g.id)}
@@ -626,11 +628,9 @@
                 {/if}
               </div>
             </div>
-            <div
-              class="flex h-full w-full items-center justify-center rounded-l font-semibold"
-            >
+            <div class="flex h-full w-full items-center justify-center rounded-l font-semibold">
               <button
-                class="disabled:!text-secondary !text-blue-500 underline flex items-center justify-center"
+                class="disabled:!text-secondary flex items-center justify-center !text-blue-500 underline"
                 disabled="{(data.session?.user.id != exam.createdBy.id &&
                   data.session?.user.role != 'admin') ||
                   schedulerExam.findIndex((sched) => exam.id == sched.exam.id) !== -1}"
@@ -873,6 +873,14 @@
       <button
         class="rounded border bg-slate-900 px-8 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
         on:click="{() => {
+          const midDay = new Date(midDateExam).getDay();
+          const finalDay = new Date(finalDateExam).getDay();
+      
+          if (midDay !== 1 || finalDay !== 1) {
+            toast.error('Date select must be on monday.');
+            return;
+          }
+          
           exportScheduleExam(midDateExam, finalDateExam);
         }}"
       >
