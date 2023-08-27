@@ -61,7 +61,7 @@
 <h1 class="my-3 text-center text-xl font-bold">Room List</h1>
 
 <div class="table-small-container border-b">
-  {#each room.filter((opt) => (state.section && (opt.type == 'both' || opt.type === state.section.room?.type)) || !state.section) as r (r.id)}
+  {#each room.filter((opt) => (state.section && (opt.type == 'both' || opt.type === state.section.type)) || !state.section) as r (r.id)}
     <div id="room-{r.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
       <div class="mb-2 flex justify-between">
         <h6 class="text-center font-semibold">
