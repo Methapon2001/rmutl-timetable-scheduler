@@ -61,7 +61,7 @@
   }
 </script>
 
-<h1 class="my-3 text-center text-xl font-bold">Room List</h1>
+<h1 class="my-3 text-center text-xl font-bold">Instructor List</h1>
 
 <div class="table-small-container border-b">
   {#each instructor as i (i.id)}
