@@ -89,6 +89,33 @@
 
     await invalidate('data:request-section');
   }
+
+  async function copyToClipboard(textToCopy: string) {
+  if (navigator.clipboard && window.isSecureContext) {
+    await navigator.clipboard.writeText(textToCopy);
+  } else {
+    const textarea = document.createElement('textarea');
+    textarea.value = textToCopy;
+
+    // Move the textarea outside the viewport to make it invisible
+    textarea.style.position = 'absolute';
+    textarea.style.left = '-99999999px';
+
+    document.body.prepend(textarea);
+
+    // highlight the content of the textarea element
+    textarea.select();
+
+    try {
+      document.execCommand('copy');
+    } catch (err) {
+      console.log(err);
+    } finally {
+      textarea.remove();
+    }
+  }
+}
+
 </script>
 
 <svelte:head>
@@ -132,7 +159,7 @@
       <button
         class="button"
         on:click="{() => {
-          navigator.clipboard.writeText(
+          copyToClipboard(
             `${window.location.origin}/request-section-form?key=${data.requestSectionStatus.data.key}`,
           );
 
