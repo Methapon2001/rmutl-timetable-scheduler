@@ -1,18 +1,11 @@
 import { User, Role, PrismaClient, Prisma } from "@prisma/client";
 import { FastifyReply, FastifyRequest } from "fastify";
 import { hash } from "../utils/scrypt";
+import { logUserInfoSelect, userSelect } from "./model";
 
 const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
-
-const userSelect: Prisma.UserSelect = {
-  id: true,
-  username: true,
-  role: true,
-  createdAt: true,
-  updatedAt: true,
-};
 
 export async function createUser(
   request: FastifyRequest<{ Body: User }>,
@@ -22,7 +15,7 @@ export async function createUser(
 
   const user = await prisma.user.create({
     data: request.body,
-    select: userSelect,
+    select: { ...userSelect, ...logUserInfoSelect },
   });
 
   return reply.status(200).send({
@@ -47,13 +40,13 @@ export async function requestUser(
 
   const user = id
     ? await prisma.user.findUnique({
-        select: userSelect,
+        select: { ...userSelect, ...logUserInfoSelect },
         where: {
           id: id,
         },
       })
     : await prisma.user.findMany({
-        select: userSelect,
+        select: { ...userSelect, ...logUserInfoSelect },
         where: userWhere,
         orderBy: {
           createdAt: "asc",
@@ -99,7 +92,7 @@ export async function updateUser(
   }
 
   const user = await prisma.user.update({
-    select: userSelect,
+    select: { ...userSelect, ...logUserInfoSelect },
     where: {
       id: id,
     },
@@ -140,7 +133,7 @@ export async function deleteUser(
   }
 
   const user = await prisma.user.delete({
-    select: userSelect,
+    select: { ...userSelect, ...logUserInfoSelect },
     where: {
       id: id,
     },

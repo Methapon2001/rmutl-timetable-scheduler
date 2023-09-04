@@ -1,33 +1,12 @@
 import { Subject, Prisma, PrismaClient } from "@prisma/client";
 import { FastifyReply, FastifyRequest } from "fastify";
+import { logInfoSelect, subjectSelect } from "./model";
 
 const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
 
-const userSelect: Prisma.UserSelect = {
-  id: true,
-  username: true,
-  role: true,
-};
-
-const subjectSelect: Prisma.SubjectSelect = {
-  id: true,
-  code: true,
-  name: true,
-  credit: true,
-  lecture: true,
-  lab: true,
-  learn: true,
-  createdAt: true,
-  createdBy: {
-    select: userSelect,
-  },
-  updatedAt: true,
-  updatedBy: {
-    select: userSelect,
-  },
-};
+const select = { ...subjectSelect, ...logInfoSelect };
 
 export async function createSubject(
   request: FastifyRequest<{ Body: Subject }>,
@@ -39,7 +18,7 @@ export async function createSubject(
       createdByUserId: request.user.id,
       updatedByUserId: request.user.id,
     },
-    select: subjectSelect,
+    select: select,
   });
 
   return reply.status(200).send({
@@ -79,13 +58,13 @@ export async function requestSubject(
 
   const subject = id
     ? await prisma.subject.findUnique({
-        select: subjectSelect,
+        select: select,
         where: {
           id: id,
         },
       })
     : await prisma.subject.findMany({
-        select: subjectSelect,
+        select: select,
         where: subjectWhere,
         orderBy: {
           createdAt: "asc",
@@ -118,7 +97,7 @@ export async function updateSubject(
   const { id } = request.params;
 
   const subject = await prisma.subject.update({
-    select: subjectSelect,
+    select: select,
     where: {
       id: id,
     },
@@ -142,7 +121,7 @@ export async function deleteSubject(
   const { id } = request.params;
 
   const subject = await prisma.subject.delete({
-    select: subjectSelect,
+    select: select,
     where: {
       id: id,
     },
@@ -177,7 +156,7 @@ export async function searchSubject(
   };
 
   const subject = await prisma.subject.findMany({
-    select: subjectSelect,
+    select: select,
     where: subjectWhere,
     orderBy: {
       createdAt: "asc",

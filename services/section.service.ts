@@ -6,121 +6,62 @@ import {
   Role,
 } from "@prisma/client";
 import { FastifyReply, FastifyRequest } from "fastify";
+import {
+  buildingSelect,
+  courseSelect,
+  groupSelect,
+  instructorSelect,
+  logInfoSelect,
+  planDetailSelect,
+  planSelect,
+  roomSelect,
+  sectionSelect,
+  subjectSelect,
+} from "./model";
 
 const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
 
-const userSelect: Prisma.UserSelect = {
-  id: true,
-  username: true,
-  role: true,
-};
-
-const subjectSelect: Prisma.SubjectSelect = {
-  id: true,
-  code: true,
-  name: true,
-  credit: true,
-  lecture: true,
-  lab: true,
-  learn: true,
-};
-
-const courseDetailSelect: Prisma.CourseDetailSelect = {
-  id: true,
-  type: true,
-  subject: {
-    select: subjectSelect,
-  },
-};
-
-const courseSelect: Prisma.CourseSelect = {
-  id: true,
-  name: true,
-  detail: {
-    select: courseDetailSelect,
-  },
-};
-
-const groupSelect: Prisma.GroupSelect = {
-  id: true,
-  name: true,
-  course: {
-    select: courseSelect,
-  },
-};
-
-const buildingSelect: Prisma.BuildingSelect = {
-  id: true,
-  code: true,
-  name: true,
-};
-
-const roomSelect: Prisma.RoomSelect = {
-  id: true,
-  name: true,
-  type: true,
-  building: {
-    select: buildingSelect,
-  },
-};
-
-const instructorSelect: Prisma.InstructorSelect = {
-  id: true,
-  name: true,
-};
-
-const childSectionSelect: Prisma.SectionSelect = {
-  id: true,
-  no: true,
-  alt: true,
-  lab: true,
-  type: true,
-  capacity: true,
-  group: {
-    select: groupSelect,
-  },
-  room: {
-    select: roomSelect,
-  },
-  subject: {
-    select: subjectSelect,
-  },
-  instructor: {
-    select: instructorSelect,
-  },
-};
-
-const sectionSelect: Prisma.SectionSelect = {
-  ...childSectionSelect,
-  parent: {
-    select: childSectionSelect,
-  },
+const select: Prisma.SectionSelect = {
+  ...sectionSelect,
+  ...logInfoSelect,
+  parent: { select: sectionSelect },
   child: {
-    select: childSectionSelect,
-    orderBy: [
-      {
-        subject: {
-          name: "asc",
+    select: {
+      ...sectionSelect,
+      room: {
+        select: {
+          ...roomSelect,
+          building: { select: buildingSelect },
         },
       },
-      {
-        no: "asc",
+      instructor: { select: instructorSelect },
+      subject: { select: subjectSelect },
+      group: { select: groupSelect },
+    },
+    orderBy: [{ no: "asc" }, { lab: "asc" }],
+  },
+  group: {
+    select: {
+      ...groupSelect,
+      plan: {
+        select: {
+          ...planSelect,
+          detail: { select: planDetailSelect },
+          course: { select: courseSelect },
+        },
       },
-      {
-        lab: "asc",
-      },
-    ],
+    },
   },
-  createdAt: true,
-  createdBy: {
-    select: userSelect,
+  room: {
+    select: {
+      ...roomSelect,
+      building: { select: buildingSelect },
+    },
   },
-  updatedAt: true,
-  updatedBy: {
-    select: userSelect,
-  },
+  instructor: { select: instructorSelect },
+  subject: { select: subjectSelect },
 };
 
 async function nextSectionNo(subjectId: string) {
@@ -247,7 +188,7 @@ export async function createSection(
         create: child,
       },
     },
-    select: sectionSelect,
+    select: select,
   });
 
   return reply.status(200).send({
@@ -294,13 +235,13 @@ export async function requestSection(
 
   const section = id
     ? await prisma.section.findUnique({
-        select: sectionSelect,
+        select: select,
         where: {
           id: id,
         },
       })
     : await prisma.section.findMany({
-        select: sectionSelect,
+        select: select,
         where: {
           ...sectionWhere,
           info: {
@@ -390,7 +331,7 @@ export async function updateSection(
   }
 
   const section = await prisma.section.update({
-    select: sectionSelect,
+    select: select,
     where: {
       id: id,
     },
@@ -488,7 +429,7 @@ export async function deleteSection(
   });
 
   const section = await prisma.section.delete({
-    select: sectionSelect,
+    select: select,
     where: {
       id: id,
     },
@@ -659,7 +600,7 @@ export async function searchSection(
   };
 
   const section = await prisma.section.findMany({
-    select: sectionSelect,
+    select: select,
     where: sectionWhere,
     orderBy: [
       {

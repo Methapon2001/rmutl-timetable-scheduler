@@ -1,71 +1,37 @@
 import { Group, Prisma, PrismaClient } from "@prisma/client";
 import { FastifyReply, FastifyRequest } from "fastify";
+import {
+  courseDetailSelect,
+  courseSelect,
+  groupSelect,
+  logInfoSelect,
+  planDetailSelect,
+  planSelect,
+  subjectSelect,
+} from "./model";
 
 const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
 
-const userSelect: Prisma.UserSelect = {
-  id: true,
-  username: true,
-  role: true,
-};
-
-const subjectSelect: Prisma.SubjectSelect = {
-  id: true,
-  code: true,
-  name: true,
-  credit: true,
-  lecture: true,
-  lab: true,
-};
-
-const courseDetailSelect: Prisma.CourseDetailSelect = {
-  id: true,
-  type: true,
-  subject: {
-    select: subjectSelect,
-  },
-};
-
-const courseSelect: Prisma.CourseSelect = {
-  id: true,
-  name: true,
-  detail: {
-    select: courseDetailSelect,
-  },
-};
-
-const planSelect: Prisma.PlanSelect = {
-  id: true,
-  name: true,
-  detail: {
+const select = {
+  ...groupSelect,
+  ...logInfoSelect,
+  plan: {
     select: {
-      year: true,
-      semester: true,
-      subject: {
-        select: subjectSelect,
+      ...planSelect,
+      detail: {
+        select: { ...planDetailSelect, subject: { select: subjectSelect } },
       },
     },
   },
-};
-
-const groupSelect: Prisma.GroupSelect = {
-  id: true,
-  name: true,
   course: {
-    select: courseSelect,
-  },
-  plan: {
-    select: planSelect,
-  },
-  createdAt: true,
-  createdBy: {
-    select: userSelect,
-  },
-  updatedAt: true,
-  updatedBy: {
-    select: userSelect,
+    select: {
+      ...courseSelect,
+      detail: {
+        select: { ...courseDetailSelect, subject: { select: subjectSelect } },
+      },
+    },
   },
 };
 
@@ -91,7 +57,7 @@ export async function createGroup(
       createdByUserId: request.user.id,
       updatedByUserId: request.user.id,
     },
-    select: groupSelect,
+    select: select,
   });
 
   return reply.status(200).send({
@@ -126,13 +92,13 @@ export async function requestGroup(
 
   const group = id
     ? await prisma.group.findUnique({
-        select: groupSelect,
+        select: select,
         where: {
           id: id,
         },
       })
     : await prisma.group.findMany({
-        select: groupSelect,
+        select: select,
         where: {
           ...groupWhere,
           info: {
@@ -192,7 +158,7 @@ export async function updateGroup(
   }
 
   const group = await prisma.group.update({
-    select: groupSelect,
+    select: select,
     where: {
       id: id,
     },
@@ -231,7 +197,7 @@ export async function deleteGroup(
   }
 
   const group = await prisma.group.delete({
-    select: groupSelect,
+    select: select,
     where: {
       id: id,
     },
@@ -268,7 +234,7 @@ export async function searchGroup(
   };
 
   const group = await prisma.group.findMany({
-    select: groupSelect,
+    select: select,
     where: groupWhere,
     orderBy: {
       createdAt: "asc",

@@ -1,33 +1,16 @@
 import { Building, Prisma, PrismaClient } from "@prisma/client";
 import { FastifyReply, FastifyRequest } from "fastify";
+import { buildingSelect, logInfoSelect } from "./model";
 
 const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
 
-const userSelect: Prisma.UserSelect = {
-  id: true,
-  username: true,
-  role: true,
-};
-
-const buildingSelect: Prisma.BuildingSelect = {
-  id: true,
-  code: true,
-  name: true,
-  createdAt: true,
-  createdBy: {
-    select: userSelect,
-  },
-  updatedAt: true,
-  updatedBy: {
-    select: userSelect,
-  },
-};
+const select = { ...buildingSelect, ...logInfoSelect };
 
 export async function createBuilding(
   request: FastifyRequest<{ Body: Building }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const building = await prisma.building.create({
     data: {
@@ -35,7 +18,7 @@ export async function createBuilding(
       createdByUserId: request.user.id,
       updatedByUserId: request.user.id,
     },
-    select: buildingSelect,
+    select: select,
   });
 
   return reply.status(200).send({
@@ -52,7 +35,7 @@ export async function requestBuilding(
       offset: number;
     } & Pick<Building, "name" | "createdByUserId" | "updatedByUserId">;
   }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const { id } = request.params;
   const { limit, offset, search, ...where } = request.query;
@@ -65,13 +48,13 @@ export async function requestBuilding(
 
   const building = id
     ? await prisma.building.findUnique({
-        select: buildingSelect,
+        select: select,
         where: {
           id: id,
         },
       })
     : await prisma.building.findMany({
-        select: buildingSelect,
+        select: select,
         where: buildingWhere,
         orderBy: {
           createdAt: "asc",
@@ -99,12 +82,12 @@ export async function updateBuilding(
     Params: Pick<Building, "id">;
     Body: Omit<Building, "id">;
   }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const { id } = request.params;
 
   const building = await prisma.building.update({
-    select: buildingSelect,
+    select: select,
     where: {
       id: id,
     },
@@ -123,12 +106,12 @@ export async function deleteBuilding(
   request: FastifyRequest<{
     Params: Pick<Building, "id">;
   }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const { id } = request.params;
 
   const building = await prisma.building.delete({
-    select: buildingSelect,
+    select: select,
     where: {
       id: id,
     },
@@ -143,7 +126,7 @@ export async function searchBuilding(
   request: FastifyRequest<{
     Querystring: { search: string; limit: number; offset: number };
   }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const { limit, offset, search } = request.query;
 
@@ -163,7 +146,7 @@ export async function searchBuilding(
   };
 
   const building = await prisma.building.findMany({
-    select: buildingSelect,
+    select: select,
     where: buildingWhere,
     orderBy: {
       createdAt: "asc",

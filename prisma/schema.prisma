@@ -146,7 +146,7 @@ model Room {
   updatedAt       DateTime @updatedAt
 
   section Section[]
-  Exam    Exam[]
+  exam Exam[]
 }
 
 enum RoomType {

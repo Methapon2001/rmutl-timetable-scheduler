@@ -68,7 +68,7 @@ export async function check(request: FastifyRequest, reply: FastifyReply) {
 
 export async function login(
   request: FastifyRequest<{ Body: { username: string; password: string } }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   clearExpiredToken();
 
@@ -96,7 +96,7 @@ export async function login(
 
 export async function logout(
   request: FastifyRequest<{ Body: { token: string } }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const token = await prisma.token.findFirst({
     where: {
@@ -126,7 +126,7 @@ export async function logout(
 
 export async function refresh(
   request: FastifyRequest<{ Body: { token: string } }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const payload = await verify(request.body.token);
 

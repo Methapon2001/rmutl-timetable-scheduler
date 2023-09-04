@@ -1,32 +1,16 @@
 import { Instructor, Prisma, PrismaClient } from "@prisma/client";
 import { FastifyReply, FastifyRequest } from "fastify";
+import { instructorSelect, logInfoSelect } from "./model";
 
 const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
 
-const userSelect: Prisma.UserSelect = {
-  id: true,
-  username: true,
-  role: true,
-};
-
-const instructorSelect: Prisma.InstructorSelect = {
-  id: true,
-  name: true,
-  createdAt: true,
-  createdBy: {
-    select: userSelect,
-  },
-  updatedAt: true,
-  updatedBy: {
-    select: userSelect,
-  },
-};
+const select = { ...instructorSelect, ...logInfoSelect };
 
 export async function createInstructor(
   request: FastifyRequest<{ Body: Instructor }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const instructor = await prisma.instructor.create({
     data: {
@@ -34,7 +18,7 @@ export async function createInstructor(
       createdByUserId: request.user.id,
       updatedByUserId: request.user.id,
     },
-    select: instructorSelect,
+    select: select,
   });
 
   return reply.status(200).send({
@@ -51,7 +35,7 @@ export async function requestInstructor(
       offset: number;
     } & Pick<Instructor, "name" | "createdByUserId" | "updatedByUserId">;
   }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const { id } = request.params;
   const { limit, offset, search, ...where } = request.query;
@@ -64,13 +48,13 @@ export async function requestInstructor(
 
   const instructor = id
     ? await prisma.instructor.findUnique({
-        select: instructorSelect,
+        select: select,
         where: {
           id: id,
         },
       })
     : await prisma.instructor.findMany({
-        select: instructorSelect,
+        select: select,
         where: instructorWhere,
         orderBy: {
           createdAt: "asc",
@@ -98,12 +82,12 @@ export async function updateInstructor(
     Params: Pick<Instructor, "id">;
     Body: Omit<Instructor, "id">;
   }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const { id } = request.params;
 
   const instructor = await prisma.instructor.update({
-    select: instructorSelect,
+    select: select,
     where: {
       id: id,
     },
@@ -122,12 +106,12 @@ export async function deleteInstructor(
   request: FastifyRequest<{
     Params: Pick<Instructor, "id">;
   }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const { id } = request.params;
 
   const instructor = await prisma.instructor.delete({
-    select: instructorSelect,
+    select: select,
     where: {
       id: id,
     },
@@ -142,7 +126,7 @@ export async function searchInstructor(
   request: FastifyRequest<{
     Querystring: { search: string; limit: number; offset: number };
   }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const { limit, offset, search } = request.query;
 
@@ -157,7 +141,7 @@ export async function searchInstructor(
   };
 
   const instructor = await prisma.instructor.findMany({
-    select: instructorSelect,
+    select: select,
     where: instructorWhere,
     orderBy: {
       createdAt: "asc",
