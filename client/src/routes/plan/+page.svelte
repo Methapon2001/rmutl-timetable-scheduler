@@ -1,136 +1,60 @@
 <script lang="ts">
   import type { PageData } from './$types';
+  import type { Plan, PlanDetail } from '$lib/types';
   import { page } from '$app/stores';
+  import toast from 'svelte-french-toast';
+
   import { invalidate } from '$app/navigation';
   import { blurOnEscape } from '$lib/utils/directives';
-  import { deletePlan } from '$lib/api/plan';
-  import debounce from '$lib/utils/debounce';
+  import { searchHandler } from '$lib/utils/search';
+  import apiRequest from '$lib/api';
+
   import Modal from '$lib/components/Modal.svelte';
   import Pagination from '$lib/components/Pagination.svelte';
-  import Plan from './PlanForm.svelte';
-  import PlanDetail from './PlanDetail.svelte';
-  import toast from 'svelte-french-toast';
-  import type { ComponentProps } from 'svelte';
+  import Form from './PlanForm.svelte';
+  import Detail from './Detail.svelte';
 
-  const handleSearch = debounce(async (text: string) => {
-    const url = new URL(window.location.toString());
-    url.searchParams.set('search', text);
-    history.replaceState({}, '', url);
-    await invalidate('data:plan');
-  }, 300);
-
-  const courseOptions = async () => {
-    return (await data.lazy.course).data.map((course) => ({
-      label: course.name,
-      value: course.id,
-      detail: course,
-    }));
-  };
-
-  const subjectOptions = async () => {
-    return (await data.lazy.subject).data.map((subject) => ({
-      label: `${subject.code} ${subject.name}`,
-      value: subject.id,
-      detail: subject,
-    }));
-  };
-
-  const formOptions = async () => {
-    return {
-      subject: await subjectOptions(),
-      course: await courseOptions(),
-    };
-  };
+  const handleSearch = searchHandler('data:course');
 
   export let data: PageData;
 
   let newState = false;
   let editState = false;
-  let editData: {
-    id: string;
-    name: string;
-    detail: {
-      year: number;
-      semester: number;
-      subjectId: string[];
-    }[];
+  let showState = false;
+
+  let currentEditData: Plan & {
+    detail: (Omit<PlanDetail, 'id'> & { subjectId: string })[];
     courseId: string;
   };
 
-  function showEdit(plan: {
-    id: string;
-    name: string;
-    detail: {
-      semester: number;
-      year: number;
-      subjectId: string;
-    }[];
-    courseId: string;
-  }) {
+  let currentShowData: (typeof data)['plan']['data'][number];
+
+  function triggerEdit(plan: typeof currentEditData) {
     editState = true;
-    editData = {
-      ...plan,
-      detail: groupDetailData(plan.detail),
-    };
+    currentEditData = plan;
   }
 
-  function groupDetailData(detail: { semester: number; year: number; subjectId: string }[]) {
-    return Object.values(
-      detail.reduce<{
-        [key: string]: { year: number; semester: number; subjectId: string[] };
-      }>((acc, obj) => {
-        const key = `${obj.year}-${obj.semester}`;
-
-        if (!acc[key]) acc[key] = { year: obj.year, semester: obj.semester, subjectId: [] };
-
-        acc[key].subjectId.push(obj.subjectId);
-        return acc;
-      }, {}),
-    );
-  }
-
-  async function handleDelete(plan: { id: string }) {
-    if (confirm('Are you sure?')) {
-      const ret = await deletePlan(plan).catch((e: Response) => console.error(e));
-
-      if (ret) {
-        await invalidate('data:plan');
-
-        toast.success('Delete Complete!');
-      } else {
-        toast.error('Failed to delete plan!\nThis record is currenly in use.');
-      }
-    }
-  }
-
-  let showState = false;
-  let showData: ComponentProps<PlanDetail>['planData'];
-
-  const subjectMap = data.plan.data.reduce<
-    Record<string, Omit<API.Subject, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>> // eslint-disable-line no-undef
-  >((acc, curr) => {
-    curr.detail.forEach((det) => {
-      if (!acc[`${det.subject.id}`]) acc[`${det.subject.id}`] = det.subject;
-    });
-
-    return acc;
-  }, {});
-
-  function showPlanDetail(plan: {
-    id: string;
-    name: string;
-    detail: {
-      semester: number;
-      year: number;
-      subjectId: string;
-    }[];
-    courseId: string;
-  }) {
+  function triggerShow(plan: typeof currentShowData) {
     showState = true;
-    showData = {
-      ...plan,
-      detail: groupDetailData(plan.detail),
-    };
+    currentShowData = plan;
+  }
+
+  async function handleDelete(id: string) {
+    const flag = confirm('Are you sure? This action cannot be undone.');
+
+    if (!flag) return;
+
+    const ret = await apiRequest('/api/plan')
+      .delete({ id })
+      .catch((e) => console.error(e));
+
+    if (!ret)
+      return toast.error(
+        'Failed to delete plan!\nThis record may currenly in use. \nSee console for more info.',
+      );
+
+    await invalidate('data:plan');
+    toast.success('Delete Complete!');
   }
 </script>
 
@@ -167,11 +91,7 @@
   <div id="new" class="bg-light p-4">
     <h1 class="mb-4 block text-center text-2xl font-bold">New Plan</h1>
     <div class="mx-auto max-w-screen-md rounded bg-white p-4 shadow">
-      {#await formOptions()}
-        Loading...
-      {:then options}
-        <Plan subjectOptions="{options.subject}" courseOptions="{options.course}" />
-      {/await}
+      <Form />
     </div>
   </div>
 {/if}
@@ -179,24 +99,14 @@
 <Modal bind:open="{editState}">
   <div id="edit" class="p-4">
     <h1 class="mb-4 block text-center text-2xl font-bold">Edit Plan</h1>
-    {#await formOptions()}
-      Loading...
-    {:then options}
-      <Plan
-        courseOptions="{options.course}"
-        subjectOptions="{options.subject}"
-        edit="{true}"
-        editData="{editData}"
-        callback="{() => (editState = false)}"
-      />
-    {/await}
+    <Form edit="{true}" {...currentEditData} callback="{() => (editState = false)}" />
   </div>
 </Modal>
 
 <Modal bind:open="{showState}">
   <div id="show-modal" class="p-4">
     <h1 class="mb-4 block text-center text-2xl font-bold">Plan Detail</h1>
-    <PlanDetail planData="{showData}" subjects="{subjectMap}" />
+    <Detail plan="{currentShowData}" />
   </div>
 </Modal>
 
@@ -218,12 +128,7 @@
       {/if}
       {#each data.plan.data as plan (plan.id)}
         <tr
-          on:click|stopPropagation="{() =>
-            showPlanDetail({
-              ...plan,
-              detail: plan.detail.map((d) => ({ ...d, subjectId: d.subject.id })),
-              courseId: plan.course.id,
-            })}"
+          on:click|stopPropagation="{() => triggerShow(plan)}"
           class="cursor-pointer hover:bg-light"
         >
           <td class="text-center">{plan.name}</td>
@@ -242,9 +147,14 @@
               <button
                 class="action-button text-blue-600"
                 on:click|stopPropagation="{() =>
-                  showEdit({
-                    ...plan,
-                    detail: plan.detail.map((d) => ({ ...d, subjectId: d.subject.id })),
+                  triggerEdit({
+                    id: plan.id,
+                    name: plan.name,
+                    detail: plan.detail.map((v) => ({
+                      year: v.year,
+                      semester: v.semester,
+                      subjectId: v.subject.id,
+                    })),
                     courseId: plan.course.id,
                   })}"
               >
@@ -252,7 +162,7 @@
               </button>
               <button
                 class="action-button text-red-600"
-                on:click|stopPropagation="{() => handleDelete({ id: plan.id })}"
+                on:click|stopPropagation="{() => handleDelete(plan.id)}"
               >
                 Delete
               </button>
@@ -297,3 +207,4 @@
     width: 1% !important;
   }
 </style>
+

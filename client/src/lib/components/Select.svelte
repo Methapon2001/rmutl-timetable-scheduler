@@ -17,10 +17,8 @@
   export let value: string | string[] = multiple ? [] : '';
 
   const dispatch = createEventDispatcher<{
-    change: {
-      label: string | string[];
-      value: string | string[];
-    };
+    change: null;
+    select: (typeof options)[number];
   }>();
 
   let selectContainerRef: HTMLDivElement;
@@ -179,10 +177,8 @@
     searchText = '';
     selectInputRef.value = '';
 
-    dispatch('change', {
-      label: selectedOptions.map((option) => option.label),
-      value: value,
-    });
+    dispatch('change', null);
+    dispatch('select', option);
   }
 
   async function remove(index: number) {
@@ -198,10 +194,7 @@
 
     await tick();
 
-    dispatch('change', {
-      label: selectedOptions.map((option) => option.label),
-      value: value,
-    });
+    dispatch('change', null);
   }
 
   async function removeAll() {
@@ -215,10 +208,7 @@
 
     await tick();
 
-    dispatch('change', {
-      label: selectedOptions.map((option) => option.label),
-      value: value,
-    });
+    dispatch('change', null);
   }
 </script>
 

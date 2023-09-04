@@ -1,88 +1,59 @@
 <script lang="ts">
   import type { PageData } from './$types';
+  import type { Course, CourseDetail } from '$lib/types';
   import { page } from '$app/stores';
-  import { invalidate } from '$app/navigation';
-  import { blurOnEscape } from '$lib/utils/directives';
-  import { deleteCourse } from '$lib/api/course';
-  import debounce from '$lib/utils/debounce';
-  import Modal from '$lib/components/Modal.svelte';
-  import Pagination from '$lib/components/Pagination.svelte';
-  import Course from './CourseForm.svelte';
-  import CourseDetail from './CourseDetail.svelte';
   import toast from 'svelte-french-toast';
 
-  const handleSearch = debounce(async (text: string) => {
-    const url = new URL(window.location.toString());
-    url.searchParams.set('search', text);
-    history.replaceState({}, '', url);
-    await invalidate('data:course');
-  }, 300);
+  import { invalidate } from '$app/navigation';
+  import { blurOnEscape } from '$lib/utils/directives';
+  import { searchHandler } from '$lib/utils/search';
+  import apiRequest from '$lib/api';
 
-  const subjectOptions = async () => {
-    return (await data.lazy.subject).data.map((subject) => ({
-      label: `${subject.code} ${subject.name}`,
-      value: subject.id,
-    }));
-  };
+  import Modal from '$lib/components/Modal.svelte';
+  import Pagination from '$lib/components/Pagination.svelte';
+  import Form from './CourseForm.svelte';
+  import Detail from './Detail.svelte';
+
+  const handleSearch = searchHandler('data:course');
 
   export let data: PageData;
 
   let newState = false;
   let editState = false;
-  let editData: {
-    id: string;
-    name: string;
-    detail: {
-      compulsory: string[];
-      elective: string[];
-    };
+  let showState = false;
+
+  let currentEditData: Course & {
+    detail: (Omit<CourseDetail, 'id'> & { subjectId: string })[];
   };
 
-  function showEdit(course: {
-    id: string;
-    name: string;
-    detail: {
-      subject: { id: string };
-      type: string;
-    }[];
-  }) {
+  let currentShowData: (typeof data)['course']['data'][number];
+
+  function triggerEdit(course: typeof currentEditData) {
     editState = true;
-    editData = {
-      ...course,
-      detail: course.detail.reduce<{ compulsory: string[]; elective: string[] }>(
-        (acc, curr) => {
-          if (curr.type == 'compulsory') acc.compulsory.push(curr.subject.id);
-          else acc.elective.push(curr.subject.id);
-          return acc;
-        },
-        { compulsory: [], elective: [] },
-      ),
-    };
+    currentEditData = course;
   }
 
-  async function handleDelete(course: { id: string }) {
-    if (confirm('Are you sure?')) {
-      const ret = await deleteCourse(course).catch((e: Response) => console.error(e));
-
-      if (ret) {
-        await invalidate('data:course');
-
-        toast.success('Delete Complete!');
-      } else {
-        toast.error('Failed to delete course!\nThis record is currenly in use.');
-      }
-    }
-  }
-
-  let showState = false;
-  let showData: API.Course; // eslint-disable-line no-undef
-
-  // eslint-disable-next-line no-undef
-  function showCourseDetail(course: API.Course) {
+  function triggerShow(course: typeof currentShowData) {
     showState = true;
-    showData = {
-      ...course,
-    };
+    currentShowData = course;
+  }
+
+  async function handleDelete(id: string) {
+    const flag = confirm('Are you sure? This action cannot be undone.');
+
+    if (!flag) return;
+
+    const ret = await apiRequest('/api/course')
+      .delete({ id })
+      .catch((e) => console.error(e));
+
+    if (!ret)
+      return toast.error(
+        'Failed to delete course!\nThis record may currenly in use. \nSee console for more info.',
+      );
+
+    await invalidate('data:course');
+    toast.success('Delete Complete!');
   }
 </script>
 
@@ -119,11 +90,7 @@
   <div id="new" class="bg-light p-4">
     <h1 class="mb-4 block text-center text-2xl font-bold">New Course</h1>
     <div class="mx-auto max-w-screen-md rounded bg-white p-4 shadow">
-      {#await subjectOptions()}
-        Loading...
-      {:then options}
-        <Course subjectOptions="{options}" />
-      {/await}
+      <Form />
     </div>
   </div>
 {/if}
@@ -131,23 +98,14 @@
 <Modal bind:open="{editState}">
   <div id="edit" class="p-4">
     <h1 class="mb-4 block text-center text-2xl font-bold">Edit Course</h1>
-    {#await subjectOptions()}
-      Loading...
-    {:then options}
-      <Course
-        subjectOptions="{options}"
-        edit="{true}"
-        editData="{editData}"
-        callback="{() => (editState = false)}"
-      />
-    {/await}
+    <Form edit="{true}" {...currentEditData} callback="{() => (editState = false)}" />
   </div>
 </Modal>
 
-<Modal bind:open="{showState}">
-  <div id="show-modal" class="p-4">
+<Modal bind:open="{showState}" center="{true}">
+  <div id="show" class="p-4">
     <h1 class="mb-4 block text-center text-2xl font-bold">Course Detail</h1>
-    <CourseDetail courseData="{showData}" />
+    <Detail course="{currentShowData}" />
   </div>
 </Modal>
 
@@ -169,7 +127,7 @@
       {/if}
       {#each data.course.data as course (course.id)}
         <tr
-          on:click|stopPropagation="{() => showCourseDetail(course)}"
+          on:click|stopPropagation="{() => triggerShow(course)}"
           class="cursor-pointer hover:bg-light"
         >
           <td class="text-center">{course.name}</td>
@@ -187,13 +145,20 @@
             <div class="space-x-4 whitespace-nowrap">
               <button
                 class="action-button text-blue-600"
-                on:click|stopPropagation="{() => showEdit(course)}"
+                on:click|stopPropagation="{() =>
+                  triggerEdit({
+                    ...course,
+                    detail: course.detail.map((v) => ({
+                      type: v.type,
+                      subjectId: v.subject.id,
+                    })),
+                  })}"
               >
                 Edit
               </button>
               <button
                 class="action-button text-red-600"
-                on:click|stopPropagation="{() => handleDelete({ id: course.id })}"
+                on:click|stopPropagation="{() => handleDelete(course.id)}"
               >
                 Delete
               </button>

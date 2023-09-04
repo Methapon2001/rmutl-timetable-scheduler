@@ -44,7 +44,6 @@
       const [semester, year] = selectedInfo.split('/');
       return +semester === inf.semester && +year === inf.year;
     });
-    console.log($info);
     await invalidateAll();
   }
 </script>

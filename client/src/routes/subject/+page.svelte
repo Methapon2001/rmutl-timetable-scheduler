@@ -1,61 +1,48 @@
 <script lang="ts">
   import type { PageData } from './$types';
+  import type { Subject } from '$lib/types';
   import { page } from '$app/stores';
-  import { invalidate } from '$app/navigation';
-  import { blurOnEscape } from '$lib/utils/directives';
-  import { deleteSubject } from '$lib/api/subject';
-  import debounce from '$lib/utils/debounce';
-  import Modal from '$lib/components/Modal.svelte';
-  import Pagination from '$lib/components/Pagination.svelte';
-  import SubjectForm from './SubjectForm.svelte';
   import toast from 'svelte-french-toast';
 
-  const handleSearch = debounce(async (text: string) => {
-    const url = new URL(window.location.toString());
-    url.searchParams.set('search', text);
-    history.replaceState({}, '', url);
-    await invalidate('data:subject');
-  }, 300);
+  import { invalidate } from '$app/navigation';
+  import { blurOnEscape } from '$lib/utils/directives';
+  import { searchHandler } from '$lib/utils/search';
+  import apiRequest from '$lib/api';
+
+  import Modal from '$lib/components/Modal.svelte';
+  import Pagination from '$lib/components/Pagination.svelte';
+  import Form from './SubjectForm.svelte';
+
+  const handleSearch = searchHandler('data:subject');
 
   export let data: PageData;
 
   let newState = false;
   let editState = false;
-  let editData: {
-    code: string;
-    id: string;
-    name: string;
-    credit: number;
-    lecture: number;
-    lab: number;
-    learn: number;
-  };
 
-  function showEdit(subject: {
-    code: string;
-    id: string;
-    name: string;
-    credit: number;
-    lecture: number;
-    lab: number;
-    learn: number;
-  }) {
+  let currentData: Subject;
+
+  function triggerEdit(subject: typeof currentData) {
+    currentData = subject;
     editState = true;
-    editData = subject;
   }
 
-  async function handleDelete(subject: { id: string }) {
-    if (confirm('Are you sure?')) {
-      const ret = await deleteSubject(subject).catch((e: Response) => console.error(e));
+  async function handleDelete(id: string) {
+    const flag = confirm('Are you sure? This action cannot be undone.');
 
-      if (ret) {
-        await invalidate('data:subject');
+    if (!flag) return;
 
-        toast.success('Delete Complete!');
-      } else {
-        toast.error('Fail to delete subject!\nThis record is currenly in use.');
-      }
-    }
+    const ret = await apiRequest('/api/subject')
+      .delete({ id })
+      .catch((e) => console.error(e));
+
+    if (!ret)
+      return toast.error(
+        'Failed to delete subject!\nThis record may currenly in use. \nSee console for more info.',
+      );
+
+    await invalidate('data:subject');
+    toast.success('Delete Complete!');
   }
 </script>
 
@@ -92,7 +79,7 @@
   <div id="new" class="bg-light p-4">
     <h1 class="mb-4 block text-center text-2xl font-bold">New Subject</h1>
     <div class="mx-auto max-w-screen-md rounded bg-white p-4 shadow">
-      <SubjectForm />
+      <Form />
     </div>
   </div>
 {/if}
@@ -100,7 +87,7 @@
 <Modal bind:open="{editState}">
   <div id="edit" class="p-4">
     <h1 class="mb-4 block text-center text-2xl font-bold">Edit Subject</h1>
-    <SubjectForm edit="{true}" editData="{editData}" callback="{() => (editState = false)}" />
+    <Form edit="{true}" {...currentData} callback="{() => (editState = false)}" />
   </div>
 </Modal>
 
@@ -147,13 +134,13 @@
             <div class="space-x-4 whitespace-nowrap">
               <button
                 class="action-button text-blue-600"
-                on:click="{() => showEdit({ ...subject })}"
+                on:click="{() => triggerEdit({ ...subject })}"
               >
                 Edit
               </button>
               <button
                 class="action-button text-red-600"
-                on:click="{() => handleDelete({ id: subject.id })}"
+                on:click="{() => handleDelete(subject.id)}"
               >
                 Delete
               </button>

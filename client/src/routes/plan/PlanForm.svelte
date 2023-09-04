@@ -1,461 +1,299 @@
 <script lang="ts">
-  import { type ZodError, z } from 'zod';
+  import type { ZodError } from 'zod';
+  import type {
+    ResponseDataInfo,
+    LogInfo,
+    Subject,
+    PlanDetail,
+    Course,
+    CourseDetail,
+  } from '$lib/types';
+  import toast from 'svelte-french-toast';
+
+  import { planSchema } from '$lib/types';
   import { invalidate } from '$app/navigation';
   import { blurOnEscape } from '$lib/utils/directives';
   import { getZodErrorMessage } from '$lib/utils/zod';
-  import { createPlan, editPlan } from '$lib/api/plan';
-  import { onMount } from 'svelte';
+  import apiRequest from '$lib/api';
+
   import Select from '$lib/components/Select.svelte';
-  import toast from 'svelte-french-toast';
 
-  const schema = z.object({
-    id: z.string().nonempty(),
-    name: z.string().min(3),
-    detail: z
-      .object({
-        year: z.number().min(1).max(8),
-        semester: z.number().min(1).max(3),
-        subjectId: z.string().array(),
-      })
-      .array(),
-    courseId: z.string(),
-  });
+  let firstInput: HTMLInputElement | null = null;
+  let validateError: ZodError | null = null;
 
-  const newSchema = schema.omit({
-    id: true,
-  });
-
-  export let courseOptions: {
-    label: string;
-    value: string;
-    disabled?: boolean;
-    detail: API.Course; // eslint-disable-line no-undef
-  }[];
-
-  export let subjectOptions: {
-    label: string;
-    value: string;
-    disabled?: boolean;
-  }[];
+  $: err = {
+    id: getZodErrorMessage(validateError, ['id']),
+    name: getZodErrorMessage(validateError, ['name']),
+    detail: getZodErrorMessage(validateError, ['detail']),
+    courseId: getZodErrorMessage(validateError, ['courseId']),
+  };
 
   export let edit = false;
-  export let editData: typeof form.data = {
-    id: '',
-    name: '',
-    detail: [
-      {
-        year: 1,
-        semester: 1,
-        subjectId: [],
-      },
-    ],
-    courseId: '',
-  };
 
-  export let callback: () => void = function () {
-    // do nothing.
-  };
+  export let id = '';
+  export let name = '';
+  export let detail: (Omit<PlanDetail, 'id'> & { subjectId: string })[] = [];
+  export let courseId = '';
 
-  let form: {
-    data: z.infer<typeof schema>;
-    error: ZodError | undefined;
-  } = {
-    data: {
-      id: '',
-      name: '',
-      detail: [
-        {
-          year: 1,
-          semester: 1,
-          subjectId: [],
-        },
-      ],
-      courseId: '',
-    },
-    error: undefined,
-  };
+  /**
+   * Necessary for edit mode
+   */
+  let groupedDetail: {
+    year: number;
+    semester: number;
+    subjectId: string[];
+  }[] =
+    detail.length === 0
+      ? [{ year: 1, semester: 1, subjectId: [] }]
+      : Object.values(
+          detail
+            .sort((a, b) => b.year - a.year || b.semester - a.semester)
+            .reduce<{ [key: string]: { year: number; semester: number; subjectId: string[] } }>(
+              (acc, obj) => {
+                const key = `${obj.year}-${obj.semester}`;
+                if (!acc[key]) {
+                  acc[key] = { year: obj.year, semester: obj.semester, subjectId: [] };
+                }
+                acc[key].subjectId.push(obj.subjectId);
+                return acc;
+              },
+              {},
+            ),
+        );
 
-  let firstInput: HTMLInputElement;
+  $: detail = groupedDetail.flatMap((val) =>
+    val.subjectId.map((v) => ({ year: val.year, semester: val.semester, subjectId: v })),
+  );
 
-  async function handleSubmit() {
-    return edit ? await handleEdit() : await handleCreate();
+  const params = { limit: '9999' };
+  const subject = apiRequest('/api/subject').get<ResponseDataInfo<LogInfo<Subject>>>(params);
+  const course =
+    apiRequest('/api/course').get<
+      ResponseDataInfo<LogInfo<Course & { detail: (CourseDetail & { subject: Subject })[] }>>
+    >(params);
+
+  const subjectOptions = async () =>
+    (await subject).data
+      .sort((a, b) => a.name.localeCompare(b.name) || a.code.localeCompare(b.code))
+      .map((v) => ({ label: `${v.code} ${v.name}`, value: v.id }));
+  const courseOptions = async () =>
+    (await course).data
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((v) => ({ label: v.name, value: v.id, detail: v }));
+
+  let selectedCourse: Awaited<ReturnType<typeof courseOptions>>[number]['detail'] | undefined;
+
+  $: courseOptions()
+    .then((opt) => opt.find((v) => v.value === courseId)?.detail)
+    .then((v) => (selectedCourse = v));
+
+  function resetState() {
+    id = name = '';
+    groupedDetail = [{ year: 1, semester: 1, subjectId: [] }];
   }
 
-  async function handleCreate() {
-    form.error = undefined;
-
-    const result = newSchema
-      .transform((val) => ({
-        name: val.name,
-        courseId: val.courseId,
-        detail: val.detail.flatMap((val) =>
-          val.subjectId.map((subjectId) => ({ year: val.year, semester: val.semester, subjectId })),
-        ),
-      }))
-      .safeParse(form.data);
-
-    if (!result.success) {
-      form.error = result.error;
-      return;
-    }
-
-    const ret = await createPlan(result.data).catch((r: Response) => console.error(r));
-
-    if (ret) {
-      form.data = {
-        id: '',
-        name: '',
-        detail: [
-          {
-            year: 1,
-            semester: 1,
-            subjectId: [],
-          },
-        ],
-        courseId: '',
-      };
-
-      await invalidate('data:plan');
-
-      callback();
-
-      firstInput.focus();
-
-      toast.success('Plan Created!');
-    } else {
-      toast.error('Fail to create Plan!');
-    }
-  }
+  export let callback: (data: unknown) => void = () => {
+    // do nothing
+  };
 
   async function handleEdit() {
-    form.error = undefined;
+    validateError = null;
 
-    const result = schema
-      .transform((val) => ({
-        id: val.id,
-        name: val.name,
-        courseId: val.courseId,
-        detail: val.detail.flatMap((val) =>
-          val.subjectId.map((subjectId) => ({ year: val.year, semester: val.semester, subjectId })),
-        ),
-      }))
-      .safeParse(form.data);
+    const parsed = planSchema.safeParse({ id, name, detail, courseId });
 
-    if (!result.success) {
-      form.error = result.error;
-      return;
-    }
+    if (!parsed.success) return handleError(parsed.error);
 
-    const ret = await editPlan(result.data).catch((r: Response) => console.error(r));
+    const ret = await apiRequest('/api/plan')
+      .put(parsed.data)
+      .catch((e) => console.error(e));
 
-    if (ret) {
-      form.data = {
-        id: '',
-        name: '',
-        detail: [
-          {
-            year: 1,
-            semester: 1,
-            subjectId: [],
-          },
-        ],
-        courseId: '',
-      };
-
-      await invalidate('data:plan');
-
-      callback();
-
-      toast.success('Edit Complete!');
-    } else {
-      toast.error('Fail to Edit plan!');
-    }
+    if (ret) await postSubmit(ret);
   }
 
-  onMount(() => {
-    if (edit && editData) {
-      form.data = editData;
-    }
-  });
+  async function handleNew() {
+    validateError = null;
+
+    const parsed = planSchema.omit({ id: true }).safeParse({ id, name, detail, courseId });
+
+    if (!parsed.success) return handleError(parsed.error);
+
+    const ret = await apiRequest('/api/plan')
+      .post(parsed.data)
+      .catch((e) => console.error(e));
+
+    if (ret) await postSubmit(ret);
+  }
+
+  function handleError(error: ZodError) {
+    validateError = error;
+  }
+
+  async function postSubmit(data: unknown) {
+    firstInput?.focus();
+    await invalidate('data:plan');
+    toast.success('Success');
+    resetState();
+    callback(data);
+  }
+
+  function resetDetail() {
+    groupedDetail = [{ year: 1, semester: 1, subjectId: [] }];
+  }
 
   function addDetail() {
-    const last = form.data.detail.at(-1);
+    const last = groupedDetail.at(-1);
 
-    if (last?.year === 8 && last?.semester === 3) return;
+    groupedDetail = [
+      ...groupedDetail,
+      {
+        year: !last ? 1 : last.semester === 3 ? last.year + 1 : last.year,
+        semester: !last ? 1 : last.semester === 3 ? 1 : last.semester + 1,
+        subjectId: [],
+      },
+    ];
+  }
 
-    if (!last) {
-      form.data.detail = [
-        {
-          year: 1,
-          semester: 1,
-          subjectId: [],
-        },
-      ];
-    } else {
-      form.data.detail =
-        last.semester < 3
-          ? [
-              ...form.data.detail,
-              {
-                year: last.year,
-                semester: last.semester + 1,
-                subjectId: [],
-              },
-            ]
-          : [
-              ...form.data.detail,
-              {
-                year: last.year + 1,
-                semester: 1,
-                subjectId: [],
-              },
-            ];
-    }
+  function delDetail(index: number) {
+    groupedDetail = groupedDetail.filter((_, idx) => idx !== index);
   }
 </script>
 
-<form on:submit|preventDefault="{() => handleSubmit()}" class="space-y-4">
+<form on:submit|preventDefault="{() => (edit ? handleEdit() : handleNew())}" class="space-y-4">
   <section id="input-name" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
-      <label for="" class="font-semibold">
+      <label for="form-course-name" class="font-semibold">
         Name <span class="text-red-600">*</span>
       </label>
     </div>
     <div class="col-span-4">
       <input
+        id="form-plan-name"
         type="text"
-        placeholder="Plan Name"
-        class="input
-          {form.error && getZodErrorMessage(form.error, ['name']).length > 0
-          ? 'border border-red-600'
-          : ''}"
-        bind:value="{form.data.name}"
+        placeholder="Course Name"
+        class="input"
+        class:border-red-600="{err.name}"
+        bind:value="{name}"
+        bind:this="{firstInput}"
         use:blurOnEscape
       />
     </div>
-    <div class="col-span-4 col-start-3 text-red-600">
-      {form.error ? getZodErrorMessage(form.error, ['name']) : ''}
-    </div>
+    {#if err.name} <div class="col-span-4 col-start-3 text-red-600">{err.name.join()}</div> {/if}
   </section>
   <section id="input-course" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
-      <label for="" class="font-semibold">
+      <label for="form-plan-course" class="font-semibold">
         Course <span class="text-red-600">*</span>
       </label>
     </div>
-    <div
-      class="col-span-4"
-      class:invalid="{form.error && getZodErrorMessage(form.error, ['courseId']).length > 0}"
-    >
-      <Select
-        options="{courseOptions}"
-        bind:value="{form.data.courseId}"
-        placeholder="Select Course"
-      />
+    <div class="col-span-4" class:invalid="{err.courseId}">
+      {#await courseOptions()}
+        <Select options="{[]}" placeholder="Loading..." />
+      {:then options}
+        <Select
+          id="form-room-building"
+          options="{options}"
+          bind:value="{courseId}"
+          placeholder="Select Course"
+          on:change="{() => {
+            resetDetail();
+          }}"
+        />
+      {/await}
     </div>
-    <div class="col-span-4 col-start-3 text-red-600">
-      {form.error ? getZodErrorMessage(form.error, ['courseId']) : ''}
-    </div>
+    {#if err.courseId}
+      <div class="col-span-4 col-start-3 text-red-600">{err.courseId.join()}</div>
+    {/if}
   </section>
-  {#if form.data.courseId}
-    {#each form.data.detail as _, detailIdx}
-      <div class="space-y-2 rounded border p-4">
+
+  {#if courseId}
+    {#each groupedDetail as _, idx}
+      <div class="space-y-4 rounded border p-4">
         <section id="input-year" class="grid grid-cols-6">
           <div class="col-span-2 flex items-center">
-            <label for="" class="font-semibold">
+            <label for="form-plan-year-{idx}" class="font-semibold">
               Year <span class="text-red-600">*</span>
             </label>
           </div>
           <div class="col-span-4">
             <input
+              id="form-plan-year-{idx}"
               type="number"
-              class="input
-              {form.error && getZodErrorMessage(form.error, ['year']).length > 0
-                ? 'border border-red-600'
-                : ''}"
-              bind:value="{form.data.detail[detailIdx].year}"
+              class="input w-fit text-center"
+              class:border-red-600="{err.detail}"
+              bind:value="{groupedDetail[idx].year}"
+              on:change="{() =>
+                (groupedDetail[idx].year =
+                  groupedDetail[idx].year > 8
+                    ? 8
+                    : groupedDetail[idx].year < 0
+                    ? 0
+                    : groupedDetail[idx].year)}"
+              min="{0}"
+              max="{8}"
               use:blurOnEscape
-              max="8"
-              min="1"
             />
           </div>
-          <div class="col-span-4 col-start-3 text-red-600">
-            {form.error ? getZodErrorMessage(form.error, ['year']) : ''}
-          </div>
         </section>
-        <section id="input-semester" class="grid grid-cols-6">
+        <section id="input-semester-{idx}" class="grid grid-cols-6">
           <div class="col-span-2 flex items-center">
-            <label for="" class="font-semibold">
+            <label for="form-plan-semester-{idx}" class="font-semibold">
               Semester <span class="text-red-600">*</span>
             </label>
           </div>
           <div class="col-span-4">
             <input
+              id="form-plan-semester-{idx}"
               type="number"
-              class="input
-              {form.error && getZodErrorMessage(form.error, ['semester']).length > 0
-                ? 'border border-red-600'
-                : ''}"
-              bind:value="{form.data.detail[detailIdx].semester}"
+              class="input w-fit text-center"
+              class:border-red-600="{err.detail}"
+              bind:value="{groupedDetail[idx].semester}"
+              on:change="{() =>
+                (groupedDetail[idx].semester =
+                  groupedDetail[idx].semester > 3
+                    ? 3
+                    : groupedDetail[idx].semester < 0
+                    ? 0
+                    : groupedDetail[idx].semester)}"
+              min="{0}"
+              max="{3}"
               use:blurOnEscape
-              max="3"
-              min="1"
             />
-          </div>
-          <div class="col-span-4 col-start-3 text-red-600">
-            {form.error ? getZodErrorMessage(form.error, ['semester']) : ''}
           </div>
         </section>
-        <section id="input-subject" class="grid grid-cols-6">
+        <section id="input-plan-subject-{idx}" class="grid grid-cols-6">
           <div class="col-span-2 flex items-center">
-            <label for="" class="font-semibold">
-              Subject <span class="text-red-600">*</span>
-            </label>
+            <label for="form-plan-subject-{idx}" class="font-semibold">Subject</label>
           </div>
-          <div
-            class="col-span-4"
-            class:invalid="{form.error && getZodErrorMessage(form.error, ['subjectId']).length > 0}"
-          >
-            <Select
-              options="{subjectOptions.filter((option) => {
-                const used = form.data.detail.some(
-                  (d, idx) =>
-                    idx !== detailIdx && d.subjectId.findIndex((v) => v === option.value) !== -1,
-                );
+          <div class="col-span-4" class:invalid="{err.detail}">
+            {#await subjectOptions()}
+              <Select options="{[]}" placeholder="Loading..." />
+            {:then options}
+              <Select
+                id="form-plan-subject-{idx}"
+                options="{options.filter(
+                  (val) => selectedCourse?.detail.some((v) => v.subject.id === val.value) ?? false,
+                )}"
+                bind:value="{groupedDetail[idx].subjectId}"
+                placeholder="Select Subject"
+                multiple
+              />
+            {/await}
+          </div>
 
-                if (form.data.courseId.length !== 0) {
-                  const val = courseOptions.find((opt) => opt.value === form.data.courseId);
-                  const course = val?.detail;
-
-                  return !used && course?.detail.some((d) => d.subject.id === option.value);
-                }
-              })}"
-              bind:value="{form.data.detail[detailIdx].subjectId}"
-              multiple
-              placeholder="Select Subject"
-            />
-          </div>
-          <div class="col-span-4 col-start-3 text-red-600">
-            {form.error ? getZodErrorMessage(form.error, ['subjectId']) : ''}
-          </div>
+          {#if err.detail}
+            <div class="col-span-4 col-start-3 text-red-600">{err.detail.join()}</div>
+          {/if}
         </section>
       </div>
+      {#if err.detail}
+        {@const errorMsg = getZodErrorMessage(validateError, ['detail'], false)}
+        <div class="col-span-4 col-start-3 text-red-600">{errorMsg?.join() || ''}</div>
+      {/if}
     {/each}
-    <button type="button" class="button w-full" on:click="{() => addDetail()}">Add semester</button>
+
+    <button type="button" class="button w-full" on:click="{() => addDetail()}"
+      >Add Semester/Year</button
+    >
   {/if}
   <button type="submit" class="button w-full">Save</button>
-  <!--  <section id="input-course" class="grid grid-cols-6">
-    <div class="col-span-2 flex items-center">
-      <label for="" class="font-semibold">
-        Course <span class="text-red-600">*</span>
-      </label>
-    </div>
-    <div
-      class="col-span-4"
-      class:invalid="{form.error && getZodErrorMessage(form.error, ['courseId']).length > 0}"
-    >
-      <Select
-        options="{courseOptions}"
-        bind:value="{form.data.courseId}"
-        placeholder="Select Course"
-      />
-    </div>
-    <div class="col-span-4 col-start-3 text-red-600">
-      {form.error ? getZodErrorMessage(form.error, ['courseId']) : ''}
-    </div>
-  </section>
-  <section id="input-subject" class="grid grid-cols-6">
-    <div class="col-span-2 flex items-center">
-      <label for="" class="font-semibold">
-        Subject <span class="text-red-600">*</span>
-      </label>
-    </div>
-    <div
-      class="col-span-4"
-      class:invalid="{form.error && getZodErrorMessage(form.error, ['subjectId']).length > 0}"
-    >
-      <Select
-        options="{subjectOptions.filter((option) => {
-          if (form.data.courseId.length !== 0) {
-            const val = courseOptions.find((opt) => opt.value === form.data.courseId);
-            const course = val?.detail;
-
-            return course?.detail.some((detail) => detail.subject.id === option.value);
-          }
-        })}"
-        bind:value="{form.data.subjectId}"
-        multiple
-        placeholder="Select Subject"
-      />
-    </div>
-    <div class="col-span-4 col-start-3 text-red-600">
-      {form.error ? getZodErrorMessage(form.error, ['subjectId']) : ''}
-    </div>
-  </section>
-  <section id="input-year" class="grid grid-cols-6">
-    <div class="col-span-2 flex items-center">
-      <label for="" class="font-semibold">
-        Year <span class="text-red-600">*</span>
-      </label>
-    </div>
-    <div class="col-span-4">
-      <input
-        type="number"
-        class="input
-          {form.error && getZodErrorMessage(form.error, ['year']).length > 0
-          ? 'border border-red-600'
-          : ''}"
-        bind:value="{form.data.year}"
-        bind:this="{firstInput}"
-        use:blurOnEscape
-      />
-    </div>
-    <div class="col-span-4 col-start-3 text-red-600">
-      {form.error ? getZodErrorMessage(form.error, ['year']) : ''}
-    </div>
-  </section>
-  <section id="input-semester" class="grid grid-cols-6">
-    <div class="col-span-2 flex items-center">
-      <label for="" class="font-semibold">
-        Semester <span class="text-red-600">*</span>
-      </label>
-    </div>
-    <div class="col-span-4">
-      <input
-        type="number"
-        class="input
-          {form.error && getZodErrorMessage(form.error, ['semester']).length > 0
-          ? 'border border-red-600'
-          : ''}"
-        bind:value="{form.data.semester}"
-        use:blurOnEscape
-      />
-    </div>
-    <div class="col-span-4 col-start-3 text-red-600">
-      {form.error ? getZodErrorMessage(form.error, ['semester']) : ''}
-    </div>
-  </section>
-  <section id="input-name" class="grid grid-cols-6">
-    <div class="col-span-2 flex items-center">
-      <label for="" class="font-semibold">
-        Name <span class="text-red-600">*</span>
-      </label>
-    </div>
-    <div class="col-span-4">
-      <input
-        type="text"
-        class="input
-          {form.error && getZodErrorMessage(form.error, ['name']).length > 0
-          ? 'border border-red-600'
-          : ''}"
-        bind:value="{form.data.name}"
-        use:blurOnEscape
-      />
-    </div>
-    <div class="col-span-4 col-start-3 text-red-600">
-      {form.error ? getZodErrorMessage(form.error, ['name']) : ''}
-    </div>
-  </section>
-
-  <button type="submit" class="button w-full">Save</button> -->
 </form>

@@ -1,136 +1,95 @@
 <script lang="ts">
-  import { type ZodError, z } from 'zod';
+  import type { ZodError } from 'zod';
+  import toast from 'svelte-french-toast';
+
+  import { instructorSchema } from '$lib/types';
   import { invalidate } from '$app/navigation';
   import { blurOnEscape } from '$lib/utils/directives';
   import { getZodErrorMessage } from '$lib/utils/zod';
-  import { createInstructor, editInstructor } from '$lib/api/instructor';
-  import { onMount } from 'svelte';
-  import toast from 'svelte-french-toast';
+  import apiRequest from '$lib/api';
 
-  const schema = z.object({
-    id: z.string().nonempty(),
-    name: z.string().min(3),
-  });
+  let firstInput: HTMLInputElement | null = null;
+  let validateError: ZodError | null = null;
 
-  const newSchema = schema.omit({
-    id: true,
-  });
+  $: err = {
+    id: getZodErrorMessage(validateError, ['id']),
+    name: getZodErrorMessage(validateError, ['name']),
+  };
 
   export let edit = false;
-  export let editData: typeof form.data = {
-    id: '',
-    name: '',
-  };
 
-  export let callback: () => void = function () {
-    // do nothing.
-  };
+  export let id = '';
+  export let name = '';
 
-  let form: {
-    data: z.infer<typeof schema>;
-    error: ZodError | undefined;
-  } = {
-    data: {
-      id: '',
-      name: '',
-    },
-    error: undefined,
-  };
-
-  let firstInput: HTMLInputElement;
-
-  async function handleSubmit() {
-    return edit ? await handleEdit() : await handleCreate();
+  function resetState() {
+    id = name = '';
   }
 
-  async function handleCreate() {
-    form.error = undefined;
-
-    const result = newSchema.safeParse(form.data);
-
-    if (!result.success) {
-      form.error = result.error;
-      return;
-    }
-
-    const ret = await createInstructor(result.data).catch((r: Response) => console.error(r));
-
-    if (ret) {
-      form.data = {
-        id: '',
-        name: '',
-      };
-
-      await invalidate('data:instructor');
-
-      callback();
-
-      firstInput.focus();
-
-      toast.success('Instructor Created!');
-    } else {
-      toast.error('Fail to create Instructor!');
-    }
-  }
+  export let callback: (data: unknown) => void = () => {
+    // do nothing
+  };
 
   async function handleEdit() {
-    form.error = undefined;
+    validateError = null;
 
-    const result = schema.safeParse(form.data);
+    const parsed = instructorSchema.safeParse({ id, name });
 
-    if (!result.success) {
-      form.error = result.error;
-      return;
-    }
+    if (!parsed.success) return handleError(parsed.error);
 
-    const ret = await editInstructor(result.data).catch((r: Response) => console.error(r));
+    const ret = await apiRequest('/api/instructor')
+      .put(parsed.data)
+      .catch((e) => console.error(e));
 
-    if (ret) {
-      form.data = {
-        id: '',
-        name: '',
-      };
-
-      await invalidate('data:instructor');
-
-      callback();
-
-      toast.success('Edit Complete!');
-    } else {
-      toast.error('Fail to Edit Instructor!');
-    }
+    if (ret) await postSubmit(ret);
   }
 
-  onMount(() => {
-    if (edit && editData) {
-      form.data = editData;
-    }
-  });
+  async function handleNew() {
+    validateError = null;
+
+    const parsed = instructorSchema.omit({ id: true }).safeParse({ name });
+
+    if (!parsed.success) return handleError(parsed.error);
+
+    const ret = await apiRequest('/api/instructor')
+      .post(parsed.data)
+      .catch((e) => console.error(e));
+
+    if (ret) await postSubmit(ret);
+  }
+
+  function handleError(error: ZodError) {
+    validateError = error;
+  }
+
+  async function postSubmit(data: unknown) {
+    firstInput?.focus();
+    await invalidate('data:instructor');
+    toast.success('Success');
+    resetState();
+    callback(data);
+  }
 </script>
 
-<form on:submit|preventDefault="{() => handleSubmit()}" class="space-y-4">
-  <section id="input-name" class="grid grid-cols-6">
-    <div class="col-span-2 flex items-center">
-      <label for="" class="font-semibold">
+<form on:submit|preventDefault="{() => (edit ? handleEdit() : handleNew())}" class="space-y-4">
+  <section id="input-name" class="grid grid-cols-6 items-center">
+    <div class="col-span-2">
+      <label for="form-inst-name" class="font-semibold">
         Name <span class="text-red-600">*</span>
       </label>
     </div>
     <div class="col-span-4">
       <input
+        id="form-inst-name"
         type="text"
         placeholder="Instructor Name"
-        class="input text-center
-        {form.error && getZodErrorMessage(form.error, ['name']).length > 0
-          ? 'border border-red-600'
-          : ''}"
-        bind:value="{form.data.name}"
+        class="input"
+        class:border-red-600="{err.name}"
+        bind:value="{name}"
         bind:this="{firstInput}"
         use:blurOnEscape
       />
     </div>
-    <div class="col-span-4 col-start-3 text-red-600">
-      {form.error ? getZodErrorMessage(form.error, ['name']) : ''}
-    </div>
+    {#if err.name} <div class="col-span-4 col-start-3 text-red-600">{err.name.join()}</div> {/if}
   </section>
 
   <button type="submit" class="button w-full">Save</button>

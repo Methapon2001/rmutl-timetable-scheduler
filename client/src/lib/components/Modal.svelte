@@ -5,6 +5,7 @@
 
   export let width = '48rem';
   export let open = false;
+  export let center = false;
 </script>
 
 <svelte:window
@@ -14,9 +15,9 @@
 />
 
 {#if open}
-  <div class="modal" transition:fade="{{ duration: 150 }}">
+  <div class="modal" transition:fade="{{ duration: 150 }}" class:center="{center}">
     <div
-      transition:fly="{{ x: 100 }}"
+      transition:fly="{{ x: center ? 0 : 100, y: center ? 100 : 0 }}"
       class="modal-content max-w-md md:max-w-xl"
       style:width="{width}"
       on:outclick="{() => (open = false)}"
@@ -40,7 +41,12 @@
     z-index: 50;
   }
 
-  .modal-content {
+  .modal.center {
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal .modal-content {
     position: relative;
     height: 100%;
     overflow-y: auto;
@@ -49,7 +55,13 @@
     border-bottom-left-radius: 0.5rem;
   }
 
-  .close {
+  .modal.center .modal-content {
+    border-top-right-radius: 0.5rem;
+    border-bottom-right-radius: 0.5rem;
+    max-height: 80%;
+  }
+
+  .modal .modal-content .close {
     position: absolute;
     right: 0.5rem;
     top: 0.5rem;

@@ -1,213 +1,157 @@
 <script lang="ts">
-  import { type ZodError, z } from 'zod';
+  import type { ZodError } from 'zod';
+  import type { Building, ResponseDataInfo, LogInfo } from '$lib/types';
+  import toast from 'svelte-french-toast';
+
+  import { roomSchema } from '$lib/types';
   import { invalidate } from '$app/navigation';
   import { blurOnEscape } from '$lib/utils/directives';
   import { getZodErrorMessage } from '$lib/utils/zod';
-  import { createRoom, editRoom } from '$lib/api/room';
-  import { onMount } from 'svelte';
-  import Select from '$lib/components/Select.svelte';
-  import toast from 'svelte-french-toast';
+  import apiRequest from '$lib/api';
 
-  const typeOptions: {
-    label: string;
-    value: string;
-    disabled?: boolean;
-  }[] = [
-    {
-      label: 'Lecture',
-      value: 'lecture',
-    },
-    {
-      label: 'Lab',
-      value: 'lab',
-    },
-    {
-      label: 'Both',
-      value: 'both',
-    },
+  import Select from '$lib/components/Select.svelte';
+
+  let firstInput: HTMLInputElement | null = null;
+  let validateError: ZodError | null = null;
+
+  $: err = {
+    id: getZodErrorMessage(validateError, ['id']),
+    name: getZodErrorMessage(validateError, ['name']),
+    type: getZodErrorMessage(validateError, ['type']),
+    buildingId: getZodErrorMessage(validateError, ['buildingId']),
+  };
+
+  const building = apiRequest('/api/building').get<ResponseDataInfo<LogInfo<Building>>>({
+    limit: '9999',
+  });
+
+  const buildingOptions = async () =>
+    (await building).data
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((v) => ({ label: v.name, value: v.id }));
+
+  const roomTypeOptions = [
+    { label: 'Lecture', value: 'lecture' },
+    { label: 'Lab', value: 'lab' },
+    { label: 'Lecture/Lab', value: 'both' },
   ];
 
-  const schema = z.object({
-    id: z.string().nonempty(),
-    name: z.string().min(3),
-    type: z.string().nonempty({ message: 'Must select one of the options.' }),
-    buildingId: z.string().nonempty({ message: 'Must select one of the options.' }),
-  });
-
-  const newSchema = schema.omit({
-    id: true,
-  });
-
-  export let buildingOptions: {
-    label: string;
-    value: string;
-    disabled?: boolean;
-    preselected?: boolean;
-  }[];
-
   export let edit = false;
-  export let editData: typeof form.data = {
-    id: '',
-    name: '',
-    type: '',
-    buildingId: '',
-  };
 
-  export let callback: () => void = function () {
-    // do nothing.
-  };
+  export let id = '';
+  export let name = '';
+  export let type = '';
+  export let buildingId = '';
 
-  let form: {
-    data: z.infer<typeof schema>;
-    error: ZodError | undefined;
-  } = {
-    data: {
-      id: '',
-      name: '',
-      type: '',
-      buildingId: '',
-    },
-    error: undefined,
-  };
-
-  let firstInput: HTMLInputElement;
-
-  async function handleSubmit() {
-    return edit ? await handleEdit() : await handleCreate();
+  function resetState() {
+    id = name = type = buildingId = '';
   }
 
-  async function handleCreate() {
-    form.error = undefined;
-
-    const result = newSchema.safeParse(form.data);
-
-    if (!result.success) {
-      form.error = result.error;
-      return;
-    }
-
-    const ret = await createRoom(result.data).catch((r: Response) => console.error(r));
-
-    if (ret) {
-      form.data = {
-        id: '',
-        name: '',
-        type: '',
-        buildingId: '',
-      };
-
-      await invalidate('data:room');
-
-      callback();
-
-      firstInput.focus();
-
-      toast.success('Room Created!');
-    } else {
-      toast.error('Fail to create Room!');
-    }
-  }
+  export let callback: (data: unknown) => void = () => {
+    // do nothing
+  };
 
   async function handleEdit() {
-    form.error = undefined;
+    validateError = null;
 
-    const result = schema.safeParse(form.data);
+    const parsed = roomSchema.safeParse({ id, name, type, buildingId });
 
-    if (!result.success) {
-      form.error = result.error;
-      return;
-    }
+    if (!parsed.success) return handleError(parsed.error);
 
-    const ret = await editRoom(result.data).catch((r: Response) => console.error(r));
+    const ret = await apiRequest('/api/room')
+      .put(parsed.data)
+      .catch((e) => console.error(e));
 
-    if (ret) {
-      form.data = {
-        id: '',
-        name: '',
-        type: '',
-        buildingId: '',
-      };
-
-      await invalidate('data:room');
-
-      callback();
-
-      toast.success('Edit Complete');
-    } else {
-      toast.error('Fail to Edit Room!');
-    }
+    if (ret) await postSubmit(ret);
   }
 
-  onMount(() => {
-    if (edit && editData) {
-      form.data = editData;
-    }
-  });
+  async function handleNew() {
+    validateError = null;
+
+    const parsed = roomSchema.omit({ id: true }).safeParse({ id, name, type, buildingId });
+
+    if (!parsed.success) return handleError(parsed.error);
+
+    const ret = await apiRequest('/api/room')
+      .post(parsed.data)
+      .catch((e) => console.error(e));
+
+    if (ret) await postSubmit(ret);
+  }
+
+  function handleError(error: ZodError) {
+    validateError = error;
+  }
+
+  async function postSubmit(data: unknown) {
+    firstInput?.focus();
+    await invalidate('data:room');
+    toast.success('Success');
+    resetState();
+    callback(data);
+  }
 </script>
 
-<form on:submit|preventDefault="{() => handleSubmit()}" class="space-y-4">
+<form on:submit|preventDefault="{() => (edit ? handleEdit() : handleNew())}" class="space-y-4">
   <section id="input-building" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
-      <label for="" class="font-semibold">
+      <label for="form-room-building" class="font-semibold">
         Building <span class="text-red-600">*</span>
       </label>
     </div>
-    <div
-      class="col-span-4"
-      class:invalid="{form.error && getZodErrorMessage(form.error, ['buildingId']).length > 0}"
-    >
-      <Select
-        options="{buildingOptions}"
-        bind:value="{form.data.buildingId}"
-        placeholder="Select Building"
-      />
+    <div class="col-span-4" class:invalid="{err.buildingId}">
+      {#await buildingOptions()}
+        <Select options="{[]}" placeholder="Loading..." />
+      {:then options}
+        <Select
+          id="form-room-building"
+          options="{options}"
+          bind:value="{buildingId}"
+          placeholder="Select Building"
+        />
+      {/await}
     </div>
-    <div class="col-span-4 col-start-3 text-red-600">
-      {form.error ? getZodErrorMessage(form.error, ['buildingId']) : ''}
-    </div>
+    {#if err.buildingId}
+      <div class="col-span-4 col-start-3 text-red-600">{err.buildingId.join()}</div>
+    {/if}
   </section>
   <section id="input-type" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
-      <label for="" class="font-semibold">
+      <label for="form-room-type" class="font-semibold">
         Type <span class="text-red-600">*</span>
       </label>
     </div>
-    <div
-      class="col-span-4"
-      class:invalid="{form.error && getZodErrorMessage(form.error, ['type']).length > 0}"
-    >
+    <div class="col-span-4" class:invalid="{err.type}">
       <Select
-        options="{typeOptions}"
-        bind:value="{form.data.type}"
+        id="form-room-type"
+        options="{roomTypeOptions}"
+        bind:value="{type}"
         placeholder="Select Room Type"
       />
     </div>
-    <div class="col-span-4 col-start-3 text-red-600">
-      {form.error ? getZodErrorMessage(form.error, ['type']) : ''}
-    </div>
+    {#if err.type}
+      <div class="col-span-4 col-start-3 text-red-600">{err.type.join()}</div>
+    {/if}
   </section>
-  <section id="input-name" class="grid grid-cols-6">
-    <div class="col-span-2 flex items-center">
-      <label for="" class="font-semibold">
+  <section id="input-name" class="grid grid-cols-6 items-center">
+    <div class="col-span-2">
+      <label for="form-room-name" class="font-semibold">
         Name <span class="text-red-600">*</span>
       </label>
     </div>
     <div class="col-span-4">
       <input
+        id="form-room-name"
         type="text"
         placeholder="Room Name"
-        class="input
-          {form.error && getZodErrorMessage(form.error, ['name']).length > 0
-          ? 'border border-red-600'
-          : ''}"
-        bind:value="{form.data.name}"
+        class="input"
+        class:border-red-600="{err.name}"
+        bind:value="{name}"
         bind:this="{firstInput}"
         use:blurOnEscape
       />
     </div>
-    <div class="col-span-4 col-start-3 text-red-600">
-      {form.error ? getZodErrorMessage(form.error, ['name']) : ''}
-    </div>
+    {#if err.name} <div class="col-span-4 col-start-3 text-red-600">{err.name.join()}</div> {/if}
   </section>
 
   <button type="submit" class="button w-full">Save</button>

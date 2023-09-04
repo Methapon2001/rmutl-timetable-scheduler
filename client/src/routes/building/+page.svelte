@@ -1,49 +1,48 @@
 <script lang="ts">
   import type { PageData } from './$types';
+  import type { Building } from '$lib/types';
   import { page } from '$app/stores';
-  import { invalidate } from '$app/navigation';
-  import { blurOnEscape } from '$lib/utils/directives';
-  import { deleteBuilding } from '$lib/api/building';
-  import debounce from '$lib/utils/debounce';
-  import Modal from '$lib/components/Modal.svelte';
-  import Pagination from '$lib/components/Pagination.svelte';
-  import Building from './BuildingForm.svelte';
   import toast from 'svelte-french-toast';
 
-  const handleSearch = debounce(async (text: string) => {
-    const url = new URL(window.location.toString());
-    url.searchParams.set('search', text);
-    history.replaceState({}, '', url);
-    await invalidate('data:building');
-  }, 300);
+  import { invalidate } from '$app/navigation';
+  import { blurOnEscape } from '$lib/utils/directives';
+  import { searchHandler } from '$lib/utils/search';
+  import apiRequest from '$lib/api';
+
+  import Modal from '$lib/components/Modal.svelte';
+  import Pagination from '$lib/components/Pagination.svelte';
+  import Form from './BuildingForm.svelte';
+
+  const search = searchHandler('data:building');
 
   export let data: PageData;
 
   let newState = false;
   let editState = false;
-  let editData: {
-    id: string;
-    code: string;
-    name: string;
-  };
 
-  function showEdit(building: { id: string; code: string; name: string }) {
+  let currentData: Building;
+
+  function triggerEdit(building: typeof currentData) {
+    currentData = building;
     editState = true;
-    editData = building;
   }
 
-  async function handleDelete(building: { id: string }) {
-    if (confirm('Are you sure?')) {
-      const ret = await deleteBuilding(building).catch((e: Response) => console.error(e));
+  async function handleDelete(id: string) {
+    const flag = confirm('Are you sure? This action cannot be undone.');
 
-      if (ret) {
-        await invalidate('data:building');
+    if (!flag) return;
 
-        toast.success('Delete Complete!');
-      } else {
-        toast.error('Failed to delete building!\nThis record is currenly in use.');
-      }
-    }
+    const ret = await apiRequest('/api/building')
+      .delete({ id })
+      .catch((e) => console.error(e));
+
+    if (!ret)
+      return toast.error(
+        'Failed to delete building!\nThis record may currenly in use. \nSee console for more info.',
+      );
+
+    await invalidate('data:building');
+    toast.success('Delete Complete!');
   }
 </script>
 
@@ -66,7 +65,7 @@
       placeholder="Search"
       autocomplete="off"
       value="{$page.url.searchParams.get('search')}"
-      on:input="{(e) => handleSearch(e.currentTarget.value)}"
+      on:input="{(e) => search(e.currentTarget.value)}"
       use:blurOnEscape
     />
   </div>
@@ -80,7 +79,7 @@
   <div id="new" class="bg-light p-4">
     <h1 class="mb-4 block text-center text-2xl font-bold">New Building</h1>
     <div class="mx-auto max-w-screen-md rounded bg-white p-4 shadow">
-      <Building />
+      <Form />
     </div>
   </div>
 {/if}
@@ -88,7 +87,7 @@
 <Modal bind:open="{editState}">
   <div id="edit" class="p-4">
     <h1 class="mb-4 block text-center text-2xl font-bold">Edit Building</h1>
-    <Building edit="{true}" editData="{editData}" callback="{() => (editState = false)}" />
+    <Form edit="{true}" {...currentData} callback="{() => (editState = false)}" />
   </div>
 </Modal>
 
@@ -125,12 +124,12 @@
           </td>
           <td class="fit-width text-center">
             <div class="space-x-4 whitespace-nowrap">
-              <button class="action-button text-blue-600" on:click="{() => showEdit(building)}">
+              <button class="action-button text-blue-600" on:click="{() => triggerEdit(building)}">
                 Edit
               </button>
               <button
                 class="action-button text-red-600"
-                on:click="{() => handleDelete({ id: building.id })}"
+                on:click="{() => handleDelete(building.id)}"
               >
                 Delete
               </button>
