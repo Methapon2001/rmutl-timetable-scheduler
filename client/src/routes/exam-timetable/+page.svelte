@@ -310,6 +310,7 @@
 
     let pdfData = schedulerExam.map((sched) => [
       sched.exam.section[0]?.subject.code + ' ' + sched.exam.section[0]?.subject.name,
+      'SEC_' + sched.exam.section.map(v => v.no).join(', '),
       new Date(midTimestamp + dayTimestamp * weekdayMapNum[sched.weekday]).getDate() +
         ' ' +
         monthName[new Date(midTimestamp + dayTimestamp * weekdayMapNum[sched.weekday]).getMonth()] +
@@ -351,7 +352,7 @@
     ]);
 
     autoTable(doc, {
-      head: [['Subject', 'Midterm', 'Final', 'Room', 'Instructor']],
+      head: [['Subject', 'Section', 'Midterm', 'Final', 'Room', 'Instructor']],
       headStyles: {
         fontStyle: 'bold',
       },

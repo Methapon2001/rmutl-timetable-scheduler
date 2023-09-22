@@ -182,24 +182,30 @@ export async function exportScheduleExam(
       ...styleBorder,
     });
   ws.cell(1, 2)
-    .string("กลางภาค")
+    .string("กลุ่มเรียน")
     .style({
       ...styleCenter,
       ...styleBorder,
     });
   ws.cell(1, 3)
-    .string("ปลายภาค")
+    .string("กลางภาค")
     .style({
       ...styleCenter,
       ...styleBorder,
     });
   ws.cell(1, 4)
-    .string("ห้องสอบ")
+    .string("ปลายภาค")
     .style({
       ...styleCenter,
       ...styleBorder,
     });
   ws.cell(1, 5)
+    .string("ห้องสอบ")
+    .style({
+      ...styleCenter,
+      ...styleBorder,
+    });
+  ws.cell(1, 6)
     .string("ผู้คุมสอบ")
     .style({
       ...styleCenter,
@@ -248,6 +254,13 @@ export async function exportScheduleExam(
       });
 
     ws.cell(2 + idx, 2)
+      .string('SEC_' + val.exam.section.map((v) => v.no).join(", "))
+      .style({
+        ...styleTopLeft,
+        ...styleBorder,
+      });
+
+    ws.cell(2 + idx, 3)
       .string(
         new Date(
           midtermDate.getTime() + timestampDay * weekdayMapNum[val.weekday]
@@ -272,14 +285,14 @@ export async function exportScheduleExam(
           (8 +
             Math.floor(val.end / 4) +
             ":" +
-            ["00", "15", "30", "45"][(val.end) % 4]) +
+            ["00", "15", "30", "45"][val.end % 4]) +
           " น."
       )
       .style({
         ...styleTopLeft,
         ...styleBorder,
       });
-    ws.cell(2 + idx, 3)
+    ws.cell(2 + idx, 4)
       .string(
         new Date(
           finalDate.getTime() + timestampDay * weekdayMapNum[val.weekday]
@@ -304,20 +317,20 @@ export async function exportScheduleExam(
           (8 +
             Math.floor(val.end / 4) +
             ":" +
-            ["00", "15", "30", "45"][(val.end) % 4]) +
+            ["00", "15", "30", "45"][val.end % 4]) +
           " น."
       )
       .style({
         ...styleTopLeft,
         ...styleBorder,
       });
-    ws.cell(2 + idx, 4)
+    ws.cell(2 + idx, 5)
       .string(val.exam.room?.building.code + "-" + val.exam.room?.name)
       .style({
         ...styleTopLeft,
         ...styleBorder,
       });
-    ws.cell(2 + idx, 5)
+    ws.cell(2 + idx, 6)
       .string(val.exam.instructor.map((inst) => inst.name).join("\n"))
       .style({
         ...styleTopLeft,
