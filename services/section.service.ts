@@ -27,9 +27,28 @@ const subjectSelect: Prisma.SubjectSelect = {
   learn: true,
 };
 
+const courseDetailSelect: Prisma.CourseDetailSelect = {
+  id: true,
+  type: true,
+  subject: {
+    select: subjectSelect,
+  },
+};
+
+const courseSelect: Prisma.CourseSelect = {
+  id: true,
+  name: true,
+  detail: {
+    select: courseDetailSelect,
+  },
+};
+
 const groupSelect: Prisma.GroupSelect = {
   id: true,
   name: true,
+  course: {
+    select: courseSelect,
+  },
 };
 
 const buildingSelect: Prisma.BuildingSelect = {
