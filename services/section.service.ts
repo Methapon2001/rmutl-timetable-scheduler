@@ -8,6 +8,7 @@ import {
 import { FastifyReply, FastifyRequest } from "fastify";
 import {
   buildingSelect,
+  courseDetailSelect,
   courseSelect,
   groupSelect,
   instructorSelect,
@@ -49,7 +50,9 @@ const select: Prisma.SectionSelect = {
         select: {
           ...planSelect,
           detail: { select: planDetailSelect },
-          course: { select: courseSelect },
+          course: {
+            select: { ...courseSelect, detail: { select: courseDetailSelect } },
+          },
         },
       },
     },
