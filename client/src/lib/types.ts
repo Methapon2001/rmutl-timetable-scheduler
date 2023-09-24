@@ -122,3 +122,74 @@ export const planSchema = z.object({
 
 export type PlanDetail = Omit<z.infer<typeof planDetailSchema>, 'subjectId'> & { id: string };
 export type Plan = Omit<z.infer<typeof planSchema>, 'detail' | 'courseId'>;
+
+export type Info = {
+  id: string;
+  year: number;
+  semester: number;
+  current: boolean;
+};
+
+export const groupSchema = z.object({
+  id: z.string().nonempty(),
+  name: z.string().min(3),
+  courseId: z.string().nonempty({ message: ERR_SELECT_MSG }),
+  planId: z.string().nonempty({ message: ERR_SELECT_MSG }),
+});
+
+export type Group = Omit<z.infer<typeof groupSchema>, 'courseId' | 'planId'>;
+
+export const subSectionNewSchema = z.object({
+  roomId: z.string().transform((v) => v.trim() || null),
+  instructor: z.string().array(),
+  capacity: z.number(),
+});
+
+const altSectionTransform = (v: string) => {
+  if (!v.trim()) return null;
+  const listNo = v.split(/[,\s]+/).map(Number);
+  const sortedNo = [...new Set(listNo)].sort((a, b) => +a - +b);
+  return sortedNo.join(', ');
+};
+
+export const sectionNewSchema = z
+  .object({
+    type: z.enum(['lecture', 'lab'], { errorMap: ENUM_ERROR_MAP }),
+    no: z.number().min(1).nullable(),
+    manual: z.boolean(),
+    alt: z.string().transform(altSectionTransform),
+    groupId: z.string().transform((v) => v.trim() || null),
+    subjectId: z.string().nonempty({ message: ERR_SELECT_MSG }),
+    section: subSectionNewSchema.array(),
+  })
+  .superRefine(({ manual, no }, ctx) => {
+    if (manual && !no) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Must be specify in manual mode.',
+        path: ['no'],
+      });
+    }
+  });
+
+export const sectionEditSchema = z.object({
+  id: z.string(),
+  alt: z.string().transform(altSectionTransform),
+  groupId: z.string().transform((v) => v.trim() || null),
+  roomId: z.string().transform((v) => v.trim() || null),
+  instructor: z.string().array(),
+  capacity: z.number(),
+});
+
+export type SectionNew = z.infer<typeof sectionNewSchema>;
+
+export type Section = Omit<
+  z.infer<typeof sectionNewSchema> & {
+    id: string;
+    lab: number | null;
+    capacity: number;
+    no: number;
+    alt: string;
+  },
+  'subjectId' | 'groupId' | 'section' | 'manual'
+>;
