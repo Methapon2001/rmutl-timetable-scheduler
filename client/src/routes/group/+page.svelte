@@ -1,70 +1,52 @@
 <script lang="ts">
   import type { PageData } from './$types';
+  import type { Group } from '$lib/types';
   import { page } from '$app/stores';
-  import { invalidate } from '$app/navigation';
-  import { blurOnEscape } from '$lib/utils/directives';
-  import { deleteGroup } from '$lib/api/group';
-  import debounce from '$lib/utils/debounce';
-  import Modal from '$lib/components/Modal.svelte';
-  import Pagination from '$lib/components/Pagination.svelte';
-  import Group from './GroupForm.svelte';
   import toast from 'svelte-french-toast';
 
-  const handleSearch = debounce(async (text: string) => {
-    const url = new URL(window.location.toString());
-    url.searchParams.set('search', text);
-    history.replaceState({}, '', url);
-    await invalidate('data:group');
-  }, 300);
+  import { invalidate } from '$app/navigation';
+  import { blurOnEscape } from '$lib/utils/directives';
 
-  const courseOptions = async () => {
-    return (await data.lazy.course).data.map((course) => ({
-      label: course.name,
-      value: course.id,
-    }));
-  };
+  import { searchHandler } from '$lib/utils/search';
+  import apiRequest from '$lib/api';
 
-  const planOptions = async () => {
-    return (await data.lazy.plan).data.map((plan) => ({
-      label: plan.name,
-      value: plan.id,
-      detail: plan,
-    }));
-  };
+  import Modal from '$lib/components/Modal.svelte';
+  import Pagination from '$lib/components/Pagination.svelte';
+  import Form from './GroupForm.svelte';
 
-  const formOptions = async () => ({
-    course: await courseOptions(),
-    plan: await planOptions(),
-  });
+  const handleSearch = searchHandler('data:group');
 
   export let data: PageData;
 
   let newState = false;
   let editState = false;
-  let editData: {
-    id: string;
-    name: string;
+
+  let currentData: Group & {
     courseId: string;
     planId: string;
   };
 
-  function showEdit(group: { id: string; name: string; courseId: string; planId: string }) {
+  function triggerEdit(group: typeof currentData) {
     editState = true;
-    editData = group;
+    currentData = group;
   }
 
-  async function handleDelete(group: { id: string }) {
-    if (confirm('Are you sure?')) {
-      const ret = await deleteGroup(group).catch((e: Response) => console.error(e));
+  async function handleDelete(id: string) {
+    const flag = confirm('Are you sure? This action cannot be undone.');
 
-      if (ret) {
-        await invalidate('data:group');
+    if (!flag) return;
 
-        toast.success('Delete Complete!');
-      } else {
-        toast.error('Failed to delete group!\nThis record is currenly in use.');
-      }
-    }
+    const ret = await apiRequest('/api/group')
+      .delete({ id })
+      .catch((e) => console.error(e));
+
+    if (!ret)
+      return toast.error(
+        'Failed to delete group!\nThis record may currenly in use. \nSee console for more info.',
+      );
+
+    await invalidate('data:group');
+    toast.success('Delete Complete!');
   }
 </script>
 
@@ -92,7 +74,12 @@
     />
   </div>
 
-  <button type="button" class="button w-full md:w-fit disabled:bg-secondary disabled:border-secondary disabled:cursor-not-allowed" disabled="{!data.lazy.info?.current}" on:click="{() => (newState = !newState)}">
+  <button
+    type="button"
+    class="button w-full disabled:cursor-not-allowed disabled:border-secondary disabled:bg-secondary md:w-fit"
+    disabled="{!data.info?.current}"
+    on:click="{() => (newState = !newState)}"
+  >
     New Group
   </button>
 </div>
@@ -101,11 +88,7 @@
   <div id="new" class="bg-light p-4">
     <h1 class="mb-4 block text-center text-2xl font-bold">New Group</h1>
     <div class="mx-auto max-w-screen-md rounded bg-white p-4 shadow">
-      {#await formOptions()}
-        Loading...
-      {:then options}
-        <Group courseOptions="{options.course}" planOptions="{options.plan}" />
-      {/await}
+      <Form />
     </div>
   </div>
 {/if}
@@ -113,17 +96,7 @@
 <Modal bind:open="{editState}">
   <div id="edit" class="p-4">
     <h1 class="mb-4 block text-center text-2xl font-bold">Edit Group</h1>
-    {#await formOptions()}
-      Loading...
-    {:then options}
-      <Group
-        courseOptions="{options.course}"
-        planOptions="{options.plan}"
-        edit="{true}"
-        editData="{editData}"
-        callback="{() => (editState = false)}"
-      />
-    {/await}
+    <Form edit="{true}" {...currentData} callback="{() => (editState = false)}" />
   </div>
 </Modal>
 
@@ -165,17 +138,19 @@
               <button
                 class="action-button text-blue-600 disabled:text-secondary"
                 on:click="{() =>
-                  showEdit({ ...group, courseId: group.course.id, planId: group.plan.id })}"
-                disabled="{data.session?.user.id != group.createdBy.id &&
-                  data.session?.user.role != 'admin' || !data.lazy.info?.current}"
+                  triggerEdit({ ...group, courseId: group.course.id, planId: group.plan.id })}"
+                disabled="{(data.session?.user.id != group.createdBy.id &&
+                  data.session?.user.role != 'admin') ||
+                  !data.info?.current}"
               >
                 Edit
               </button>
               <button
                 class="action-button text-red-600 disabled:text-secondary"
-                on:click="{() => handleDelete({ id: group.id })}"
-                disabled="{data.session?.user.id != group.createdBy.id &&
-                  data.session?.user.role != 'admin' || !data.lazy.info?.current}"
+                on:click="{() => handleDelete(group.id)}"
+                disabled="{(data.session?.user.id != group.createdBy.id &&
+                  data.session?.user.role != 'admin') ||
+                  !data.info?.current}"
               >
                 Delete
               </button>
