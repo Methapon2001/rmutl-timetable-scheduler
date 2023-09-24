@@ -3,9 +3,9 @@ import type * as types from './types';
 import { refresh } from './api/auth';
 
 /**
- * Store list of resource and its body data type
+ * Store list of resource and its body data type.
  */
-type Data = {
+type RouteBody = {
   '/api/instructor': types.Instructor;
   '/api/subject': types.Subject;
   '/api/building': types.Building;
@@ -18,9 +18,29 @@ type Data = {
   '/api/plan': types.Plan & {
     detail: (Omit<types.PlanDetail, 'id'> & { subjectId: types.Subject['id'] })[];
   } & { courseId: string };
+  '/api/group': types.Group;
 };
 
-function apiRequest<T extends keyof Data>(resource: T, fetcher = window.fetch) {
+type UniqueRouteBody = {
+  '/api/section': {
+    post: types.SectionNew;
+    put: { id: string };
+    delete: { id: string };
+  };
+};
+
+/**
+ * Remap all route and its body data type into route data.
+ */
+type RouteData = {
+  [R in keyof RouteBody]: {
+    post: RouteBody[R];
+    put: RouteBody[R];
+    delete: RouteBody[R];
+  };
+} & UniqueRouteBody;
+
+function apiRequest<TRoute extends keyof RouteData>(resource: TRoute, fetcher = window.fetch) {
   const url = PUBLIC_API_HOST + resource;
 
   return {
@@ -40,7 +60,7 @@ function apiRequest<T extends keyof Data>(resource: T, fetcher = window.fetch) {
         })
       ).json();
     },
-    post: async <R = unknown>(data: Omit<Data[T], 'id'>): Promise<R> => {
+    post: async <R = unknown>(data: Omit<RouteData[TRoute]['post'], 'id'>): Promise<R> => {
       const session = await refresh(fetcher);
       return (
         await fetcher(url, {
@@ -53,7 +73,7 @@ function apiRequest<T extends keyof Data>(resource: T, fetcher = window.fetch) {
         })
       ).json();
     },
-    put: async <R = unknown>(data: Data[T]): Promise<R> => {
+    put: async <R = unknown>(data: RouteData[TRoute]['put']): Promise<R> => {
       const session = await refresh(fetcher);
       return (
         await fetcher(`${url}/${data.id}`, {
@@ -66,7 +86,7 @@ function apiRequest<T extends keyof Data>(resource: T, fetcher = window.fetch) {
         })
       ).json();
     },
-    delete: async <R = unknown>(data: Pick<Data[T], 'id'>): Promise<R> => {
+    delete: async <R = unknown>(data: Pick<RouteData[TRoute]['delete'], 'id'>): Promise<R> => {
       const session = await refresh();
       return (
         await fetcher(`${url}/${data.id}`, {
