@@ -16,7 +16,7 @@ export const load = (async ({ fetch, parent, depends, url }) => {
   const room = apiRequest('/api/room', fetch);
 
   return {
-    room: room.get<ResponseDataInfo<LogInfo<Room> & { building: Building }>>(
+    room: room.get<ResponseDataInfo<LogInfo<Room & { building: Building }>>>(
       paginationRequestParams(url),
     ),
   };
