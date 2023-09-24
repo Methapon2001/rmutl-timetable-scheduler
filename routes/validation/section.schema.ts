@@ -29,7 +29,7 @@ export default {
       groupId: { type: ["string", "null"] },
       manual: { type: "boolean", default: false },
       type: { type: "string", enum: ["lecture", "lab"] },
-      no: { type: "number" },
+      no: { type: ["number", "null"] },
       alt: { type: ["string", "null"] },
       section: {
         type: "array",
