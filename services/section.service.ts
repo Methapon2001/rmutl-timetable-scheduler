@@ -306,6 +306,14 @@ export async function updateSection(
   const rec = await prisma.section.findUnique({
     select: {
       createdByUserId: true,
+      parent: {
+        select: {
+          child: { select: { id: true } },
+        },
+      },
+      child: {
+        select: { id: true },
+      },
     },
     where: {
       id: id,
@@ -349,6 +357,20 @@ export async function updateSection(
       updatedByUserId: request.user.id,
     },
   });
+
+  if (request.body.groupId) {
+    const relatedId = rec.parent
+      ? rec.parent.child.map((v) => v.id)
+      : rec.child.map((v) => v.id);
+
+    relatedId.forEach(async (v) => {
+      if (id === v) return;
+      await prisma.section.update({
+        where: { id: v },
+        data: { groupId: request.body.groupId },
+      });
+    });
+  }
 
   return reply.status(200).send({
     data: section,
