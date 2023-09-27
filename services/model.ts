@@ -76,6 +76,7 @@ export const groupSelect = {
 export const sectionSelect = {
   id: true,
   no: true,
+  alt: true,
   lab: true,
   type: true,
   capacity: true,
