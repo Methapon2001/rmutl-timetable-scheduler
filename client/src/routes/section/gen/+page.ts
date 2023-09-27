@@ -1,70 +1,47 @@
-import type { PageLoad } from "./$types";
-import { redirect } from "@sveltejs/kit";
-import { PUBLIC_API_HOST } from "$env/static/public";
-import { info } from "$lib/stores";
+import type { PageLoad } from './$types';
+import type {
+  ResponseDataInfo,
+  LogInfo,
+  Group,
+  Plan,
+  PlanDetail,
+  Course,
+  CourseDetail,
+  Info,
+} from '$lib/types';
 
-let currentInfo: API.Info | undefined = undefined;
+import { paginationRequestParams } from '$lib/utils/search';
+import apiRequest from '$lib/api';
+
+import { redirect } from '@sveltejs/kit';
+import { info } from '$lib/stores';
+
+let currentInfo: Info | undefined = undefined;
 info.subscribe((v) => (currentInfo = v));
 
-export const load = (async ({ fetch, parent }) => {
+export const load = (async ({ fetch, parent, url }) => {
   const { session } = await parent();
 
-  if (!session) throw redirect(302, "/login?redirect=/generate-section");
+  if (!session) throw redirect(302, '/login?redirect=/section/gen');
 
-  const requestGroup = async () => {
-    const res = await fetch(
-      `${PUBLIC_API_HOST}/api/group?limit=9999${
-        currentInfo
-          ? `&year=${currentInfo.year}&semester=${currentInfo.semester}`
-          : ""
-      }`,
-    );
-    const body = await res.json();
-    return body as {
-      data: API.Group[];
-      limit: number;
-      offset: number;
-      total: number;
-    };
-  };
+  const group = apiRequest('/api/group', fetch);
+  const param = paginationRequestParams(url);
 
-  const requestPlan = async () => {
-    const res = await fetch(`${PUBLIC_API_HOST}/api/plan?limit=9999`);
-    const body = await res.json();
-    return body as {
-      data: API.Plan[];
-      limit: number;
-      offset: number;
-      total: number;
-    };
-  };
-
-  const requestRoom = async () => {
-    const res = await fetch(`${PUBLIC_API_HOST}/api/room?limit=9999`);
-    const body = await res.json();
-    return body as {
-      data: API.Room[];
-      limit: number;
-      offset: number;
-      total: number;
-    };
-  };
-
-  const requestInstructor = async () => {
-    const res = await fetch(`${PUBLIC_API_HOST}/api/instructor?limit=9999`);
-    const body = await res.json();
-    return body as {
-      data: API.Instructor[];
-      limit: number;
-      offset: number;
-      total: number;
-    };
-  };
+  if (currentInfo !== undefined) {
+    param.set('semester', currentInfo.semester.toString());
+    param.set('year', currentInfo.year.toString());
+  }
 
   return {
-    group: requestGroup(),
-    plan: requestPlan(),
-    room: requestRoom(),
-    instructor: requestInstructor(),
+    group: group.get<
+      ResponseDataInfo<
+        LogInfo<
+          Group & {
+            plan: Plan & { detail: PlanDetail; course: Course & { detail: CourseDetail } };
+          }
+        >
+      >
+    >(param),
+    info: currentInfo,
   };
 }) satisfies PageLoad;

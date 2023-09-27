@@ -24,7 +24,7 @@ type RouteBody = {
 type UniqueRouteBody = {
   '/api/section': {
     post: types.SectionNew;
-    put: { id: string };
+    put: types.SectionEdit;
     delete: { id: string };
   };
 };
