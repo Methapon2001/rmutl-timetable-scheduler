@@ -141,7 +141,10 @@ export type Group = Omit<z.infer<typeof groupSchema>, 'courseId' | 'planId'>;
 
 export const subSectionNewSchema = z.object({
   roomId: z.string().transform((v) => v.trim() || null),
-  instructor: z.string().array(),
+  instructor: z
+    .string()
+    .transform((v) => ({ id: v }))
+    .array(),
   capacity: z.number(),
 });
 
@@ -177,19 +180,22 @@ export const sectionEditSchema = z.object({
   alt: z.string().transform(altSectionTransform),
   groupId: z.string().transform((v) => v.trim() || null),
   roomId: z.string().transform((v) => v.trim() || null),
-  instructor: z.string().array(),
+  instructor: z
+    .string()
+    .transform((v) => ({ id: v }))
+    .array(),
   capacity: z.number(),
 });
 
 export type SectionNew = z.infer<typeof sectionNewSchema>;
-
+export type SectionEdit = z.infer<typeof sectionEditSchema>;
 export type Section = Omit<
   z.infer<typeof sectionNewSchema> & {
     id: string;
     lab: number | null;
     capacity: number;
     no: number;
-    alt: string;
+    alt: string | null;
   },
   'subjectId' | 'groupId' | 'section' | 'manual'
 >;
