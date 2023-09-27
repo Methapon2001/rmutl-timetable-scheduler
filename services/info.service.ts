@@ -73,6 +73,7 @@ export async function requestInfo(
       })
     : await prisma.info.findMany({
         select: select,
+        orderBy: [{ year: "desc" }, { semester: "desc" }],
         where: infoWhere,
         skip: offset,
         take: limit,
