@@ -53,7 +53,8 @@ export const load = (async ({ fetch, parent, depends, url }) => {
             })[];
             group:
               | (Group & {
-                  plan: Plan & { detail: PlanDetail; course: Course & { detail: CourseDetail } };
+                  plan: Plan & { detail: (PlanDetail & { subject: Subject })[] };
+                  course: Course & { detail: (CourseDetail & { subject: Subject })[] };
                 })
               | null;
             room: (Room & { building: Building }) | null;

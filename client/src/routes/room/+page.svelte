@@ -5,7 +5,7 @@
   import toast from 'svelte-french-toast';
 
   import { invalidate } from '$app/navigation';
-  import { blurOnEscape } from '$lib/utils/directives';
+  import { blurOnEscape } from '$lib/element';
 
   import { searchHandler } from '$lib/utils/search';
   import apiRequest from '$lib/api';

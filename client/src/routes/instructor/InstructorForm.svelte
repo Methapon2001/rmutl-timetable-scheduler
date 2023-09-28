@@ -4,7 +4,7 @@
 
   import { instructorSchema } from '$lib/types';
   import { invalidate } from '$app/navigation';
-  import { blurOnEscape } from '$lib/utils/directives';
+  import { blurOnEscape } from '$lib/element';
   import { getZodErrorMessage } from '$lib/utils/zod';
   import apiRequest from '$lib/api';
 

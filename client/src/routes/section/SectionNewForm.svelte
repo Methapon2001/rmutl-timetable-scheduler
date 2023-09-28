@@ -14,7 +14,7 @@
 
   import { sectionNewSchema } from '$lib/types';
   import { invalidate } from '$app/navigation';
-  import { blurOnEscape } from '$lib/utils/directives';
+  import { blurOnEscape } from '$lib/element';
   import { getZodErrorMessage as getErrMsg } from '$lib/utils/zod';
   import { info } from '$lib/stores';
   import apiRequest from '$lib/api';

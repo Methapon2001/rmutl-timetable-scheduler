@@ -2,7 +2,7 @@
   import type { PageData } from './$types';
   import { page } from '$app/stores';
   import { invalidate } from '$app/navigation';
-  import { blurOnEscape } from '$lib/utils/directives';
+  import { blurOnEscape } from '$lib/element';
   import { deleteExam } from '$lib/api/exam';
   import debounce from '$lib/utils/debounce';
   import Modal from '$lib/components/Modal.svelte';

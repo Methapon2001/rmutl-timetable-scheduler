@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { ZodError } from 'zod';
   import { invalidate } from '$app/navigation';
-  import { blurOnEscape } from '$lib/utils/directives';
+  import { blurOnEscape } from '$lib/element';
   import { getZodErrorMessage } from '$lib/utils/zod';
   import { buildingSchema } from '$lib/types';
   import apiRequest from '$lib/api';

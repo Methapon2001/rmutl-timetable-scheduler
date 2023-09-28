@@ -5,7 +5,7 @@
   import toast from 'svelte-french-toast';
 
   import { goto, invalidate } from '$app/navigation';
-  import { blurOnEscape } from '$lib/utils/directives';
+  import { blurOnEscape } from '$lib/element';
 
   import { searchHandler } from '$lib/utils/search';
   import apiRequest from '$lib/api';
@@ -23,6 +23,8 @@
   let editState = false;
 
   let currentData: Section & {
+    /** Overwrite alt type since it is optional when fetched from api */
+    alt: string;
     roomId: string;
     groupId: string;
     instructorId: string[];

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { fade, fly } from 'svelte/transition';
-  import { clickOutside } from '$lib/utils/directives';
+  import { clickOutside } from '$lib/element';
   import CrossIcon from '$lib/icons/CrossIcon.svelte';
 
   export let width = '48rem';
