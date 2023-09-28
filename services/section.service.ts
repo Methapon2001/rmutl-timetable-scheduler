@@ -47,13 +47,10 @@ const select: Prisma.SectionSelect = {
     select: {
       ...groupSelect,
       plan: {
-        select: {
-          ...planSelect,
-          detail: { select: planDetailSelect },
-          course: {
-            select: { ...courseSelect, detail: { select: courseDetailSelect } },
-          },
-        },
+        select: { ...planSelect, detail: { select: planDetailSelect } },
+      },
+      course: {
+        select: { ...courseSelect, detail: { select: courseDetailSelect } },
       },
     },
   },
