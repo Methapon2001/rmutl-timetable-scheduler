@@ -2,12 +2,10 @@ import { Prisma, PrismaClient, Scheduler } from "@prisma/client";
 import { FastifyReply, FastifyRequest } from "fastify";
 import {
   buildingSelect,
-  courseDetailSelect,
   courseSelect,
   groupSelect,
   instructorSelect,
   logInfoSelect,
-  planDetailSelect,
   planSelect,
   roomSelect,
   scheduleSelect,
@@ -32,12 +30,7 @@ const select: Prisma.SchedulerSelect = {
         },
       },
       group: {
-        select: {
-          ...groupSelect,
-          plan: {
-            select: { ...planSelect, course: { select: courseSelect } },
-          },
-        },
+        select: groupSelect,
       },
       instructor: { select: instructorSelect },
       subject: { select: subjectSelect },
