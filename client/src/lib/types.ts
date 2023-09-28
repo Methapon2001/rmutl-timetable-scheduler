@@ -123,12 +123,14 @@ export const planSchema = z.object({
 export type PlanDetail = Omit<z.infer<typeof planDetailSchema>, 'subjectId'> & { id: string };
 export type Plan = Omit<z.infer<typeof planSchema>, 'detail' | 'courseId'>;
 
-export type Info = {
-  id: string;
-  year: number;
-  semester: number;
-  current: boolean;
-};
+export const infoSchema = z.object({
+  id: z.string(),
+  year: z.number(),
+  semester: z.number().min(1).max(3),
+  current: z.boolean(),
+});
+
+export type Info = z.infer<typeof infoSchema>;
 
 export const groupSchema = z.object({
   id: z.string().nonempty(),
@@ -199,3 +201,14 @@ export type Section = Omit<
   },
   'subjectId' | 'groupId' | 'section' | 'manual'
 >;
+
+export const timetableSchema = z.object({
+  id: z.string(),
+  start: z.number(),
+  end: z.number(),
+  weekday: z.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']),
+  publish: z.boolean().default(false),
+  sectionId: z.string(),
+});
+
+export type Timetable = Omit<z.infer<typeof timetableSchema>, 'sectionId'>;
