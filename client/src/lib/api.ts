@@ -19,6 +19,7 @@ type RouteBody = {
     detail: (Omit<types.PlanDetail, 'id'> & { subjectId: types.Subject['id'] })[];
   } & { courseId: string };
   '/api/group': types.Group;
+  '/api/scheduler': types.Timetable;
 };
 
 type UniqueRouteBody = {
