@@ -1,63 +1,57 @@
 <script lang="ts">
   import type { PageData } from './$types';
+  import type { Info } from '$lib/types';
   import { page } from '$app/stores';
-  import { invalidate, invalidateAll } from '$app/navigation';
-  import { blurOnEscape } from '$lib/utils/directives';
-  import { deleteInfo, editInfo } from '$lib/api/info';
-  import debounce from '$lib/utils/debounce';
-  import Modal from '$lib/components/Modal.svelte';
-  import Pagination from '$lib/components/Pagination.svelte';
-  import Info from './InfoForm.svelte';
   import toast from 'svelte-french-toast';
 
-  const handleSearch = debounce(async (text: string) => {
-    const url = new URL(window.location.toString());
-    url.searchParams.set('search', text);
-    history.replaceState({}, '', url);
-    await invalidate('data:info');
-  }, 300);
+  import { invalidate } from '$app/navigation';
+  import { blurOnEscape } from '$lib/element';
+  import { searchHandler } from '$lib/utils/search';
+  import apiRequest from '$lib/api';
+
+  import Modal from '$lib/components/Modal.svelte';
+  import Pagination from '$lib/components/Pagination.svelte';
+  import Form from './InfoForm.svelte';
+
+  const search = searchHandler('data:info');
 
   export let data: PageData;
 
   let newState = false;
-  let editState = false;
-  let editData: {
-    id: string;
-    year: number;
-    semester: number;
-    current: boolean;
-  };
 
-  function showEdit(info: { id: string; year: number; semester: number; current: boolean }) {
-    editState = true;
-    editData = info;
+  async function handleDelete(id: string) {
+    let flag = confirm('You are trying to delete all data related to this info, please confirm.');
+
+    if (!flag) return;
+
+    flag = confirm('Are you sure? This action cannot be undone.');
+
+    if (!flag) return;
+
+    const ret = await apiRequest('/api/info')
+      .delete({ id })
+      .catch((e) => console.error(e));
+
+    if (!ret)
+      return toast.error(
+        'Failed to delete info!\nThis record may currenly in use. \nSee console for more info.',
+      );
+
+    await invalidate('data:info');
+    toast.success('Delete Complete!');
   }
 
-  async function handleDelete(info: { id: string }) {
-    if (confirm('Are you sure? The records that using this data will also be deleted!')) {
-      const ret = await deleteInfo(info).catch((e: Response) => console.error(e));
-
-      if (ret) {
-        await invalidate('data:info');
-
-        toast.success('Delete Complete!');
-      } else {
-        toast.error('Failed to delete info!\nThis record is currenly in use.');
-      }
-    }
-  }
-
-  async function setCurrent(info: { id: string, year: number, semester: number; }) {
-
-    const ret = await editInfo({
-      id: info.id,
-      year: info.year,
-      semester: info.semester,
-      current: true,
-    }).catch((r: Response) => console.error(r));
+  async function setCurrent(info: { id: string; year: number; semester: number }) {
+    const ret = await apiRequest('/api/info')
+      .put({
+        id: info.id,
+        year: info.year,
+        semester: info.semester,
+        current: true,
+      })
+      .catch((e) => console.error(e));
 
     if (ret) {
-
       await invalidate('data:info');
 
       toast.success('Set Current Complete!');
@@ -86,7 +80,7 @@
       placeholder="Search"
       autocomplete="off"
       value="{$page.url.searchParams.get('search')}"
-      on:input="{(e) => handleSearch(e.currentTarget.value)}"
+      on:input="{(e) => search(e.currentTarget.value)}"
       use:blurOnEscape
     />
   </div>
@@ -100,24 +94,10 @@
   <div id="new" class="bg-light p-4">
     <h1 class="mb-4 block text-center text-2xl font-bold">New Info</h1>
     <div class="mx-auto max-w-screen-md rounded bg-white p-4 shadow">
-      <Info />
+      <Form />
     </div>
   </div>
 {/if}
-
-<Modal bind:open="{editState}">
-  <div id="edit" class="p-4">
-    <h1 class="mb-4 block text-center text-2xl font-bold">Edit Info</h1>
-    <Info
-      edit="{true}"
-      editData="{editData}"
-      callback="{() => {
-        editState = false;
-        invalidate('data:info');
-      }}"
-    />
-  </div>
-</Modal>
 
 <div id="records" class="overflow-x-auto">
   <table class="w-full">
@@ -144,16 +124,14 @@
           >
           <td class="fit-width text-center">
             <div class="space-x-4 whitespace-nowrap">
-              <button class="action-button text-green-600 disabled:text-secondary" disabled="{info.current}" on:click="{() => setCurrent(info)}">
+              <button
+                class="action-button text-green-600 disabled:text-secondary"
+                disabled="{info.current}"
+                on:click="{() => setCurrent(info)}"
+              >
                 Set Current
               </button>
-              <!-- <button class="action-button text-blue-600" on:click="{() => showEdit(info)}">
-                Edit
-              </button> -->
-              <button
-                class="action-button text-red-600"
-                on:click="{() => handleDelete({ id: info.id })}"
-              >
+              <button class="action-button text-red-600" on:click="{() => handleDelete(info.id)}">
                 Delete
               </button>
             </div>
