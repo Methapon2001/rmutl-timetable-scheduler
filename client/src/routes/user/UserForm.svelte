@@ -1,246 +1,188 @@
 <script lang="ts">
-  import { type ZodError, z } from 'zod';
+  import type { ZodError } from 'zod';
+  import toast from 'svelte-french-toast';
+
+  import { userSchema } from '$lib/types';
   import { invalidate } from '$app/navigation';
-  import { blurOnEscape } from '$lib/utils/directives';
+  import { blurOnEscape } from '$lib/element';
   import { getZodErrorMessage } from '$lib/utils/zod';
-  import { createUser, editUser } from '$lib/api/user';
-  import { onMount } from 'svelte';
+  import apiRequest from '$lib/api';
+
   import Select from '$lib/components/Select.svelte';
 
-  const roleOptions: {
-    label: string;
-    value: string;
-    disabled?: boolean;
-  }[] = [
-    {
-      label: 'User',
-      value: 'user',
-    },
-    {
-      label: 'Admin',
-      value: 'admin',
-    },
+  let firstInput: HTMLInputElement | null = null;
+  let validateError: ZodError | null = null;
+
+  $: err = {
+    id: getZodErrorMessage(validateError, ['id']),
+    username: getZodErrorMessage(validateError, ['username']),
+    role: getZodErrorMessage(validateError, ['role']),
+    password: getZodErrorMessage(validateError, ['password']),
+    confirmPassword: getZodErrorMessage(validateError, ['confirmPassword']),
+  };
+
+  const roleOptions: { label: string; value: string }[] = [
+    { label: 'User', value: 'user' },
+    { label: 'Admin', value: 'admin' },
   ];
 
-  const schema = z.object({
-    id: z.string().nonempty(),
-    username: z.string().min(3),
-    role: z.string().nonempty({ message: 'Must select one of the options.' }),
-  });
-
-  const editSchema = schema
-    .extend({
-      password: z.string().min(4, 'Password must be longer than 4 characters.').optional(),
-      confirmPassword: z.string().min(4, 'Password must be longer than 4 characters.').optional(),
-    })
-    .superRefine(({ confirmPassword, password }, ctx) => {
-      if (confirmPassword !== password) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'The passwords did not match.',
-          path: ['confirmPassword'],
-        });
-      }
-    });
-
-  const newSchema = schema
-    .omit({
-      id: true,
-    })
-    .extend({
-      password: z.string().min(4, 'Password must be longer than 4 characters.'),
-      confirmPassword: z.string().min(4, 'Password must be longer than 4 characters.'),
-    })
-    .superRefine(({ confirmPassword, password }, ctx) => {
-      if (confirmPassword !== password) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'The passwords did not match.',
-          path: ['confirmPassword'],
-        });
-      }
-    });
-
   export let edit = false;
-  export let editData: typeof form.data = {
-    id: '',
-    username: '',
-    role: '',
-  };
 
-  export let callback: () => void = function () {
-    // do nothing.
-  };
+  export let id = '';
+  export let username = '';
+  export let role = '';
+  export let password = '';
+  export let confirmPassword = '';
 
-  let form: {
-    data: z.infer<typeof editSchema>;
-    error: ZodError | undefined;
-  } = {
-    data: {
-      id: '',
-      username: '',
-      password: '',
-      confirmPassword: '',
-      role: 'user',
-    },
-    error: undefined,
-  };
-
-  async function handleSubmit() {
-    return edit ? await handleEdit() : await handleCreate();
+  function resetState() {
+    id = username = role = password = confirmPassword = '';
   }
 
-  async function handleCreate() {
-    form.error = undefined;
-
-    const result = newSchema.safeParse(form.data);
-
-    if (!result.success) {
-      form.error = result.error;
-      return;
-    }
-
-    const ret = await createUser(result.data).catch((r: Response) => console.error(r));
-
-    if (ret) {
-      form.data = {
-        id: '',
-        username: '',
-        password: '',
-        role: 'user',
-      };
-
-      await invalidate('data:user');
-
-      callback();
-    }
-  }
+  export let callback: (data: unknown) => void = () => {
+    // do nothing
+  };
 
   async function handleEdit() {
-    form.error = undefined;
+    validateError = null;
 
-    const result = editSchema
-      .superRefine((val, ctx) => {
-        if (val.password && val.password.length < 4) {
+    const parsed = userSchema
+      .superRefine(({ confirmPassword, password }, ctx) => {
+        if (confirmPassword !== password) {
           ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'Password must be longer than 4 characters.',
-            path: ['password'],
+            code: 'custom',
+            message: 'The passwords not match.',
+            path: ['confirmPassword'],
           });
         }
       })
-      .transform((val) => ({ ...val, password: val.password == '' ? undefined : val.password }))
-      .safeParse(form.data);
+      .safeParse({ id, username, role, password, confirmPassword });
 
-    if (!result.success) {
-      form.error = result.error;
-      return;
-    }
+    if (!parsed.success) return handleError(parsed.error);
 
-    const ret = await editUser(result.data).catch((r: Response) => console.error(r));
+    const ret = await apiRequest('/api/user')
+      .put(parsed.data)
+      .catch((e) => console.error(e));
 
-    if (ret) {
-      form.data = {
-        id: '',
-        username: '',
-        password: '',
-        role: 'user',
-      };
+    if (ret) await postSubmit(ret);
+  }
+  async function handleNew() {
+    validateError = null;
 
-      await invalidate('data:user');
+    const parsed = userSchema
+      .omit({ id: true })
+      .superRefine(({ confirmPassword, password }, ctx) => {
+        if (confirmPassword !== password) {
+          ctx.addIssue({
+            code: 'custom',
+            message: 'The passwords not match.',
+            path: ['confirmPassword'],
+          });
+        }
+      })
+      .safeParse({ id, username, role, password, confirmPassword });
 
-      callback();
-    }
+    if (!parsed.success) return handleError(parsed.error);
+
+    const ret = await apiRequest('/api/user')
+      .post(parsed.data)
+      .catch((e) => console.error(e));
+
+    if (ret) await postSubmit(ret);
   }
 
-  onMount(() => {
-    if (edit && editData) {
-      form.data = editData;
-    }
-  });
+  function handleError(error: ZodError) {
+    validateError = error;
+  }
+
+  async function postSubmit(data: unknown) {
+    firstInput?.focus();
+    await invalidate('data:user');
+    toast.success('Success');
+    resetState();
+    callback(data);
+  }
 </script>
 
-<form on:submit|preventDefault="{() => handleSubmit()}" class="space-y-4">
-  <section id="input-role" class="grid grid-cols-6">
+<form on:submit|preventDefault="{() => (edit ? handleEdit() : handleNew())}" class="space-y-4">
+  <section id="form-input-role" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
-      <label for="" class="font-semibold">
+      <label for="input-role" class="font-semibold">
         Role <span class="text-red-600">*</span>
       </label>
     </div>
-    <div
-      class="col-span-4"
-      class:invalid="{form.error && getZodErrorMessage(form.error, ['role']).length > 0}"
-    >
-      <Select options="{roleOptions}" bind:value="{form.data.role}" placeholder="Select Role" />
+    <div class="col-span-4" class:invalid="{err.role}">
+      <Select
+        id="input-role"
+        options="{roleOptions}"
+        bind:value="{role}"
+        placeholder="Select Role"
+      />
     </div>
-    <div class="col-span-4 col-start-3 text-red-600">
-      {form.error ? getZodErrorMessage(form.error, ['role']) : ''}
-    </div>
+    {#if err.role}
+      <div class="col-span-4 col-start-3 text-red-600">{err.role.join()}</div>
+    {/if}
   </section>
-  <section id="input-username" class="grid grid-cols-6">
+  <section id="form-input-username" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
-      <label for="" class="font-semibold">
+      <label for="input-username" class="font-semibold">
         Username <span class="text-red-600">*</span>
       </label>
     </div>
     <div class="col-span-4">
       <input
+        id="input-username"
         type="text"
-        class="input
-            {form.error && getZodErrorMessage(form.error, ['username']).length > 0
-          ? 'border border-red-600'
-          : ''}"
-        bind:value="{form.data.username}"
+        class="input"
+        class:border-red-600="{err.username}"
+        bind:value="{username}"
         use:blurOnEscape
       />
     </div>
-    <div class="col-span-4 col-start-3 text-red-600">
-      {form.error ? getZodErrorMessage(form.error, ['username']) : ''}
-    </div>
+    {#if err.username}
+      <div class="col-span-4 col-start-3 text-red-600">{err.username.join()}</div>
+    {/if}
   </section>
 
-  <section id="input-password" class="grid grid-cols-6">
+  <section id="form-input-password" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
-      <label for="" class="font-semibold">
+      <label for="input-password" class="font-semibold">
         Password {#if !edit}<span class="text-red-600">*</span>{/if}
       </label>
     </div>
     <div class="col-span-4">
       <input
+        id="input-password"
         type="password"
-        class="input
-            {form.error && getZodErrorMessage(form.error, ['password']).length > 0
-          ? 'border border-red-600'
-          : ''}"
-        bind:value="{form.data.password}"
+        class="input"
+        class:border-red-600="{err.username}"
+        bind:value="{password}"
         use:blurOnEscape
       />
     </div>
-    <div class="col-span-4 col-start-3 text-red-600">
-      {form.error ? getZodErrorMessage(form.error, ['password']) : ''}
-    </div>
+    {#if err.password}
+      <div class="col-span-4 col-start-3 text-red-600">{err.password.join()}</div>
+    {/if}
   </section>
 
-  <section id="input-confirm-password" class="grid grid-cols-6">
+  <section id="form-input-confirm-password" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
-      <label for="confirm-password" class="font-semibold">
+      <label for="input-confirm-password" class="font-semibold">
         Confirm Password {#if !edit}<span class="text-red-600">*</span>{/if}
       </label>
     </div>
     <div class="col-span-4">
       <input
+        id="input-confirm-password"
         type="password"
-        class="input
-            {form.error && getZodErrorMessage(form.error, ['confirmPassword']).length > 0
-          ? 'border border-red-600'
-          : ''}"
-        bind:value="{form.data.confirmPassword}"
+        class="input"
+        class:border-red-600="{err.username}"
+        bind:value="{confirmPassword}"
         use:blurOnEscape
       />
     </div>
-    <div class="col-span-4 col-start-3 text-red-600">
-      {form.error ? getZodErrorMessage(form.error, ['confirmPassword']) : ''}
-    </div>
+    {#if err.confirmPassword}
+      <div class="col-span-4 col-start-3 text-red-600">{err.confirmPassword.join()}</div>
+    {/if}
   </section>
 
   <button type="submit" class="button w-full">Save</button>

@@ -1,41 +1,49 @@
 <script lang="ts">
   import type { PageData } from './$types';
+  import type { User } from '$lib/types';
   import { page } from '$app/stores';
+  import toast from 'svelte-french-toast';
+
   import { invalidate } from '$app/navigation';
-  import { blurOnEscape } from '$lib/utils/directives';
-  import { deleteUser } from '$lib/api/user';
-  import debounce from '$lib/utils/debounce';
+  import { blurOnEscape } from '$lib/element';
+
+  import { searchHandler } from '$lib/utils/search';
+  import apiRequest from '$lib/api';
+
   import Modal from '$lib/components/Modal.svelte';
   import Pagination from '$lib/components/Pagination.svelte';
-  import UserForm from './UserForm.svelte';
+  import Form from './UserForm.svelte';
 
-  const handleSearch = debounce(async (text: string) => {
-    const url = new URL(window.location.toString());
-    url.searchParams.set('search', text);
-    history.replaceState({}, '', url);
-    await invalidate('data:user');
-  }, 300);
+  const handleSearch = searchHandler('data:user');
 
   export let data: PageData;
 
   let newState = false;
   let editState = false;
-  let editData: {
-    id: string;
-    username: string;
-    role: string;
-  };
 
-  function showEdit(user: { id: string; username: string; role: string }) {
+  let currentData: User;
+
+  function triggerEdit(user: typeof currentData) {
     editState = true;
-    editData = user;
+    currentData = user;
   }
 
-  async function handleDelete(user: { id: string }) {
-    if (confirm('Are you sure?')) {
-      await deleteUser(user).catch((e: Response) => console.error(e));
-      await invalidate('data:user');
-    }
+  async function handleDelete(id: string) {
+    const flag = confirm('Are you sure? This action cannot be undone.');
+
+    if (!flag) return;
+
+    const ret = await apiRequest('/api/user')
+      .delete({ id })
+      .catch((e) => console.error(e));
+
+    if (!ret)
+      return toast.error(
+        'Failed to delete user!\nThis record may currenly in use. \nSee console for more info.',
+      );
+
+    await invalidate('data:user');
+    toast.success('Delete Complete!');
   }
 </script>
 
@@ -72,7 +80,7 @@
   <div id="new" class="bg-light p-4">
     <h1 class="mb-4 block text-center text-2xl font-bold">New User</h1>
     <div class="mx-auto max-w-screen-md rounded bg-white p-4 shadow">
-      <UserForm />
+      <Form />
     </div>
   </div>
 {/if}
@@ -80,7 +88,7 @@
 <Modal bind:open="{editState}">
   <div id="edit" class="p-4">
     <h1 class="mb-4 block text-center text-2xl font-bold">Edit User</h1>
-    <UserForm edit="{true}" editData="{editData}" callback="{() => (editState = false)}" />
+    <Form edit="{true}" {...currentData} callback="{() => (editState = false)}" />
   </div>
 </Modal>
 
@@ -115,13 +123,10 @@
           </td>
           <td class="fit-width text-center">
             <div class="space-x-4 whitespace-nowrap">
-              <button class="action-button text-blue-600" on:click="{() => showEdit(user)}">
+              <button class="action-button text-blue-600" on:click="{() => triggerEdit(user)}">
                 Edit
               </button>
-              <button
-                class="action-button text-red-600"
-                on:click="{() => handleDelete({ id: user.id })}"
-              >
+              <button class="action-button text-red-600" on:click="{() => handleDelete(user.id)}">
                 Delete
               </button>
             </div>
