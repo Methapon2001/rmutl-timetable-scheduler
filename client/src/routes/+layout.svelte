@@ -2,7 +2,7 @@
   import '../app.postcss';
   import type { LayoutData } from './$types';
   import { page } from '$app/stores';
-  import { clickOutside } from '$lib/utils/directives';
+  import { clickOutside } from '$lib/element';
   import MenuIcon from '$lib/icons/MenuIcon.svelte';
   import { Toaster } from 'svelte-french-toast';
   import { invalidateAll } from '$app/navigation';
@@ -34,6 +34,7 @@
   }
 
   $: route = $page.route.id;
+  $: infoData = data.info.data.sort((a, b) => b.year - a.year || b.semester - a.semester);
 
   let currentInfo = data.info.data.find((inf) => inf.current);
   let selectedInfo = currentInfo ? `${currentInfo.semester}/${currentInfo.year}` : '';
@@ -110,7 +111,7 @@
       on:change="{setInfo}"
     >
       {#key data.info.total}
-        {#each data.info.data as inf}
+        {#each infoData as inf}
           <option value="{`${inf.semester}/${inf.year}`}"
             >{inf.semester}/{inf.year} {inf.current ? '(Current)' : ''}</option
           >

@@ -6,7 +6,7 @@ export const ssr = false;
 export const prerender = true;
 export const trailingSlash = 'always';
 
-export const load = (async ({ fetch, depends }) => {
+export const load = (async ({ fetch }) => {
   let userSession: API.Session | null = null;
 
   try {
