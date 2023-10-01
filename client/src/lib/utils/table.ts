@@ -1,17 +1,15 @@
-type WeekdayShort = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
-type SectionData = Omit<
-  API.Section, // eslint-disable-line no-undef
-  'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'
->;
-export type ScheduleData = {
-  id: string;
-  section: SectionData;
-  weekday: WeekdayShort;
-  period: number;
-  size: number;
-}[];
+import type { Building, Group, Instructor, Room, Section, Subject, Timetable } from '$lib/types';
 
-export function processOverlaps(arr: ScheduleData) {
+export function processOverlaps(
+  arr: (Timetable & {
+    section: Section & {
+      group: Group | null;
+      room: (Room & { building: Building }) | null;
+      instructor: Instructor[];
+      subject: Subject;
+    };
+  })[],
+) {
   const processed = arr.map((current) => {
     return {
       ...current,
@@ -19,8 +17,8 @@ export function processOverlaps(arr: ScheduleData) {
         (item) =>
           item != current &&
           item.weekday == current.weekday &&
-          item.period + item.size > current.period &&
-          item.period < current.period + current.size,
+          item.end >= current.start &&
+          item.start <= current.end,
       ),
       _offset: -1,
     };
@@ -35,8 +33,8 @@ export function processOverlaps(arr: ScheduleData) {
       (item) =>
         processed[i].id != item.id &&
         item.weekday == processed[i].weekday &&
-        processed[i].period < item.period + item.size &&
-        processed[i].period + processed[i].size > item.period,
+        processed[i].start <= item.end &&
+        processed[i].end >= item.start,
     );
 
     mutualOverlap.forEach((item) => {
