@@ -2,7 +2,7 @@
   import type { PageData } from './$types';
   import { invalidateAll } from '$app/navigation';
   import { editUser } from '$lib/api/user';
-  import { blurOnEscape } from '$lib/utils/directives';
+  import { blurOnEscape } from '$lib/element';
   import { getZodErrorMessage } from '$lib/utils/zod';
   import { ZodError, z } from 'zod';
 
