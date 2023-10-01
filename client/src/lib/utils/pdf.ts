@@ -330,27 +330,6 @@ export function drawDetailTable(
         y + vAlignTextCenter(options.rowHeaderHeight + rowHeight * 2, doc),
       );
 
-      // doc.setFontSize(options.fontSize + 10);
-      // doc.text(
-      //   'ภาคเรียน',
-      //   x + schedule.colWidth,
-      //   y + vAlignTextCenter(options.rowHeaderHeight + rowHeight * 6, doc),
-      // );
-      // doc.setFontSize(options.fontSize);
-
-      // doc.setFontSize(options.fontSize + 6);
-      // doc.text(
-      //   'ปีที่เข้าศึกษา',
-      //   x + schedule.colHeaderWidth,
-      //   y + vAlignTextCenter(options.rowHeaderHeight + rowHeight * 21, doc),
-      // );
-      // doc.text(
-      //   'จำนวน นศ.',
-      //   x + schedule.colHeaderWidth,
-      //   y + vAlignTextCenter(options.rowHeaderHeight + rowHeight * 25, doc),
-      // );
-      // doc.setFontSize(options.fontSize);
-
       doc.setFontSize(options.fontSize + 20);
       doc.text(
         title,
@@ -441,17 +420,6 @@ export function drawDetailTable(
         },
         [0, 0, 0],
       );
-      // doc.text(
-      //   totalCredit.toString(),
-      //   x +
-      //   schedule.colHeaderWidth +
-      //   schedule.colWidth * 14 +
-      //   schedule.colWidth / 4,
-      //   y + vAlignTextCenter(rowHeight, doc) + rowHeight * 12 + options.rowHeaderHeight,
-      //   {
-      //     align: 'center',
-      //   },
-      // );
       doc.text(
         totalLecture.toString(),
         x + schedule.colHeaderWidth + schedule.colWidth * 14 + schedule.colWidth * 0.25,
@@ -807,27 +775,6 @@ export function drawExamDetailTable(
         y + vAlignTextCenter(options.rowHeaderHeight + rowHeight * 2, doc),
       );
 
-      // doc.setFontSize(options.fontSize + 10);
-      // doc.text(
-      //   'ภาคเรียน',
-      //   x + schedule.colWidth,
-      //   y + vAlignTextCenter(options.rowHeaderHeight + rowHeight * 6, doc),
-      // );
-      // doc.setFontSize(options.fontSize);
-
-      // doc.setFontSize(options.fontSize + 6);
-      // doc.text(
-      //   'ปีที่เข้าศึกษา',
-      //   x + schedule.colHeaderWidth,
-      //   y + vAlignTextCenter(options.rowHeaderHeight + rowHeight * 21, doc),
-      // );
-      // doc.text(
-      //   'จำนวน นศ.',
-      //   x + schedule.colHeaderWidth,
-      //   y + vAlignTextCenter(options.rowHeaderHeight + rowHeight * 25, doc),
-      // );
-      // doc.setFontSize(options.fontSize);
-
       doc.setFontSize(options.fontSize + 20);
       doc.text(
         title,
@@ -935,17 +882,6 @@ export function drawExamDetailTable(
         },
         [0, 0, 0],
       );
-      // doc.text(
-      //   totalCredit.toString(),
-      //   x +
-      //   schedule.colHeaderWidth +
-      //   schedule.colWidth * 14 +
-      //   schedule.colWidth / 4,
-      //   y + vAlignTextCenter(rowHeight, doc) + rowHeight * 12 + options.rowHeaderHeight,
-      //   {
-      //     align: 'center',
-      //   },
-      // );
       doc.text(
         totalLecture.toString(),
         x + schedule.colHeaderWidth + schedule.colWidth * 14 + schedule.colWidth * 0.25,
@@ -1101,11 +1037,11 @@ export function drawSchedule(
           1;
 
         const cords = [
-          scheduleAnchor[0] + colWidth * (v.period - 1),
+          scheduleAnchor[0] + colWidth * (v.start - 1),
           scheduleAnchor[1] +
             rowHeight * (weekdayMap[v.weekday] - 1) +
             (v._overlap ? (rowHeight * v._offset) / maxOverlap : 0),
-          v.size * colWidth,
+          (v.start - v.end + 1) * colWidth,
           v._overlap ? rowHeight / maxOverlap : rowHeight,
         ];
 
@@ -1133,14 +1069,6 @@ export function drawSchedule(
               align: 'center',
             },
           );
-          // doc.text(
-          //   `${v.section.room?.building.name}`,
-          //   cords[0] + cords[2] / 2,
-          //   cords[1] + vAlignTextCenter(cords[3] / 1, doc) + cords[3] / 10,
-          //   {
-          //     align: 'center',
-          //   },  (v._overlap ? 0 : cords[3] / 2)
-          // );
         } else {
           doc.text(
             `${v.section.subject.code}_SEC_${v.section.no}${
@@ -1161,7 +1089,7 @@ export function drawSchedule(
   };
 }
 
-export function createPDF(orient: "landscape" | "portrait" = "landscape") {
+export function createPDF(orient: 'landscape' | 'portrait' = 'landscape') {
   const doc = new jsPDF({
     orientation: orient,
     unit: 'mm',
@@ -1336,14 +1264,9 @@ export function drawScheduleExam(
             ? v.exam.section.find((obj) => obj.group && obj.group.id === detailBy?.id)?.no
             : v.exam.section.map((obj) => obj.no).join(', ');
 
-        doc.text(
-          `SEC ${sectionNo}`,
-          cords[0] + cords[2] / 2,
-          cords[1] + cords[3] / 1.75,
-          {
-            align: 'center',
-          },
-        );
+        doc.text(`SEC ${sectionNo}`, cords[0] + cords[2] / 2, cords[1] + cords[3] / 1.75, {
+          align: 'center',
+        });
         doc.text(
           `${v.exam.room?.building.code}-${v.exam.room?.name}`,
           cords[0] + cords[2] / 2,
@@ -1352,14 +1275,6 @@ export function drawScheduleExam(
             align: 'center',
           },
         );
-        // doc.text(
-        //   `${v.section.room?.building.name}`,
-        //   cords[0] + cords[2] / 2,
-        //   cords[1] + vAlignTextCenter(cords[3] / 1, doc) + cords[3] / 10,
-        //   {
-        //     align: 'center',
-        //   },  (v._overlap ? 0 : cords[3] / 2)
-        // );
       });
 
       doc.setFontSize(sourceSetting.fontSize);
