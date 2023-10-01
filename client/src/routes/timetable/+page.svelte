@@ -1,105 +1,52 @@
 <script lang="ts">
-  import { onMount, type ComponentProps, onDestroy } from 'svelte';
   import type { PageData } from './$types';
+  import { onMount, type ComponentProps, onDestroy } from 'svelte';
+  import toast from 'svelte-french-toast';
+
   import { PUBLIC_API_WS } from '$env/static/public';
-  import { invalidate } from '$app/navigation';
+
+  import { invalidate, invalidateAll } from '$app/navigation';
   import { createPDF, drawDetailTable, drawSchedule } from '$lib/utils/pdf';
   import { resetData } from '$lib/api/reset';
   import { createScheduler } from '$lib/api/scheduler';
-  import { processOverlaps } from '$lib/utils/table';
-  import { checkOverlap } from './utils';
-  import toast from 'svelte-french-toast';
-  import Table from './Table.svelte';
+  import { checkOverlap, processOverlaps } from './utils';
+
+  import { publish } from '$lib/api/publish';
+  import { exportSchedule } from '$lib/api/export-data';
+
+  import type { Section, Subject } from '$lib/types';
+  import viewport from '$lib/element';
+  import apiRequest from '$lib/api';
+
   import Modal from '$lib/components/Modal.svelte';
-  import ModalCenter from '$lib/components/ModalCenter.svelte';
-  import GenerateModal from './GenerateModal.svelte';
   import FilterIcon from '$lib/icons/FilterIcon.svelte';
   import Filter from './Filter.svelte';
-  import { publish } from '$lib/api/publish';
-  import viewport from '$lib/utils/useViewportAction';
-  import SectionNewForm from '../section/NewForm.svelte';
-  import SectionEditForm from '../section/EditForm.svelte';
+  import GenerateModal from './GenerateModal.svelte';
+  import Table from './Table.svelte';
+  import NewForm from '../section/SectionNewForm.svelte';
+  import EditForm from '../section/SectionEditForm.svelte';
   import ShowRoom from './ShowRoom.svelte';
-  import { exportSchedule } from '$lib/api/export-data';
 
   export let data: PageData;
 
   let ws: WebSocket;
-
   onMount(() => {
     ws = new WebSocket(PUBLIC_API_WS);
-
     ws.onopen = () => console.log('WebSocket Connected.');
-
     ws.onmessage = (event) => {
       if (event.data === 'Schedule updated.') invalidate('data:scheduler');
     };
-
     ws.onclose = () => console.log('WebSocket Closed');
   });
 
   onDestroy(() => ws.close());
 
-  const groupOptions = async () => {
-    return (await data.lazy.group).data.map((group) => ({
-      label: group.name,
-      value: group.id,
-    }));
-  };
+  let scheduler: ComponentProps<Table>['data'] = [];
 
-  const roomOptions = async () => {
-    return (await data.lazy.room).data.map((room) => ({
-      label: `${room.building.code}-${room.name} (${room.type
-        .charAt(0)
-        .toLocaleUpperCase()}${room.type.slice(1)})`,
-      value: room.id,
-      detail: room,
-    }));
-  };
-
-  const subjectOptions = async () => {
-    return (await data.lazy.subject).data.map((subject) => ({
-      label: `${subject.code} ${subject.name}`,
-      value: subject.id,
-      detail: subject,
-    }));
-  };
-
-  const instructorOptions = async () => {
-    return (await data.lazy.instructor).data.map((instructor) => ({
-      label: instructor.name,
-      value: instructor.id,
-    }));
-  };
-
-  const formOptions = async () => {
-    return {
-      group: await groupOptions(),
-      subject: await subjectOptions(),
-      room: await roomOptions(),
-      instructor: await instructorOptions(),
-    };
-  };
-
-  $: isPublish = data.scheduler.data.some((sched) => {
-    return sched.createdBy.id === data.session?.user.id && sched.publish === true;
-  });
-
-  let scheduler: ComponentProps<Table>['data'];
-
-  $: scheduler = data.scheduler.data.map((obj) => {
-    return {
-      id: obj.id,
-      weekday: obj.weekday,
-      period: obj.start,
-      size: obj.end - obj.start + 1,
-      section: obj.section,
-    };
-  });
-
+  $: scheduler = data.scheduler.data;
   $: instructor = Object.values(
     data.section.data.reduce<
-      Record<string, Omit<API.Instructor, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>> // eslint-disable-line no-undef
+      Record<string, (typeof data.section.data)[number]['instructor'][number]>
     >((acc, curr) => {
       curr.instructor.forEach((inst) => {
         if (!acc[`${inst.id}`]) acc[`${inst.id}`] = inst;
@@ -110,7 +57,7 @@
 
   $: room = Object.values(
     data.section.data.reduce<
-      Record<string, Omit<API.Room, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>> // eslint-disable-line no-undef
+      Record<string, NonNullable<(typeof data.section.data)[number]['room']>>
     >((acc, curr) => {
       if (curr.room && !acc[`${curr.room.id}`]) {
         acc[`${curr.room.id}`] = curr.room;
@@ -121,7 +68,7 @@
 
   $: group = Object.values(
     data.section.data.reduce<
-      Record<string, Omit<API.Group, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>> // eslint-disable-line no-undef
+      Record<string, NonNullable<(typeof data.section.data)[number]['group']>>
     >((acc, curr) => {
       if (curr.group && !acc[`${curr.group.id}`]) {
         acc[`${curr.group.id}`] = curr.group;
@@ -130,6 +77,13 @@
     }, {}),
   );
 
+  $: isPublish = data.scheduler.data.some((v) => {
+    return v.createdBy.id === data.session?.user.id && v.publish === true;
+  });
+
+  let pov: 'instructor' | 'group' = 'group';
+  let leftOverHours = 0;
+
   let state: ComponentProps<Table>['state'] = {
     selected: false,
     section: null,
@@ -137,9 +91,6 @@
     period: 1,
     size: 1,
   };
-
-  let pov: 'instructor' | 'group' = 'group';
-  let leftOverHours = 0;
 
   function resetState() {
     state = {
@@ -158,10 +109,10 @@
     state.weekday = weekday;
     state.period = period;
 
-    handleDataChange();
+    detectOverlap();
   }
 
-  function handleDataChange() {
+  function detectOverlap() {
     state.isOverflow = state.period + state.size - 1 > 25;
 
     const {
@@ -220,25 +171,23 @@
     }
   }
 
-  // eslint-disable-next-line no-undef
-  function getRequiredHour(section: API.Section | API.Section['child'][number]) {
+  type SectionArg = NonNullable<(typeof state)['section']>;
+
+  function getRequiredHour(section: SectionArg) {
     return section.type === 'lecture' ? section.subject.lecture : section.subject.lab;
   }
 
-  // eslint-disable-next-line no-undef
-  function getUsedHour(section: API.Section | API.Section['child'][number]) {
+  function getUsedHour(section: SectionArg) {
     return scheduler
       .filter((sched) => sched.section.id === section.id)
-      .reduce((acc, curr) => acc + curr.size / 2, 0);
+      .reduce((acc, curr) => acc + (curr.end - curr.start + 1) / 2, 0);
   }
 
-  // eslint-disable-next-line no-undef
-  function getLeftOverHours(section: API.Section | API.Section['child'][number]) {
+  function getLeftOverHours(section: SectionArg) {
     return getRequiredHour(section) - getUsedHour(section);
   }
 
-  // eslint-disable-next-line no-undef
-  function handleSelectSection(section: API.Scheduler['section']) {
+  function handleSelectSection(section: SectionArg) {
     if (isPublish) {
       toast.error('Data is published, Cannot edit.');
       return false;
@@ -274,17 +223,17 @@
 
       leftOverHours = left;
 
-      handleDataChange();
-    }
+      detectOverlap();
 
-    if (pov === 'group') {
-      document.querySelector(`#group-${state.section?.group?.id}`)?.scrollIntoView({
-        behavior: 'smooth',
-      });
-    } else {
-      document.querySelector(`#inst-${state.section?.instructor[0].id}`)?.scrollIntoView({
-        behavior: 'smooth',
-      });
+      if (pov === 'group') {
+        document.querySelector(`#group-${state.section?.group?.id}`)?.scrollIntoView({
+          behavior: 'smooth',
+        });
+      } else {
+        document.querySelector(`#inst-${state.section?.instructor[0].id}`)?.scrollIntoView({
+          behavior: 'smooth',
+        });
+      }
     }
 
     return true;
@@ -391,22 +340,23 @@
   $: filterList = [
     {
       group: 'Group',
-      options: group?.map((grp) => ({
-        value: grp.name,
-        label: grp.name,
-      })) ?? [],
+      options:
+        group?.map((grp) => ({
+          value: grp.name,
+          label: grp.name,
+        })) ?? [],
     },
     {
       group: 'Instructor',
-      options: instructor?.map((inst) => ({
-        value: inst.name,
-        label: inst.name,
-      })) ?? [],
+      options:
+        instructor?.map((inst) => ({
+          value: inst.name,
+          label: inst.name,
+        })) ?? [],
     },
   ];
 
   let showState = false;
-
   let searchText = '';
 
   $: filteredSection = data.section.data.filter((obj) => {
@@ -427,51 +377,36 @@
 
   let newState = false;
   let editState = false;
-  let editData: {
-    id: string;
+
+  let currentData: Section & {
+    /** Overwrite alt type since it is optional when fetched from api */
     alt: string;
-    groupId: string;
     roomId: string;
-    instructor: string[];
-    capacity: number;
+    groupId: string;
+    instructorId: string[];
+    subject: Subject;
   };
 
-  let showData: {
-    no: number;
-    lab: number | null;
-    subject: { name: string };
-    type: string;
-  };
-
-  function showEdit(
-    editSectionData: {
-      id: string;
-      alt: string;
-      groupId: string;
-      roomId: string;
-      instructor: {
-        id: string;
-      }[];
-      capacity: number;
-    },
-    showSectionData: {
-      no: number;
-      type: string;
-      lab: number | null;
-      subject: { name: string };
-    },
-  ) {
+  function triggerEdit(section: typeof currentData) {
     editState = true;
-    editData = {
-      ...editSectionData,
-      instructor: editSectionData.instructor.map((inst) => inst.id),
-    };
-    showData = showSectionData;
+    currentData = section;
   }
 
   let showRoomState = false;
-
   let tableSelectState: string;
+
+  async function handleDelete(id: string) {
+    const ret = await apiRequest('/api/scheduler')
+      .delete({ id })
+      .catch((e) => console.error(e));
+
+    if (!ret)
+      return toast.error(
+        'Failed to delete course!\nThis record may currenly in use. \nSee console for more info.',
+      );
+
+    await invalidate('data:scheduler');
+  }
 </script>
 
 <svelte:window on:keydown="{handleKeydown}" />
@@ -480,7 +415,7 @@
   <div class="flex-grow">
     <div class="relative">
       <div class="z-20 grid grid-cols-2">
-        <div class="table-small-container border-b border-r">
+        <div class="table-small-container relative border-b border-r">
           {#if pov === 'group'}
             {#each instructor.filter((obj) => state.section?.instructor.findIndex((inst) => inst.id == obj.id) !== -1) as i (i.id)}
               <div id="inst-{i.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
@@ -491,8 +426,9 @@
                   bind:data="{scheduler}"
                   bind:state="{state}"
                   on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
+                  on:remove="{(e) => handleDelete(e.detail.id)}"
                   small="{true}"
-                  selectable="{data.lazy.info?.current}"
+                  selectable="{data.info?.current}"
                   instructor="{i}"
                 />
               </div>
@@ -507,8 +443,9 @@
                   bind:data="{scheduler}"
                   bind:state="{state}"
                   on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
+                  on:remove="{(e) => handleDelete(e.detail.id)}"
                   small="{true}"
-                  selectable="{data.lazy.info?.current}"
+                  selectable="{data.info?.current}"
                   group="{g}"
                 />
               </div>
@@ -523,16 +460,18 @@
                   Room - {r.building.code}-{r.name} <span class="capitalize">({r.type})</span>
                 </h6>
                 <button
-                  class="bg-primary rounded px-2 font-semibold text-white"
-                  on:click="{() => (showRoomState = true)}">View All</button
+                  class="rounded bg-primary px-2 font-semibold text-white"
+                  on:click="{() => (showRoomState = true)}"
+                  >{state.selected ? 'Change' : 'View All'}</button
                 >
               </div>
               <Table
                 bind:data="{scheduler}"
                 bind:state="{state}"
                 on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
+                on:remove="{(e) => handleDelete(e.detail.id)}"
                 small="{true}"
-                selectable="{data.lazy.info?.current}"
+                selectable="{data.info?.current}"
                 room="{r}"
               />
             </div>
@@ -540,7 +479,7 @@
           {#if state.section && !state.section.room}
             <div class="flex h-full w-full items-center justify-center">
               <button
-                class="bg-primary rounded p-2 font-semibold text-white"
+                class="rounded bg-primary p-2 font-semibold text-white"
                 on:click="{() => (showRoomState = true)}">Select Room</button
               >
             </div>
@@ -551,7 +490,7 @@
         {#if data.section.total === 0}
           <div class="p-8 text-center">
             <h1 class="mb-4 text-5xl font-extrabold">No Data</h1>
-            <h2 class="text-secondary text-3xl">
+            <h2 class="text-3xl text-secondary">
               No section created.<br />Must have section data in order for timetable to show.
             </h2>
           </div>
@@ -575,7 +514,8 @@
                 bind:data="{scheduler}"
                 bind:state="{state}"
                 on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
-                selectable="{data.lazy.info?.current}"
+                on:remove="{(e) => handleDelete(e.detail.id)}"
+                selectable="{data.info?.current}"
                 noDelete="{isPublish}"
                 group="{g}"
               />
@@ -599,7 +539,8 @@
                 bind:data="{scheduler}"
                 bind:state="{state}"
                 on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
-                selectable="{data.lazy.info?.current}"
+                on:remove="{(e) => handleDelete(e.detail.id)}"
+                selectable="{data.info?.current}"
                 noDelete="{isPublish}"
                 instructor="{i}"
               />
@@ -629,7 +570,7 @@
     </div>
   </div>
   <div>
-    <div class="section-selector bg-light border-l">
+    <div class="section-selector border-l bg-light">
       <div class="relative m-4 mb-0 grid grid-cols-4 items-center gap-4">
         <input
           type="text"
@@ -638,7 +579,7 @@
           bind:value="{searchText}"
         />
         <button
-          class="input text-secondary flex !w-full items-center justify-center bg-white shadow"
+          class="input flex !w-full items-center justify-center bg-white text-secondary shadow"
           on:click="{() => (showFilter = !showFilter)}"
         >
           <FilterIcon />
@@ -653,12 +594,12 @@
             <div class="mb-2 space-y-2 text-sm">
               <div class="flex gap-2">
                 <span
-                  class="bg-primary flex items-center rounded px-2 py-1 font-semibold text-white"
+                  class="flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
                 >
                   {section.subject.code}
                 </span>
                 <span
-                  class="bg-primary flex items-center rounded px-2 py-1 font-semibold text-white"
+                  class="flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
                 >
                   {section.subject.name}
                 </span>
@@ -666,12 +607,12 @@
 
               <div class="flex gap-2">
                 <span
-                  class="bg-primary flex items-center rounded px-2 py-1 font-semibold text-white"
+                  class="flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
                 >
                   SEC {section.no}
                 </span>
                 <span
-                  class="bg-primary flex items-center rounded px-2 py-1 font-semibold text-white"
+                  class="flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
                 >
                   {section.group?.name ?? 'Any'}
                 </span>
@@ -683,10 +624,11 @@
               class:bg-green-400="{state.section?.id === section.id}"
               class:line-through="{getLeftOverHours(section) == 0}"
               class:text-red-600="{getLeftOverHours(section) == 0}"
+              class:cursor-default="{getLeftOverHours(section) == 0}"
               class:text-yellow-500="{getUsedHour(section) > 0 &&
                 getUsedHour(section) < getRequiredHour(section) &&
                 state.section?.id != section.id}"
-              disabled="{!data.lazy.info?.current}"
+              disabled="{!data.info?.current}"
               on:click="{() => handleSelectSection(section)}"
             >
               <div
@@ -698,43 +640,39 @@
                 </small>
               </div>
               <div class="col-span-3 flex h-full w-full items-center pl-3 font-semibold">
-              <div class="text-left">
-                {#if section.instructor.length == 0}
-                  <small>Not assigned</small>
-                {:else}
-                  {#each section.instructor as instructor}
-                    <small class="block w-full">{instructor.name}</small>
-                  {/each}
-                {/if}
+                <div class="text-left">
+                  {#if section.instructor.length == 0}
+                    <small class="block w-full">Not assigned</small>
+                  {:else}
+                    {#each section.instructor as instructor}
+                      <small class="block w-full">{instructor.name}</small>
+                    {/each}
+                  {/if}
                 </div>
               </div>
               <div class="flex h-full w-full items-center justify-center rounded-l font-semibold">
                 <button
-                  class="disabled:!text-secondary !text-blue-500 underline flex item-scenter justify-center"
+                  class="item-scenter flex justify-center !text-blue-500 underline disabled:!text-secondary"
                   disabled="{(data.session?.user.id != section.createdBy.id &&
                     data.session?.user.role != 'admin') ||
                     (getUsedHour(section) > 0 &&
                       getUsedHour(section) < getRequiredHour(section) &&
                       state.section?.id != section.id) ||
                     getLeftOverHours(section) == 0 ||
-                    !data.lazy.info?.current}"
+                    !data.info?.current}"
                   on:click|stopPropagation="{() => {
-                    showEdit(
-                      {
-                        id: section.id,
-                        alt: section.alt ?? '',
-                        groupId: section.group?.id ?? '',
-                        roomId: section.room?.id ?? '',
-                        instructor: section.instructor,
-                        capacity: section.capacity,
-                      },
-                      {
-                        no: section.no,
-                        type: section.type,
-                        lab: section.lab,
-                        subject: section.subject,
-                      },
-                    );
+                    triggerEdit({
+                      id: section.id,
+                      no: section.no, // no-edit, readonly
+                      lab: section.lab, // no-edit, readonly
+                      type: section.type, // no-edit, readonly
+                      alt: section.alt ?? '',
+                      capacity: section.capacity,
+                      groupId: section.group?.id ?? '',
+                      roomId: section.room?.id ?? '',
+                      instructorId: section.instructor.map((v) => v.id),
+                      subject: section.subject, // no-edit, readonly
+                    });
                     invalidate('data:scheduler');
                   }}"
                 >
@@ -750,63 +688,62 @@
                 class:bg-green-400="{state.section?.id === child.id}"
                 class:text-red-600="{getLeftOverHours(child) == 0}"
                 class:line-through="{getLeftOverHours(child) == 0}"
+                class:cursor-default="{getLeftOverHours(child) == 0}"
                 class:text-yellow-500="{getUsedHour(child) > 0 &&
                   getUsedHour(child) < getRequiredHour(child) &&
                   state.section?.id != child.id}"
-                disabled="{!data.lazy.info?.current}"
-                on:click="{() => handleSelectSection({ ...child, child: [] })}"
+                disabled="{!data.info?.current}"
+                on:click="{() => handleSelectSection(child)}"
               >
-              <div
-                class="flex h-full w-full items-center justify-center rounded-l border-r text-center font-semibold"
-              >
-                <small class="block">
-                  {child.type}
-                  {child.lab ?? ''}
-                </small>
-              </div>
-              <div class="col-span-3 flex h-full w-full items-center pl-3 font-semibold">
-              <div class="text-left">
-                {#if child.instructor.length == 0}
-                  <small>Not assigned</small>
-                {:else}
-                  {#each child.instructor as instructor}
-                    <small class="block w-full">{instructor.name}</small>
-                  {/each}
-                {/if}
+                <div
+                  class="flex h-full w-full items-center justify-center rounded-l border-r text-center font-semibold"
+                >
+                  <small class="block">
+                    {child.type}
+                    {child.lab ?? ''}
+                  </small>
                 </div>
-              </div>
+                <div class="col-span-3 flex h-full w-full items-center pl-3 font-semibold">
+                  <div class="text-left">
+                    {#if child.instructor.length == 0}
+                      <small>Not assigned</small>
+                    {:else}
+                      {#each child.instructor as instructor}
+                        <small class="block w-full">{instructor.name}</small>
+                      {/each}
+                    {/if}
+                  </div>
+                </div>
                 <div
                   class="flex h-full w-full items-center justify-center rounded-l border-r font-semibold"
                 >
                   <button
-                    class="disabled:!text-secondary !text-blue-500 underline flex items-center justify-center"
+                    class="flex items-center justify-center !text-blue-500 underline disabled:!text-secondary"
                     disabled="{(data.session?.user.id != section.createdBy.id &&
                       data.session?.user.role != 'admin') ||
                       (getUsedHour(child) > 0 &&
                         getUsedHour(child) < getRequiredHour(child) &&
                         state.section?.id != child.id) ||
                       getLeftOverHours(child) == 0 ||
-                      !data.lazy.info?.current}"
+                      !data.info?.current}"
                     on:click|stopPropagation="{() => {
-                      showEdit(
-                        {
-                          id: child.id,
-                          alt: child.alt ?? '',
-                          groupId: child.group?.id ?? '',
-                          roomId: child.room?.id ?? '',
-                          instructor: child.instructor,
-                          capacity: child.capacity,
-                        },
-                        {
-                          no: child.no,
-                          type: child.type,
-                          lab: child.lab,
-                          subject: child.subject,
-                        },
-                      );
+                      triggerEdit({
+                        id: child.id,
+                        no: child.no, // no-edit, readonly
+                        lab: child.lab, // no-edit, readonly
+                        type: child.type, // no-edit, readonly
+                        alt: child.alt ?? '',
+                        capacity: child.capacity,
+                        groupId: child.group?.id ?? '',
+                        roomId: child.room?.id ?? '',
+                        instructorId: child.instructor.map((v) => v.id),
+                        subject: child.subject, // no-edit, readonly
+                      });
                       invalidate('data:scheduler');
-                    }}"><small>Edit</small></button
+                    }}"
                   >
+                    <small>Edit</small>
+                  </button>
                 </div>
               </button>
             {/each}
@@ -815,8 +752,8 @@
       {/each}
       <div class="p-4">
         <button
-          class="button disabled:border-secondary disabled:bg-secondary disabled:cursor-not-allowed"
-          disabled="{!data.lazy.info?.current}"
+          class="button disabled:cursor-not-allowed disabled:border-secondary disabled:bg-secondary"
+          disabled="{!data.info?.current}"
           on:click="{() => (newState = !newState)}">Add Section</button
         >
       </div>
@@ -892,14 +829,14 @@
   </div>
   {#if state.section}
     <div
-      class="border-primary bg-light flex justify-between gap-2 overflow-hidden rounded border pr-2 font-semibold shadow"
+      class="flex justify-between gap-2 overflow-hidden rounded border border-primary bg-light pr-2 font-semibold shadow"
     >
       <span class="bg-primary px-3 py-2 font-semibold text-white">Selected</span>
       <span class="truncate py-2">
         {state.section?.subject.code ?? ''}
         {state.section?.subject.name ?? ''}
       </span>
-      <span class="py-2">{state.section?.group?.name ?? ''}</span>
+      <span class="whitespace-nowrap py-2">{state.section?.group?.name ?? ''}</span>
       <span class="whitespace-nowrap py-2">SEC {state.section?.no ?? ''}</span>
       <span class="whitespace-nowrap py-2 capitalize"
         >{state.section?.type} {state.section?.lab ?? ''}</span
@@ -910,7 +847,7 @@
   {/if}
 
   <div class="alloc-control">
-    <div class="bg-primary grid grid-cols-6 rounded font-semibold text-white">
+    <div class="grid grid-cols-6 rounded bg-primary font-semibold text-white">
       <div class="col-span-5 flex items-center px-4 py-2">
         <input
           class="w-full"
@@ -918,7 +855,7 @@
           min="1"
           max="{leftOverHours * 2}"
           disabled="{state.section === null}"
-          on:change="{() => handleDataChange()}"
+          on:change="{() => detectOverlap()}"
           bind:value="{state.size}"
         />
       </div>
@@ -937,31 +874,7 @@
   </div>
 </Modal>
 
-<Modal bind:open="{newState}">
-  {#if newState}
-    <div id="new" class="p-4">
-      <h1 class="mb-4 block text-center text-2xl font-bold">New Section</h1>
-      <div class="mx-auto max-w-screen-md">
-        {#await formOptions()}
-          Loading...
-        {:then options}
-          <SectionNewForm
-            groupOptions="{options.group}"
-            roomOptions="{options.room}"
-            subjectOptions="{options.subject}"
-            instructorOptions="{options.instructor}"
-            callback="{async () => {
-              newState = !newState;
-              await invalidate('data:timetable');
-            }}"
-          />
-        {/await}
-      </div>
-    </div>
-  {/if}
-</Modal>
-
-<ModalCenter bind:open="{showRoomState}">
+<Modal bind:open="{showRoomState}">
   {#await data.lazy.room}
     Loading...
   {:then roomData}
@@ -969,42 +882,39 @@
       scheduler="{scheduler}"
       room="{roomData.data}"
       state="{state}"
-      bind:open="{showRoomState}"
+      handleSelect="{handleSelect}"
     />
   {/await}
-</ModalCenter>
+</Modal>
 
-<Modal bind:open="{editState}">
+<Modal bind:open="{newState}">
   <div id="edit" class="p-4">
-    <h1 class="mb-4 block text-center text-2xl font-bold">Edit Section</h1>
-    {#await formOptions()}
-      Loading...
-    {:then options}
-      <SectionEditForm
-        groupOptions="{options.group}"
-        roomOptions="{options.room}"
-        instructorOptions="{options.instructor}"
-        edit="{true}"
-        editData="{editData}"
-        showData="{showData}"
-        callback="{async () => {
-          editState = false;
-          await invalidate('data:scheduler');
-
-          if (state.section) {
-            const selected = filteredSection.find((sec) => sec.id === state.section?.id);
-
-            if (selected && !handleSelectSection(selected)) {
-              resetState();
-            }
-          }
-        }}"
-      />
-    {/await}
+    <h1 class="block text-center text-2xl font-bold">New Section</h1>
+    <hr class="my-2" />
+    <NewForm
+      callback="{async () => {
+        await invalidateAll();
+        newState = false;
+      }}"
+    />
   </div>
 </Modal>
 
-<style lang="postcss">
+<Modal bind:open="{editState}">
+  <div id="edit" class="p-4">
+    <h1 class="block text-center text-2xl font-bold">Edit Section</h1>
+    <hr class="my-2" />
+    <EditForm
+      {...currentData}
+      callback="{async () => {
+        await invalidateAll();
+        editState = false;
+      }}"
+    />
+  </div>
+</Modal>
+
+<style>
   .table-small-container {
     height: calc(193px + 1rem + 1.5rem + 1rem + 0.5rem);
     overflow-y: auto;

@@ -4,7 +4,7 @@
 
   export let sections: Parameters<typeof generate>[0];
   export let schedule: Parameters<typeof generate>[1];
-  export let group: Omit<API.Group, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>[]; // eslint-disable-line no-undef
+  export let group: NonNullable<Parameters<typeof generate>[0][number]['group']>[];
 
   const subjectTypeOptions = ['compulsory', 'elective'] as const;
 
