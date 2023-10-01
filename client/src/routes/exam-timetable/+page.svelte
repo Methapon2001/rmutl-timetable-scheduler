@@ -17,7 +17,7 @@
   import ExamNewForm from '../exam/ExamForm.svelte';
   import ShowRoom from './ShowRoom.svelte';
   import { resetData } from '$lib/api/reset';
-  import viewport from '$lib/utils/useViewportAction';
+  import viewport from '$lib/element';
   import ShowInstructor from './ShowInstructor.svelte';
   import autoTable from 'jspdf-autotable';
   import { publishExam } from '$lib/api/publish';
@@ -460,7 +460,7 @@
               <div class="mb-2 flex justify-between">
                 <h6 class="font-semibold">Instructor - {i.name}</h6>
                 <button
-                  class="bg-primary rounded px-2 font-semibold text-white"
+                  class="rounded bg-primary px-2 font-semibold text-white"
                   on:click="{() => (showInstructorState = true)}">View All</button
                 >
               </div>
@@ -478,7 +478,7 @@
           {#if state.exam && !state.exam.instructor.length}
             <div class="flex h-full w-full items-center justify-center">
               <button
-                class="bg-primary rounded p-2 font-semibold text-white"
+                class="rounded bg-primary p-2 font-semibold text-white"
                 on:click="{() => (showInstructorState = true)}">Select Instructor</button
               >
             </div>
@@ -507,7 +507,7 @@
         {#if data.exam.total === 0}
           <div class="p-8 text-center">
             <h1 class="mb-4 text-5xl font-extrabold">No Data</h1>
-            <h2 class="text-secondary text-3xl">
+            <h2 class="text-3xl text-secondary">
               No section created.<br />Must have section data in order for timetable to show.
             </h2>
           </div>
@@ -528,7 +528,7 @@
                 Room - {r.building.code}-{r.name} <span class="capitalize">({r.type})</span>
               </h6>
               <button
-                class="bg-primary rounded px-2 font-semibold text-white"
+                class="rounded bg-primary px-2 font-semibold text-white"
                 on:click="{() => (showRoomState = true)}">View All</button
               >
             </div>
@@ -545,7 +545,7 @@
         {#if state.exam && !state.exam.room}
           <div class="flex h-full w-full items-center justify-center">
             <button
-              class="bg-primary rounded p-2 font-semibold text-white"
+              class="rounded bg-primary p-2 font-semibold text-white"
               on:click="{() => (showRoomState = true)}">Select Room</button
             >
           </div>
@@ -563,7 +563,7 @@
     </div>
   </div>
   <div>
-    <div class="section-selector bg-light border-l">
+    <div class="section-selector border-l bg-light">
       <div class="relative m-4 grid grid-cols-4 items-center gap-4">
         <input
           type="text"
@@ -572,7 +572,7 @@
           bind:value="{searchText}"
         />
         <button
-          class="input text-secondary flex !w-full items-center justify-center bg-white shadow"
+          class="input flex !w-full items-center justify-center bg-white text-secondary shadow"
           on:click="{() => (showFilter = !showFilter)}"
         >
           <FilterIcon />
@@ -585,17 +585,17 @@
         <div class="w-full space-y-2 border-b p-4">
           <div class="mb-2 space-y-2 text-sm">
             <div class="flex gap-2">
-              <span class="bg-primary flex items-center rounded px-2 py-1 font-semibold text-white">
+              <span class="flex items-center rounded bg-primary px-2 py-1 font-semibold text-white">
                 {exam.section[0]?.subject.code ?? ''}
               </span>
-              <span class="bg-primary flex items-center rounded px-2 py-1 font-semibold text-white">
+              <span class="flex items-center rounded bg-primary px-2 py-1 font-semibold text-white">
                 {exam.section[0]?.subject.name ?? ''}
               </span>
             </div>
             <div class="flex gap-2">
               {#each exam.section as sec}
                 <span
-                  class="bg-primary flex items-center rounded px-2 py-1 font-semibold text-white"
+                  class="flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
                 >
                   SEC {sec.no}
                 </span>
@@ -631,7 +631,7 @@
             </div>
             <div class="flex h-full w-full items-center justify-center rounded-l font-semibold">
               <button
-                class="disabled:!text-secondary flex items-center justify-center !text-blue-500 underline"
+                class="flex items-center justify-center !text-blue-500 underline disabled:!text-secondary"
                 disabled="{(data.session?.user.id != exam.createdBy.id &&
                   data.session?.user.role != 'admin') ||
                   schedulerExam.findIndex((sched) => exam.id == sched.exam.id) !== -1}"
@@ -651,7 +651,7 @@
       {/each}
       <div class="p-4">
         <button
-          class="button disabled:bg-secondary disabled:border-secondary disabled:cursor-not-allowed"
+          class="button disabled:cursor-not-allowed disabled:border-secondary disabled:bg-secondary"
           disabled="{!data.lazy.info?.current}"
           on:click="{() => (newState = !newState)}">Add Exam</button
         >
@@ -717,7 +717,7 @@
   </div>
   {#if state.exam}
     <div
-      class="border-primary bg-light flex justify-between gap-2 overflow-hidden rounded border pr-2 font-semibold shadow"
+      class="flex justify-between gap-2 overflow-hidden rounded border border-primary bg-light pr-2 font-semibold shadow"
     >
       <span class="bg-primary px-3 py-2 font-semibold text-white">Selected</span>
       <span class="truncate py-2">
@@ -876,12 +876,12 @@
         on:click="{() => {
           const midDay = new Date(midDateExam).getDay();
           const finalDay = new Date(finalDateExam).getDay();
-      
+
           if (midDay !== 1 || finalDay !== 1) {
             toast.error('Date select must be on monday.');
             return;
           }
-          
+
           exportScheduleExam(midDateExam, finalDateExam);
         }}"
       >
