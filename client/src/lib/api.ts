@@ -6,6 +6,7 @@ import { refresh } from './api/auth';
  * Store list of resource and its body data type.
  */
 type RouteBody = {
+  '/api/user': types.User;
   '/api/instructor': types.Instructor;
   '/api/subject': types.Subject;
   '/api/building': types.Building;
@@ -18,8 +19,11 @@ type RouteBody = {
   '/api/plan': types.Plan & {
     detail: (Omit<types.PlanDetail, 'id'> & { subjectId: types.Subject['id'] })[];
   } & { courseId: string };
+  '/api/info': types.Info;
   '/api/group': types.Group;
   '/api/scheduler': types.Timetable;
+  '/api/exam': types.Exam;
+  '/api/scheduler-exam': types.TimetableExam;
 };
 
 type UniqueRouteBody = {

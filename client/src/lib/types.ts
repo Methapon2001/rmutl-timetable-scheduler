@@ -11,23 +11,13 @@ export type ResponseDataInfo<T> = {
   total: number;
 };
 
-export const userSchema = z
-  .object({
-    id: z.string().nonempty(),
-    username: z.string().min(3),
-    role: z.string().nonempty({ message: ERR_SELECT_MSG }),
-    password: z.string().min(4, 'Password must be longer than 4 characters.'),
-    confirmPassword: z.string().min(4, 'Password must be longer than 4 characters.'),
-  })
-  .superRefine(({ confirmPassword, password }, ctx) => {
-    if (confirmPassword !== password) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'The passwords did not match.',
-        path: ['confirmPassword'],
-      });
-    }
-  });
+export const userSchema = z.object({
+  id: z.string().nonempty(),
+  username: z.string().min(3),
+  role: z.string().nonempty({ message: ERR_SELECT_MSG }),
+  password: z.string().min(4, 'Password must be longer than 4 characters.'),
+  confirmPassword: z.string().min(4, 'Password must be longer than 4 characters.'),
+});
 
 export type UserInput = Omit<z.infer<typeof userSchema>, 'confirmPassword'>;
 export type User = Omit<UserInput, 'password'>;
@@ -202,13 +192,41 @@ export type Section = Omit<
   'subjectId' | 'groupId' | 'section' | 'manual'
 >;
 
+const weekdays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
+
 export const timetableSchema = z.object({
   id: z.string(),
   start: z.number(),
   end: z.number(),
-  weekday: z.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']),
+  weekday: z.enum(weekdays),
   publish: z.boolean().default(false),
   sectionId: z.string(),
 });
 
 export type Timetable = Omit<z.infer<typeof timetableSchema>, 'sectionId'>;
+
+export const examSchema = z.object({
+  id: z.string(),
+  roomId: z.string().transform((v) => v.trim() || null),
+  section: z
+    .string()
+    .transform((v) => ({ id: v }))
+    .array(),
+  instructor: z
+    .string()
+    .transform((v) => ({ id: v }))
+    .array(),
+});
+
+export type Exam = Pick<z.infer<typeof examSchema>, 'id'>;
+
+export const timetableExamSchema = z.object({
+  id: z.string(),
+  start: z.number(),
+  end: z.number(),
+  weekday: z.enum(weekdays),
+  publish: z.boolean().default(false),
+  examId: z.string(),
+});
+
+export type TimetableExam = Omit<z.infer<typeof timetableExamSchema>, 'examId'>;
