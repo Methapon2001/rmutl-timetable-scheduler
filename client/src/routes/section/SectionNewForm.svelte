@@ -327,11 +327,18 @@
         type="button"
         class="absolute right-0 top-0 p-3"
         on:click="{() => removeSection(secIdx)}"
+        hidden="{(secIdx === 0 &&
+          type === 'lecture' &&
+          currentSubject &&
+          currentSubject.lecture > 0) ||
+          (type === 'lab' && section.length === 1) ||
+          (type === 'lecture' && secIdx !== 0 && section.length === 2)}"
       >
         <CrossIcon />
       </button>
       <h2 class="font-2xl !mt-0 text-center font-semibold capitalize">
-        {secIdx === 0 ? type : `lab ${secIdx}`}
+        {secIdx === 0 ? type : 'lab'}
+        {type === 'lecture' && secIdx !== 0 ? secIdx : type === 'lab' ? secIdx + 1 : ''}
       </h2>
       <section id="form-room" class="grid grid-cols-6">
         <div class="col-span-2 flex items-center">
