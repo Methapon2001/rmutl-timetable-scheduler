@@ -14,7 +14,7 @@ export type ResponseDataInfo<T> = {
 export const userSchema = z.object({
   id: z.string().nonempty(),
   username: z.string().min(3),
-  role: z.string().nonempty({ message: ERR_SELECT_MSG }),
+  role: z.enum(['admin', 'user'], { errorMap: ENUM_ERROR_MAP }),
   password: z.string().min(4, 'Password must be longer than 4 characters.'),
   confirmPassword: z.string().min(4, 'Password must be longer than 4 characters.'),
 });
