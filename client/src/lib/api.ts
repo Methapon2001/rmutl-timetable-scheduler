@@ -1,4 +1,4 @@
-import { PUBLIC_API_HOST } from '$env/static/public';
+import { env } from '$env/dynamic/public';
 import type * as types from './types';
 import { refresh } from './api/auth';
 
@@ -6,7 +6,6 @@ import { refresh } from './api/auth';
  * Store list of resource and its body data type.
  */
 type RouteBody = {
-  '/api/user': types.User;
   '/api/instructor': types.Instructor;
   '/api/subject': types.Subject;
   '/api/building': types.Building;
@@ -27,6 +26,11 @@ type RouteBody = {
 };
 
 type UniqueRouteBody = {
+  '/api/user': {
+    post: types.User & { password: string };
+    put: Partial<types.User> & { role?: 'admin' | 'user'; password?: string };
+    delete: { id: string };
+  };
   '/api/section': {
     post: types.SectionNew;
     put: types.SectionEdit;
@@ -46,7 +50,7 @@ type RouteData = {
 } & UniqueRouteBody;
 
 function apiRequest<TRoute extends keyof RouteData>(resource: TRoute, fetcher = window.fetch) {
-  const url = PUBLIC_API_HOST + resource;
+  const url = (env.PUBLIC_API_HOST ? env.PUBLIC_API_HOST : window.location.origin) + resource;
 
   return {
     get: async <R = unknown>(
@@ -105,4 +109,11 @@ function apiRequest<TRoute extends keyof RouteData>(resource: TRoute, fetcher = 
   };
 }
 
-export default apiRequest;
+function getWebsocketURL() {
+  const url = new URL(env.PUBLIC_API_HOST ? env.PUBLIC_API_HOST : window.location.origin);
+  url.protocol = 'ws:';
+  url.pathname = '/websocket';
+  return url.href;
+}
+
+export { apiRequest as default, getWebsocketURL };

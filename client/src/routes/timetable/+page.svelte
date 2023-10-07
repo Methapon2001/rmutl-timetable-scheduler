@@ -3,8 +3,6 @@
   import { onMount, type ComponentProps, onDestroy } from 'svelte';
   import toast from 'svelte-french-toast';
 
-  import { PUBLIC_API_WS } from '$env/static/public';
-
   import { invalidate, invalidateAll } from '$app/navigation';
   import { createPDF, drawDetailTable, drawSchedule } from '$lib/utils/pdf';
   import { resetData } from '$lib/api/reset';
@@ -16,7 +14,7 @@
 
   import type { Section, Subject } from '$lib/types';
   import viewport from '$lib/element';
-  import apiRequest from '$lib/api';
+  import apiRequest, { getWebsocketURL } from '$lib/api';
 
   import Modal from '$lib/components/Modal.svelte';
   import FilterIcon from '$lib/icons/FilterIcon.svelte';
@@ -31,7 +29,7 @@
 
   let ws: WebSocket;
   onMount(() => {
-    ws = new WebSocket(PUBLIC_API_WS);
+    ws = new WebSocket(getWebsocketURL());
     ws.onopen = () => console.log('WebSocket Connected.');
     ws.onmessage = (event) => {
       if (event.data === 'Schedule updated.') invalidate('data:scheduler');
