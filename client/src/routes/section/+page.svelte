@@ -137,7 +137,12 @@
       {/if}
       {#each data.section.data as section (section.id)}
         <tr class="hover:bg-light">
-          <td class="whitespace-nowrap">{section.subject.code} {section.subject.name}</td>
+          <td class="whitespace-nowrap">
+            <span hidden="{section.parent !== null}">
+              {section.subject.code}
+              {section.subject.name}
+            </span>
+          </td>
           <td class="text-center">{section.no}</td>
           <td class="text-center">{section.alt ?? '-'}</td>
           <td class="text-center capitalize">{section.type}</td>
