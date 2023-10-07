@@ -34,8 +34,6 @@ const select: Prisma.ExamSelect = {
   section: {
     select: {
       ...sectionSelect,
-      ...logInfoSelect,
-      parent: { select: sectionSelect },
       group: { select: groupSelect },
       subject: { select: subjectSelect },
     },
@@ -47,7 +45,7 @@ export async function createExam(
   request: FastifyRequest<{
     Body: Exam & { instructor: Instructor[]; section: Section[] };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const info = await prisma.info.findFirst({
     where: {
@@ -95,7 +93,7 @@ export async function requestExam(
       semester: number;
     } & Pick<Exam, "roomId" | "createdByUserId" | "updatedByUserId">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
   const { limit, offset, year, semester, search, ...where } = request.query;
@@ -145,7 +143,7 @@ export async function updateExam(
       section?: Section[];
     };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 
@@ -213,7 +211,7 @@ export async function deleteExam(
   request: FastifyRequest<{
     Params: Pick<Exam, "id">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 
@@ -266,7 +264,7 @@ export async function searchExam(
   request: FastifyRequest<{
     Querystring: { search: string; limit: number; offset: number };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { limit, offset, search } = request.query;
 
@@ -351,7 +349,7 @@ export async function resetExam(
       semester: number;
     };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id: userId } = request.user;
 
