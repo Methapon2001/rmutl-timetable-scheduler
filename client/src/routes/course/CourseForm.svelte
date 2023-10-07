@@ -85,7 +85,6 @@
 
   function handleError(error: ZodError) {
     validateError = error;
-    console.error(error);
   }
 
   async function postSubmit(data: unknown) {
