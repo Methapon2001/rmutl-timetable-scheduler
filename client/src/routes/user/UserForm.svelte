@@ -175,7 +175,7 @@
         id="input-confirm-password"
         type="password"
         class="input"
-        class:border-red-600="{err.username}"
+        class:border-red-600="{err.confirmPassword}"
         bind:value="{confirmPassword}"
         use:blurOnEscape
       />
