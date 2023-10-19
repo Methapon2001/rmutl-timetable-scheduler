@@ -8,6 +8,7 @@ import type {
   Course,
   CourseDetail,
   Info,
+  Subject,
 } from '$lib/types';
 
 import { paginationRequestParams } from '$lib/utils/search';
@@ -37,7 +38,10 @@ export const load = (async ({ fetch, parent, url }) => {
       ResponseDataInfo<
         LogInfo<
           Group & {
-            plan: Plan & { detail: PlanDetail[]; course: Course & { detail: CourseDetail[] } };
+            plan: Plan & {
+              detail: (PlanDetail & { subject: Subject })[];
+              course: Course & { detail: (CourseDetail & { subject: Subject })[] };
+            };
           }
         >
       >
