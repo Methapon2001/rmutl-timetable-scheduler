@@ -1,8 +1,10 @@
-import { PUBLIC_API_HOST } from '$env/static/public';
+import { env } from '$env/dynamic/public';
 import jwtDecode from 'jwt-decode';
 
+const url = env.PUBLIC_API_HOST ? env.PUBLIC_API_HOST : window.location.origin;
+
 export const login = async (credential: { username: string; password: string }) => {
-  const res = await fetch(`${PUBLIC_API_HOST}/api/auth/login`, {
+  const res = await fetch(`${url}/api/auth/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -42,7 +44,7 @@ export const check = async (fetch: typeof global.fetch = window.fetch) => {
   if (userSession) {
     userSession = JSON.parse(userSession) as API.Session;
 
-    const res = await fetch(`${PUBLIC_API_HOST}/api/auth/check`, {
+    const res = await fetch(`${url}/api/auth/check`, {
       headers: {
         Authorization: `Bearer ${userSession.token.access}`,
       },
@@ -79,7 +81,7 @@ export const refresh = async (fetch: typeof global.fetch = window.fetch) => {
       return userSession;
     }
 
-    const res = await fetch(`${PUBLIC_API_HOST}/api/auth/refresh`, {
+    const res = await fetch(`${url}/api/auth/refresh`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -117,7 +119,7 @@ export const logout = async (fetch: typeof global.fetch = window.fetch) => {
 
   if (!userSession) return null;
 
-  await fetch(`${PUBLIC_API_HOST}/api/auth/logout`, {
+  await fetch(`${url}/api/auth/logout`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${userSession.token.access}`,
