@@ -124,7 +124,7 @@
         <section id="input-subject" class="grid grid-cols-6">
           <div class="col-span-2 flex items-center">
             <label for="group" class="font-semibold">
-              lut Subject <span class="text-red-600">*</span>
+              Subject <span class="text-red-600">*</span>
             </label>
           </div>
           <div class="col-span-4 grid auto-cols-fr">
