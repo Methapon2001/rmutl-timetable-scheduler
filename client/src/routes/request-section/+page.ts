@@ -39,58 +39,8 @@ export const load = (async ({ fetch, parent, depends }) => {
     };
   };
 
-  const requestGroup = async () => {
-    const res = await fetch(`${PUBLIC_API_HOST}/api/group?limit=9999`);
-    const body = await res.json();
-    return body as {
-      data: API.Group[];
-      limit: number;
-      offset: number;
-      total: number;
-    };
-  };
-
-  const requestRoom = async () => {
-    const res = await fetch(`${PUBLIC_API_HOST}/api/room?limit=9999`);
-    const body = await res.json();
-    return body as {
-      data: API.Room[];
-      limit: number;
-      offset: number;
-      total: number;
-    };
-  };
-
-  const requestSubject = async () => {
-    const res = await fetch(`${PUBLIC_API_HOST}/api/subject?limit=9999`);
-    const body = await res.json();
-    return body as {
-      data: API.Subject[];
-      limit: number;
-      offset: number;
-      total: number;
-    };
-  };
-
-  const requestInstructor = async () => {
-    const res = await fetch(`${PUBLIC_API_HOST}/api/instructor?limit=9999`);
-    const body = await res.json();
-    return body as {
-      data: API.Instructor[];
-      limit: number;
-      offset: number;
-      total: number;
-    };
-  };
-
   return {
     requestSectionStatus: requestRequestSectionStatus(),
     requestSection: requestRequestSection(),
-    lazy: {
-      group: requestGroup(),
-      room: requestRoom(),
-      subject: requestSubject(),
-      instructor: requestInstructor(),
-    },
   };
 }) satisfies PageLoad;

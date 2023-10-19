@@ -1,8 +1,11 @@
 import type { PageLoad } from './$types';
+import type { Instructor, Subject, LogInfo, ResponseDataInfo } from '$lib/types';
 import { error } from '@sveltejs/kit';
-import { PUBLIC_API_HOST } from '$env/static/public';
+import { env } from '$env/dynamic/public';
+import apiRequest from '$lib/api';
 
-const api = new URL(`${PUBLIC_API_HOST}/api/request-section/check`);
+const url = env.PUBLIC_API_HOST ? env.PUBLIC_API_HOST : window.location.origin;
+const api = new URL(`${url}/api/request-section/check`);
 
 export const load = (async ({ fetch, url }) => {
   const key = url.searchParams.get('key');
@@ -15,40 +18,20 @@ export const load = (async ({ fetch, url }) => {
     });
   }
 
-  const res = await fetch(api);
-  const body = await res.json();
+  const { data } = await fetch(api).then((r) => r.json());
 
-  if (body.data === null) {
+  if (data === null) {
     throw error(400, {
       message: 'No form found.',
     });
   }
 
-  const instructor = async () => {
-    const res = await fetch(`${PUBLIC_API_HOST}/api/instructor?limit=9999`);
-    const body = await res.json();
-    return body as {
-      data: API.Instructor[];
-      limit: number;
-      offset: number;
-      total: number;
-    };
-  };
-
-  const subject = async () => {
-    const res = await fetch(`${PUBLIC_API_HOST}/api/subject?limit=9999`);
-    const body = await res.json();
-    return body as {
-      data: API.Subject[];
-      limit: number;
-      offset: number;
-      total: number;
-    };
-  };
+  const instructor = apiRequest('/api/instructor', fetch);
+  const subject = apiRequest('/api/subject', fetch);
 
   return {
     key: key,
-    instructor: instructor(),
-    subject: subject(),
+    instructor: instructor.get<ResponseDataInfo<LogInfo<Instructor>>>({ limit: `${9999}` }),
+    subject: subject.get<ResponseDataInfo<LogInfo<Subject>>>({ limit: `${9999}` }),
   };
 }) satisfies PageLoad;

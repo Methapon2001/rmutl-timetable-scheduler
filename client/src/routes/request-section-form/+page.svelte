@@ -1,47 +1,50 @@
 <script lang="ts">
-  import { getZodErrorMessage } from '$lib/utils/zod';
-  import { ZodError, z } from 'zod';
+  import { type ZodError, z } from 'zod';
   import type { PageData } from './$types';
+
+  import { env } from '$env/dynamic/public';
+  import { getZodErrorMessage as getErrMsg } from '$lib/utils/zod';
   import Select from '$lib/components/Select.svelte';
-  import { PUBLIC_API_HOST } from '$env/static/public';
+
   import toast from 'svelte-french-toast';
+
+  const url = env.PUBLIC_API_HOST ? env.PUBLIC_API_HOST : window.location.origin;
 
   export let data: PageData;
 
-  const subjectOptions = data.subject.data.map((val) => ({
-    label: `${val.code} ${val.name}`,
-    value: val.id,
-  }));
-
-  const instructorOptions = data.instructor.data.map((val) => ({
-    label: val.name,
-    value: val.id,
-  }));
+  const subjectOptions = data.subject.data
+    .sort((a, b) => a.name.localeCompare(b.name) || a.code.localeCompare(b.code))
+    .map((v) => ({ label: `${v.code} ${v.name}`, value: v.id }));
+  const instructorOptions = data.instructor.data
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((v) => ({ label: v.name, value: v.id }));
 
   const schema = z.object({
     subjectId: z.string().nonempty({ message: 'Must select one of the options.' }),
     instructorId: z.string().nonempty({ message: 'Must select one of the options.' }),
   });
 
-  const form: { data: z.infer<typeof schema>; error: ZodError | undefined } = {
-    data: {
-      subjectId: '',
-      instructorId: '',
-    },
-    error: undefined,
+  let validateError: ZodError | null = null;
+
+  $: err = {
+    subjectId: getErrMsg(validateError, ['subjectId']),
+    instructorId: getErrMsg(validateError, ['instructorId']),
   };
 
-  async function handleSubmit() {
-    form.error = undefined;
+  let subjectId = '';
+  let instructorId = '';
 
-    const result = schema.safeParse(form.data);
+  async function handleSubmit() {
+    validateError = null;
+
+    const result = schema.safeParse({ subjectId, instructorId });
 
     if (!result.success) {
-      form.error = result.error;
+      validateError = result.error;
       return;
     }
 
-    const res = await fetch(`${PUBLIC_API_HOST}/api/request-section?key=${data.key}`, {
+    const res = await fetch(`${url}/api/request-section?key=${data.key}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -51,12 +54,8 @@
 
     if (!res.ok) {
       toast.error('Failed to submit form. Something went wrong.');
-      console.error(res.json());
     } else {
-      form.data = {
-        subjectId: '',
-        instructorId: '',
-      };
+      subjectId = instructorId = '';
       toast.success('Form submitted.');
     }
   }
@@ -74,19 +73,12 @@
         Requested Subject <span class="text-red-600">*</span>
       </label>
     </div>
-    <div
-      class="col-span-4"
-      class:invalid="{form.error && getZodErrorMessage(form.error, ['subjectId']).length > 0}"
-    >
-      <Select
-        options="{subjectOptions}"
-        bind:value="{form.data.subjectId}"
-        placeholder="Select Subject"
-      />
+    <div class="col-span-4" class:invalid="{err.subjectId}">
+      <Select options="{subjectOptions}" placeholder="Select Subject" bind:value="{subjectId}" />
     </div>
-    <div class="col-span-4 col-start-3 text-red-600">
-      {form.error ? getZodErrorMessage(form.error, ['subjectId']) : ''}
-    </div>
+    {#if err.subjectId}
+      <div class="col-span-4 col-start-3 text-red-600">{err.subjectId.join()}</div>
+    {/if}
   </section>
   <section id="input-instructor" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
@@ -94,19 +86,16 @@
         Requested Instructor <span class="text-red-600">*</span>
       </label>
     </div>
-    <div
-      class="col-span-4"
-      class:invalid="{form.error && getZodErrorMessage(form.error, ['instructorId']).length > 0}"
-    >
+    <div class="col-span-4" class:invalid="{err.subjectId}">
       <Select
         options="{instructorOptions}"
-        bind:value="{form.data.instructorId}"
-        placeholder="Select Instructor"
+        placeholder="Select Subject"
+        bind:value="{instructorId}"
       />
     </div>
-    <div class="col-span-4 col-start-3 text-red-600">
-      {form.error ? getZodErrorMessage(form.error, ['subjectId']) : ''}
-    </div>
+    {#if err.instructorId}
+      <div class="col-span-4 col-start-3 text-red-600">{err.instructorId.join()}</div>
+    {/if}
   </section>
   <button type="submit" class="button w-full">Save</button>
 </form>
