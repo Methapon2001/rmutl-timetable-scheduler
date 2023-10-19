@@ -68,17 +68,6 @@
   <article class="space-y-4 rounded border bg-white p-4">
     <h1 class="mb-4 text-center text-2xl font-bold">Generate Section</h1>
 
-    <section id="input-semester" class="grid grid-cols-6">
-      <div class="col-span-2 flex items-center">
-        <label for="semester" class="font-semibold">
-          Semester <span class="text-red-600">*</span>
-        </label>
-      </div>
-      <div class="col-span-4">
-        <Select options="{['1', '2', '3']}" bind:value="{semester}" placeholder="Select Semester" />
-      </div>
-    </section>
-
     <section id="input-group" class="grid grid-cols-6">
       <div class="col-span-2 flex items-center">
         <label for="group" class="font-semibold">
