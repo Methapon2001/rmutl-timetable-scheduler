@@ -1,6 +1,5 @@
 <script lang="ts">
   import type { PageData } from './$types';
-  import type { Info } from '$lib/types';
   import { page } from '$app/stores';
   import toast from 'svelte-french-toast';
 
@@ -9,7 +8,6 @@
   import { searchHandler } from '$lib/utils/search';
   import apiRequest from '$lib/api';
 
-  import Modal from '$lib/components/Modal.svelte';
   import Pagination from '$lib/components/Pagination.svelte';
   import Form from './InfoForm.svelte';
 
@@ -117,11 +115,11 @@
       {#each data.info.data as info (info.id)}
         <tr class="hover:bg-light">
           <td class="text-center" width="10%">{info.semester}/{info.year}</td>
-          <td class="text-center" width="10%"
-            >{#if info.current}<span class="rounded bg-green-500 px-2 py-1 font-semibold text-white"
-                >Active</span
-              >{/if}</td
-          >
+          <td class="text-center" width="10%">
+            {#if info.current}
+              <span class="rounded bg-green-500 px-2 py-1 font-semibold text-white">Active</span>
+            {/if}
+          </td>
           <td class="fit-width text-center">
             <div class="space-x-4 whitespace-nowrap">
               <button
