@@ -1,10 +1,24 @@
 import type { PageLoad } from './$types';
+import type {
+  Section,
+  Group,
+  Info,
+  LogInfo,
+  ResponseDataInfo,
+  Room,
+  Instructor,
+  Subject,
+  Exam,
+  Building,
+} from '$lib/types';
+
+import { paginationRequestParams } from '$lib/utils/search';
+import apiRequest from '$lib/api';
+
 import { redirect } from '@sveltejs/kit';
-import { PUBLIC_API_HOST } from '$env/static/public';
 import { info } from '$lib/stores';
 
-const api = new URL(`${PUBLIC_API_HOST}/api/exam`);
-let currentInfo: API.Info | undefined = undefined;
+let currentInfo: Info | undefined = undefined;
 info.subscribe((v) => (currentInfo = v));
 
 export const load = (async ({ fetch, parent, depends, url }) => {
@@ -14,88 +28,29 @@ export const load = (async ({ fetch, parent, depends, url }) => {
 
   if (!session) throw redirect(302, '/login?redirect=/exam');
 
-  const page = url.searchParams.get('page');
-  const search = url.searchParams.get('search');
+  const exam = apiRequest('/api/exam', fetch);
+  const param = paginationRequestParams(url);
 
-  if (search && search.length > 0) {
-    api.searchParams.set('search', search);
-  } else {
-    api.searchParams.delete('search');
+  if (currentInfo !== undefined) {
+    param.set('semester', currentInfo.semester.toString());
+    param.set('year', currentInfo.year.toString());
   }
 
-  api.searchParams.set('limit', String(20));
-  api.searchParams.set('offset', String((+(page ?? 1) - 1) * 20));
-
-  const requestExam = async () => {
-    const res = await fetch(api);
-    const body = await res.json();
-    return body as {
-      data: API.Exam[];
-      limit: number;
-      offset: number;
-      total: number;
-    };
-  };
-
-  const requestSection = async () => {
-    const res = await fetch(
-      `${PUBLIC_API_HOST}/api/section?limit=9999${
-        currentInfo ? `&year=${currentInfo.year}&semester=${currentInfo.semester}` : ''
-      }`,
-    );
-    const body = await res.json();
-    return body as {
-      data: API.Section[];
-      limit: number;
-      offset: number;
-      total: number;
-    };
-  };
-
-  const requestSectionExamFiltered = async () => {
-    const res = await fetch(
-      `${PUBLIC_API_HOST}/api/section?limit=9999&exam_filtered=1${
-        currentInfo ? `&year=${currentInfo.year}&semester=${currentInfo.semester}` : ''
-      }`,
-    );
-    const body = await res.json();
-    return body as {
-      data: API.Section[];
-      limit: number;
-      offset: number;
-      total: number;
-    };
-  };
-
-  const requestInstructor = async () => {
-    const res = await fetch(`${PUBLIC_API_HOST}/api/instructor?limit=9999`);
-    const body = await res.json();
-    return body as {
-      data: API.Instructor[];
-      limit: number;
-      offset: number;
-      total: number;
-    };
-  };
-
-  const requestRoom = async () => {
-    const res = await fetch(`${PUBLIC_API_HOST}/api/room?limit=9999`);
-    const body = await res.json();
-    return body as {
-      data: API.Room[];
-      limit: number;
-      offset: number;
-      total: number;
-    };
-  };
-
   return {
-    exam: requestExam(),
-    lazy: {
-      section: requestSection(),
-      sectionExamFiltered: requestSectionExamFiltered(),
-      instructor: requestInstructor(),
-      room: requestRoom(),
-    },
+    exam: exam.get<
+      ResponseDataInfo<
+        LogInfo<
+          Exam & {
+            section: (Section & {
+              group: Group | null;
+              subject: Subject;
+            })[];
+            instructor: Instructor[];
+            room: Room & { building: Building };
+          }
+        >
+      >
+    >(param),
+    info: currentInfo,
   };
 }) satisfies PageLoad;

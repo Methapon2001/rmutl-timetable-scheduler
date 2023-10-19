@@ -1,106 +1,53 @@
 <script lang="ts">
   import type { PageData } from './$types';
   import { page } from '$app/stores';
+  import toast from 'svelte-french-toast';
+
   import { invalidate } from '$app/navigation';
   import { blurOnEscape } from '$lib/element';
-  import { deleteExam } from '$lib/api/exam';
-  import debounce from '$lib/utils/debounce';
+
+  import { searchHandler } from '$lib/utils/search';
+  import apiRequest from '$lib/api';
+
   import Modal from '$lib/components/Modal.svelte';
   import Pagination from '$lib/components/Pagination.svelte';
-  import Exam from './ExamForm.svelte';
-  import toast from 'svelte-french-toast';
-  import { resetData } from '$lib/api/reset';
+  import Form from './ExamForm.svelte';
 
-  const handleSearch = debounce(async (text: string) => {
-    const url = new URL(window.location.toString());
-    url.searchParams.set('search', text);
-    history.replaceState({}, '', url);
-    await invalidate('data:exam');
-  }, 300);
-
-  $: sectionOptions = async () => {
-    return (await data.lazy.section).data.map((section) => ({
-      label: `${section.subject.code} ${section.subject.name} Sec ${section.no}`,
-      value: section.id,
-      detail: section,
-    }));
-  };
-
-  $: sectionExamFilteredOptions = async () => {
-    return (await data.lazy.sectionExamFiltered).data.map((section) => ({
-      label: `${section.subject.code} ${section.subject.name} Sec ${section.no}`,
-      value: section.id,
-      detail: section,
-    }));
-  };
-
-  const instructorOptions = async () => {
-    return (await data.lazy.instructor).data.map((instructor) => ({
-      label: instructor.name,
-      value: instructor.id,
-    }));
-  };
-
-  const roomOptions = async () => {
-    return (await data.lazy.room).data.map((room) => ({
-      label: `${room.building.code}-${room.name} (${room.type
-        .charAt(0)
-        .toLocaleUpperCase()}${room.type.slice(1)})`,
-      value: room.id,
-      detail: room,
-    }));
-  };
-
-  $: formOptions = async () => {
-    return {
-      section: await sectionOptions(),
-      sectionExamFiltered: await sectionExamFilteredOptions(),
-      instructor: await instructorOptions(),
-      room: await roomOptions(),
-    };
-  };
+  const handleSearch = searchHandler('data:section');
 
   export let data: PageData;
 
   let newState = false;
   let editState = false;
-  let editData: {
+
+  let currentData: {
     id: string;
-    roomId: string;
     section: string[];
     instructor: string[];
+    roomId: string;
   };
 
-  function showEdit(exam: {
-    id: string;
-    section: {
-      id: string;
-    }[];
-    instructor: {
-      id: string;
-    }[];
-    roomId: string;
-  }) {
+  function triggerEdit(section: typeof currentData) {
     editState = true;
-    editData = {
-      ...exam,
-      section: exam.section.map((sec) => sec.id),
-      instructor: exam.instructor.map((inst) => inst.id),
-    };
+    currentData = section;
   }
 
-  async function handleDelete(exam: { id: string }) {
-    if (confirm('Are you sure?')) {
-      const ret = await deleteExam(exam).catch((e: Response) => console.error(e));
+  async function handleDelete(id: string) {
+    const flag = confirm('Are you sure? This action cannot be undone.');
 
-      if (ret) {
-        await invalidate('data:exam');
+    if (!flag) return;
 
-        toast.success('Delete Complete!');
-      } else {
-        toast.error('Failed to delete exam!\nThis record is currenly in use.');
-      }
-    }
+    const ret = await apiRequest('/api/exam')
+      .delete({ id })
+      .catch((e) => console.error(e));
+
+    if (!ret)
+      return toast.error(
+        'Failed to delete exam!\nThis record may currenly in use. \nSee console for more info.',
+      );
+
+    await invalidate('data:exam');
+    toast.success('Delete Complete!');
   }
 </script>
 
@@ -137,17 +84,7 @@
   <div id="new" class="bg-light p-4">
     <h1 class="mb-4 block text-center text-2xl font-bold">New Exam</h1>
     <div class="mx-auto max-w-screen-md rounded bg-white p-4 shadow">
-      {#await formOptions()}
-        Loading...
-      {:then options}
-        <Exam
-          sectionOptions="{options.section}"
-          sectionExamFilteredOptions="{options.sectionExamFiltered}"
-          instructorOptions="{options.instructor}"
-          roomOptions="{options.room}"
-          callback="{() => invalidate('data:exam')}"
-        />
-      {/await}
+      <Form />
     </div>
   </div>
 {/if}
@@ -155,18 +92,7 @@
 <Modal bind:open="{editState}">
   <div id="edit" class="p-4">
     <h1 class="mb-4 block text-center text-2xl font-bold">Edit Exam</h1>
-    {#await formOptions()}
-      Loading...
-    {:then options}
-      <Exam
-        sectionOptions="{options.section}"
-        sectionExamFilteredOptions="{options.sectionExamFiltered}"
-        instructorOptions="{options.instructor}"
-        roomOptions="{options.room}"
-        editData="{editData}"
-        edit="{true}"
-      />
-    {/await}
+    <Form edit="{true}" {...currentData} callback="{() => (editState = false)}" />
   </div>
 </Modal>
 
@@ -175,7 +101,7 @@
     <thead>
       <tr>
         <th>Section</th>
-        <th>Instructor.</th>
+        <th>Instructor</th>
         <th>Room</th>
         <th>Created</th>
         <th>Updated</th>
@@ -227,10 +153,10 @@
                 disabled="{data.session?.user.id != exam.createdBy.id &&
                   data.session?.user.role != 'admin'}"
                 on:click="{() =>
-                  showEdit({
+                  triggerEdit({
                     id: exam.id,
-                    section: exam.section,
-                    instructor: exam.instructor,
+                    section: exam.section.map((v) => v.id),
+                    instructor: exam.instructor.map((v) => v.id),
                     roomId: exam.room?.id ?? '',
                   })}"
               >
@@ -240,7 +166,7 @@
                 class="action-button text-red-600"
                 disabled="{data.session?.user.id != exam.createdBy.id &&
                   data.session?.user.role != 'admin'}"
-                on:click="{() => handleDelete({ id: exam.id })}"
+                on:click="{() => handleDelete(exam.id)}"
               >
                 Delete
               </button>
@@ -250,22 +176,6 @@
       {/each}
     </tbody>
   </table>
-</div>
-
-<div class="flex w-full justify-end p-3">
-  <button
-    class="rounded border bg-red-600 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-red-700"
-    on:click="{async () => {
-      const flag = confirm('Are you sure? The record that using this data will also be deleted.');
-
-      if (flag) {
-        await resetData('exam');
-        invalidate('data:exam');
-      }
-    }}"
-  >
-    Reset
-  </button>
 </div>
 
 <div id="pagination">
