@@ -21,7 +21,7 @@
    * It behave like normal html and js.
    * May update component to accept any type of data dynamically.
    */
-  let semester = '1';
+  let semester = data.info?.semester.toString();
 
   /** Year is also string same as semester case earlier */
   let group: string[] = [];
