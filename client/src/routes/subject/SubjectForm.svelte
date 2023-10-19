@@ -33,7 +33,7 @@
 
   function resetState() {
     id = code = name = '';
-    credit = lecture = lab = 0;
+    credit = lecture = lab = learn = 0;
   }
 
   export let callback: (data: unknown) => void = () => {
