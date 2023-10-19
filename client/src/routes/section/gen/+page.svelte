@@ -144,6 +144,7 @@
               <span class="rounded bg-primary px-2 py-1 text-white">
                 {groupMap[v.groupId].name}
               </span>
+              {subject.find((s) => s.id === subjectId)?.code}
               {subject.find((s) => s.id === subjectId)?.name}
             </h1>
             <SectionNewForm
