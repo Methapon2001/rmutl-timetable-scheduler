@@ -46,7 +46,7 @@
   const subjectOptions = subject.then((s) =>
     s.data
       .sort((a, b) => a.name.localeCompare(b.name) || a.code.localeCompare(b.code))
-      .map((v) => ({ label: v.name, value: v.id })),
+      .map((v) => ({ label: `${v.code} ${v.name}`, value: v.id })),
   );
   const instructorOptions = instructor.then((s) =>
     s.data
@@ -89,13 +89,18 @@
   }[] = [];
 
   export let lock = false;
+  export let lockSubject = false;
+  export let lockGroup = false;
+
+  export let defaultInstructor = '';
 
   let currentSubject: Awaited<typeof subject>['data'][number] | undefined;
 
   onMount(async () => {
-    if (lock && !subjectId) throw new Error('Subject is required when mode is enabled.');
-    if (lock && !groupId) throw new Error('Group is required when mode is enabled.');
-    if (lock) handleSubject();
+    if ((lock || lockSubject) && !subjectId)
+      throw new Error('Subject is required when mode is enabled.');
+    if ((lock || lockGroup) && !groupId) throw new Error('Group is required when mode is enabled.');
+    if (lock || lockSubject) handleSubject();
   });
 
   function resetState() {
@@ -111,7 +116,7 @@
       ...section,
       {
         roomId: '',
-        instructor: [],
+        instructor: defaultInstructor ? [defaultInstructor] : [],
         capacity: 0,
       },
     ];
@@ -142,7 +147,7 @@
     section = [
       {
         roomId: '',
-        instructor: [],
+        instructor: defaultInstructor ? [defaultInstructor] : [],
         capacity: 0,
       },
     ];
@@ -220,11 +225,12 @@
 </script>
 
 <form on:submit|preventDefault="{() => !lock && handleSubmit()}" class="space-y-4">
-  {#if !lock}
+  {#if !(lock || lockSubject)}
     <section id="input-subject" class="grid grid-cols-6">
       <div class="col-span-2 flex items-center">
         <label for="subject" class="font-semibold">
-          Subject <span class="text-red-600">*</span>
+          Subject
+          <span class="text-red-600">*</span>
         </label>
       </div>
       <div class="col-span-4" class:invalid="{err.subjectId}">
