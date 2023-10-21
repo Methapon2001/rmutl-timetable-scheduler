@@ -151,7 +151,9 @@
         use:blurOnEscape
       />
     </div>
-    {#if err.name} <div class="col-span-4 col-start-3 text-red-600">{err.name.join()}</div> {/if}
+    {#if err.name}
+      <div class="col-span-4 col-start-3 text-red-600">{err.name.join()}</div>
+    {/if}
   </section>
 
   <button type="submit" class="button w-full">Save</button>

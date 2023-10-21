@@ -72,8 +72,8 @@ export function checkOverlap(
 
       if (c.exam.room && c.exam.room.id === current.exam?.room?.id) a.overlapRoom.push(c);
       if (
-        c.exam.section.findIndex((a) =>
-          current.exam?.section.findIndex((b) => b.group && b.group.id === a.group?.id),
+        c.exam.section.findIndex(
+          (a) => current.exam?.section.findIndex((b) => b.group && b.group.id === a.group?.id),
         )
       )
         a.overlapGroup.push(c);

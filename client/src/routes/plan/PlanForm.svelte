@@ -179,7 +179,9 @@
         use:blurOnEscape
       />
     </div>
-    {#if err.name} <div class="col-span-4 col-start-3 text-red-600">{err.name.join()}</div> {/if}
+    {#if err.name}
+      <div class="col-span-4 col-start-3 text-red-600">{err.name.join()}</div>
+    {/if}
   </section>
   <section id="input-course" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">

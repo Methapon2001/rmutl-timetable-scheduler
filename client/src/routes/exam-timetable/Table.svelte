@@ -119,7 +119,8 @@
       {#each { length: 50 } as _, period}
         <button
           class="transition-none hover:bg-slate-100"
-          on:click="{() => handleClick(weekday, period + 1)}"></button>
+          on:click="{() => handleClick(weekday, period + 1)}"
+        ></button>
       {/each}
     {/each}
 

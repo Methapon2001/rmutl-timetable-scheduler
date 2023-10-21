@@ -7,21 +7,15 @@
 
   export let data: PageData;
 
-  let state: ComponentProps<Table>['state'] = {
+  const dummy = {
     selected: false,
-    section: null,
     weekday: 'mon',
     period: 0,
     size: 0,
-  };
+  } as const;
 
-  let stateExam: ComponentProps<TableExam>['state'] = {
-    selected: false,
-    exam: null,
-    weekday: 'mon',
-    period: 0,
-    size: 0,
-  };
+  let state: ComponentProps<Table>['state'] = { section: null, ...dummy };
+  let stateExam: ComponentProps<TableExam>['state'] = { exam: null, ...dummy };
 
   let viewState: string;
   let groupState: string;

@@ -90,7 +90,9 @@
         use:blurOnEscape
       />
     </div>
-    {#if err.code} <div class="col-span-4 col-start-3 text-red-600">{err.code.join()}</div> {/if}
+    {#if err.code}
+      <div class="col-span-4 col-start-3 text-red-600">{err.code.join()}</div>
+    {/if}
   </section>
 
   <section id="input-name" class="grid grid-cols-6">
@@ -110,7 +112,9 @@
         use:blurOnEscape
       />
     </div>
-    {#if err.name} <div class="col-span-4 col-start-3 text-red-600">{err.name.join()}</div> {/if}
+    {#if err.name}
+      <div class="col-span-4 col-start-3 text-red-600">{err.name.join()}</div>
+    {/if}
   </section>
 
   <button type="submit" class="button w-full">Save</button>

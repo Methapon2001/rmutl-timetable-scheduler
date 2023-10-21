@@ -116,7 +116,9 @@
         use:blurOnEscape
       />
     </div>
-    {#if err.year} <div class="col-span-4 col-start-3 text-red-600">{err.year.join()}</div> {/if}
+    {#if err.year}
+      <div class="col-span-4 col-start-3 text-red-600">{err.year.join()}</div>
+    {/if}
   </section>
   <button type="submit" class="button w-full">Save</button>
 </form>
