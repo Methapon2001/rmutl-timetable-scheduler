@@ -1,9 +1,9 @@
+import type { Session } from '$lib/types';
 import { env } from '$env/dynamic/public';
 import jwtDecode from 'jwt-decode';
 
-const url = env.PUBLIC_API_HOST ? env.PUBLIC_API_HOST : window.location.origin;
-
 export const login = async (credential: { username: string; password: string }) => {
+  const url = env.PUBLIC_API_HOST ? env.PUBLIC_API_HOST : window.location.origin;
   const res = await fetch(`${url}/api/auth/login`, {
     method: 'POST',
     headers: {
@@ -24,7 +24,7 @@ export const login = async (credential: { username: string; password: string }) 
 
     localStorage.setItem('session', JSON.stringify(session));
 
-    return session as API.Session;
+    return session as Session;
   }
 
   if (!res.ok && res.status == 401) {
@@ -39,10 +39,11 @@ export const login = async (credential: { username: string; password: string }) 
  * Reference: https://kit.svelte.dev/docs/load#making-fetch-requests
  */
 export const check = async (fetch: typeof global.fetch = window.fetch) => {
-  let userSession: API.Session | string | null = localStorage.getItem('session');
+  const url = env.PUBLIC_API_HOST ? env.PUBLIC_API_HOST : window.location.origin;
+  let userSession: Session | string | null = localStorage.getItem('session');
 
   if (userSession) {
-    userSession = JSON.parse(userSession) as API.Session;
+    userSession = JSON.parse(userSession) as Session;
 
     const res = await fetch(`${url}/api/auth/check`, {
       headers: {
@@ -72,10 +73,11 @@ export const check = async (fetch: typeof global.fetch = window.fetch) => {
  * Reference: https://kit.svelte.dev/docs/load#making-fetch-requests
  */
 export const refresh = async (fetch: typeof global.fetch = window.fetch) => {
-  let userSession: API.Session | string | null = localStorage.getItem('session');
+  const url = env.PUBLIC_API_HOST ? env.PUBLIC_API_HOST : window.location.origin;
+  let userSession: Session | string | null = localStorage.getItem('session');
 
   if (userSession) {
-    userSession = JSON.parse(userSession) as API.Session;
+    userSession = JSON.parse(userSession) as Session;
 
     if (userSession.user.exp * 1000 > Date.now()) {
       return userSession;
@@ -103,7 +105,7 @@ export const refresh = async (fetch: typeof global.fetch = window.fetch) => {
 
       localStorage.setItem('session', JSON.stringify(session));
 
-      return session as API.Session;
+      return session as Session;
     }
 
     if (!res.ok && res.status == 401) {
@@ -115,7 +117,8 @@ export const refresh = async (fetch: typeof global.fetch = window.fetch) => {
 };
 
 export const logout = async (fetch: typeof global.fetch = window.fetch) => {
-  const userSession: API.Session | null = await refresh(fetch);
+  const url = env.PUBLIC_API_HOST ? env.PUBLIC_API_HOST : window.location.origin;
+  const userSession: Session | null = await refresh(fetch);
 
   if (!userSession) return null;
 
