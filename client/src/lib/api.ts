@@ -20,12 +20,29 @@ type RouteBody = {
   } & { courseId: string };
   '/api/info': types.Info;
   '/api/group': types.Group;
-  '/api/scheduler': types.Timetable;
-  '/api/exam': types.Exam;
-  '/api/scheduler-exam': types.TimetableExam;
+  '/api/scheduler': types.Timetable & { sectionId: types.Section['id'] };
+  '/api/exam': types.Exam & {
+    roomId: types.Room['id'] | null;
+    section: { id: types.Section['id'] }[];
+    instructor: { id: types.Instructor['id'] }[];
+  };
+  '/api/scheduler-exam': types.TimetableExam & { examId: types.Exam['id'] };
+  '/api/request-section/status': Record<string, unknown>;
+  '/api/request-section/check': Record<string, unknown>;
+  '/api/request-section': Record<string, unknown>;
 };
 
 type UniqueRouteBody = {
+  '/api/publish': {
+    post: { publish: boolean };
+    put: Record<string, unknown>;
+    delete: Record<string, unknown>;
+  };
+  '/api/publish-exam': {
+    post: { publish: boolean };
+    put: Record<string, unknown>;
+    delete: Record<string, unknown>;
+  };
   '/api/user': {
     post: types.User & { password: string };
     put: Partial<types.User> & { role?: 'admin' | 'user'; password?: string };
