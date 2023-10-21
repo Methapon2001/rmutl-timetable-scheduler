@@ -115,6 +115,7 @@
     <thead>
       <tr>
         <th>Name</th>
+        <th>Course</th>
         <th>Created</th>
         <th>Updated</th>
         <th>•••</th>
@@ -132,6 +133,7 @@
           class="cursor-pointer hover:bg-light"
         >
           <td class="text-center">{plan.name}</td>
+          <td class="text-center">{plan.course.name}</td>
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(plan.createdAt).toLocaleDateString()}</p>
             <p class="text-dark">{new Date(plan.createdAt).toLocaleTimeString()}</p>
@@ -207,4 +209,3 @@
     width: 1% !important;
   }
 </style>
-

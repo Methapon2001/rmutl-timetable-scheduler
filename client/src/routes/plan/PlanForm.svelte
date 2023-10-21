@@ -11,12 +11,14 @@
   import toast from 'svelte-french-toast';
 
   import { planSchema } from '$lib/types';
+  import { capitalize } from '$lib/utils/str';
   import { invalidate } from '$app/navigation';
   import { blurOnEscape } from '$lib/element';
   import { getZodErrorMessage } from '$lib/utils/zod';
   import apiRequest from '$lib/api';
 
   import Select from '$lib/components/Select.svelte';
+  import CrossIcon from '$lib/icons/CrossIcon.svelte';
 
   let firstInput: HTMLInputElement | null = null;
   let validateError: ZodError | null = null;
@@ -206,8 +208,11 @@
   </section>
 
   {#if courseId}
-    {#each groupedDetail as _, idx}
-      <div class="space-y-4 rounded border p-4">
+    {#each groupedDetail as v, idx}
+      <div class="relative space-y-4 rounded border p-4">
+        <button type="button" class="absolute right-0 top-0 p-3" on:click="{() => delDetail(idx)}">
+          <CrossIcon />
+        </button>
         <section id="input-year" class="grid grid-cols-6">
           <div class="col-span-2 flex items-center">
             <label for="form-plan-year-{idx}" class="font-semibold">
@@ -220,14 +225,8 @@
               type="number"
               class="input w-fit text-center"
               class:border-red-600="{err.detail}"
-              bind:value="{groupedDetail[idx].year}"
-              on:change="{() =>
-                (groupedDetail[idx].year =
-                  groupedDetail[idx].year > 8
-                    ? 8
-                    : groupedDetail[idx].year < 0
-                    ? 0
-                    : groupedDetail[idx].year)}"
+              bind:value="{v.year}"
+              on:change="{() => (v.year = v.year > 8 ? 8 : v.year < 0 ? 0 : v.year)}"
               min="{0}"
               max="{8}"
               use:blurOnEscape
@@ -246,14 +245,9 @@
               type="number"
               class="input w-fit text-center"
               class:border-red-600="{err.detail}"
-              bind:value="{groupedDetail[idx].semester}"
+              bind:value="{v.semester}"
               on:change="{() =>
-                (groupedDetail[idx].semester =
-                  groupedDetail[idx].semester > 3
-                    ? 3
-                    : groupedDetail[idx].semester < 0
-                    ? 0
-                    : groupedDetail[idx].semester)}"
+                (v.semester = v.semester > 3 ? 3 : v.semester < 0 ? 0 : v.semester)}"
               min="{0}"
               max="{3}"
               use:blurOnEscape
@@ -270,9 +264,18 @@
             {:then options}
               <Select
                 id="form-plan-subject-{idx}"
-                options="{options.filter(
-                  (val) => selectedCourse?.detail.some((v) => v.subject.id === val.value) ?? false,
-                )}"
+                options="{options
+                  .filter(
+                    (val) =>
+                      (selectedCourse?.detail.some((x) => x.subject.id === val.value) ?? false) &&
+                      groupedDetail.every((x, i) => i === idx || !x.subjectId.includes(val.value)),
+                  )
+                  .map((val) => ({
+                    ...val,
+                    label: `${val.label} (${capitalize(
+                      selectedCourse?.detail.find((v) => v.subject.id === val.value)?.type ?? '',
+                    )})`,
+                  }))}"
                 bind:value="{groupedDetail[idx].subjectId}"
                 placeholder="Select Subject"
                 multiple
