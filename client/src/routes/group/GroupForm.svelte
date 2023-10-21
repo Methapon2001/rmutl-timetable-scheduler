@@ -17,6 +17,7 @@
   import { getZodErrorMessage } from '$lib/utils/zod';
   import apiRequest from '$lib/api';
   import Select from '$lib/components/Select.svelte';
+  import { tick } from 'svelte';
 
   let firstInput: HTMLInputElement | null = null;
   let validateError: ZodError | null = null;
@@ -35,7 +36,9 @@
     >(params);
   const plan =
     apiRequest('/api/plan').get<
-      ResponseDataInfo<LogInfo<Plan & { detail: (PlanDetail & { subject: Subject })[] }>>
+      ResponseDataInfo<
+        LogInfo<Plan & { detail: (PlanDetail & { subject: Subject })[]; course: Course }>
+      >
     >(params);
 
   const courseOptions = async () =>
@@ -46,7 +49,7 @@
   const planOptions = async () =>
     (await plan).data
       .sort((a, b) => a.name.localeCompare(b.name))
-      .map((v) => ({ label: v.name, value: v.id }));
+      .map((v) => ({ label: v.name, value: v.id, data: v }));
 
   export let edit = false;
 
@@ -54,6 +57,8 @@
   export let name = '';
   export let courseId = '';
   export let planId = '';
+
+  let currentCourse: Awaited<typeof course>['data'][number] | undefined;
 
   function resetState() {
     id = name = courseId = planId = '';
@@ -102,6 +107,11 @@
     resetState();
     callback(data);
   }
+
+  async function handleCourse() {
+    await tick();
+    currentCourse = (await course).data.find((v) => v.id === courseId);
+  }
 </script>
 
 <form on:submit|preventDefault="{() => (edit ? handleEdit() : handleNew())}" class="space-y-4">
@@ -138,6 +148,7 @@
           id="form-group-course"
           options="{options}"
           bind:value="{courseId}"
+          on:change="{handleCourse}"
           placeholder="Select Course"
         />
       {/await}
@@ -158,7 +169,7 @@
       {:then options}
         <Select
           id="form-group-plan"
-          options="{options}"
+          options="{options.filter((v) => v.data.course.id === currentCourse?.id)}"
           bind:value="{planId}"
           placeholder="Select Plan"
         />
