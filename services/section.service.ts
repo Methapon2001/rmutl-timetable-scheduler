@@ -50,7 +50,15 @@ const select: Prisma.SectionSelect = {
         select: { ...planSelect, detail: { select: planDetailSelect } },
       },
       course: {
-        select: { ...courseSelect, detail: { select: courseDetailSelect } },
+        select: {
+          ...courseSelect,
+          detail: {
+            select: {
+              ...courseDetailSelect,
+              subject: { select: subjectSelect },
+            },
+          },
+        },
       },
     },
   },
@@ -113,7 +121,7 @@ export async function createSection(
   request: FastifyRequest<{
     Body: CreateBody;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const sectionNo =
     request.body.manual && request.body.no
@@ -216,7 +224,7 @@ export async function requestSection(
       | "updatedByUserId"
     >;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
   const { limit, offset, search, year, semester, exam_filtered, ...where } =
@@ -296,7 +304,7 @@ export async function updateSection(
       instructor?: Instructor[];
     };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 
@@ -378,7 +386,7 @@ export async function deleteSection(
   request: FastifyRequest<{
     Params: Pick<Section, "id">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 
@@ -533,7 +541,7 @@ export async function resetSection(
       semester: number;
     };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id: userId } = request.user;
 
@@ -564,7 +572,7 @@ export async function searchSection(
   request: FastifyRequest<{
     Querystring: { search: string; limit: number; offset: number };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { limit, offset, search } = request.query;
 
