@@ -22,7 +22,6 @@ const select: Prisma.SchedulerExamSelect = {
   exam: {
     select: {
       ...examSelect,
-      ...logInfoSelect,
       room: {
         select: {
           ...roomSelect,
@@ -32,7 +31,6 @@ const select: Prisma.SchedulerExamSelect = {
       section: {
         select: {
           ...sectionSelect,
-          ...logInfoSelect,
           group: { select: groupSelect },
           subject: { select: subjectSelect },
         },
@@ -44,7 +42,7 @@ const select: Prisma.SchedulerExamSelect = {
 
 export async function createSchedulerExam(
   request: FastifyRequest<{ Body: SchedulerExam }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const info = await prisma.info.findFirst({
     where: {
@@ -83,7 +81,7 @@ export async function requestSchedulerExam(
       semester: number;
     } & Pick<SchedulerExam, "publish" | "createdByUserId" | "updatedByUserId">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
   const { limit, offset, year, semester, ...where } = request.query;
@@ -129,7 +127,7 @@ export async function updateSchedulerExam(
     Params: Pick<SchedulerExam, "id">;
     Body: Omit<SchedulerExam, "id">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 
@@ -153,7 +151,7 @@ export async function deleteSchedulerExam(
   request: FastifyRequest<{
     Params: Pick<SchedulerExam, "id">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 
@@ -176,7 +174,7 @@ export async function resetSchedulerExam(
       semester: number;
     };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id: userId } = request.user;
 
