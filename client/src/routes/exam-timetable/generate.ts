@@ -1,36 +1,57 @@
-import { createSchedulerExam } from '$lib/api/scheduler-exam';
+import type {
+  Section,
+  Group,
+  Building,
+  Room,
+  Instructor,
+  Subject,
+  TimetableExam,
+  Exam,
+} from '$lib/types';
 import { checkOverlap } from './utils';
+import apiRequest from '$lib/api';
 
-type WeekdayShort = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
+type WeekdayShort = TimetableExam['weekday'];
 
 function isCurrentRegGood(
-  current: API.Exam,
+  current: Exam & {
+    section: (Section & {
+      group: Group | null;
+      subject: Subject;
+    })[];
+    instructor: Instructor[];
+    room: (Room & { building: Building }) | null;
+  },
   weekday: WeekdayShort,
   period: number,
   size: number,
-  gap: number,
-  schedule: {
-    id: string;
-    exam: API.SchedulerExam['exam'];
-    weekday: WeekdayShort;
-    period: number;
-    size: number;
-  }[],
+  schedule: (TimetableExam & {
+    exam: Exam & {
+      section: (Section & {
+        group: Group | null;
+        subject: Subject;
+      })[];
+      instructor: Instructor[];
+      room: (Room & { building: Building }) | null;
+    };
+  })[],
   option: {
     maxPerDay?: number;
+    restGap?: number;
   },
 ) {
   const maxPerDay = option.maxPerDay ?? 2;
+  const restGap = option.restGap ?? 2;
 
   const entries = schedule.filter(
-    (sched) =>
-      sched.weekday === weekday &&
-      sched.period < period &&
-      (sched.exam.section.findIndex(
-        (sec) => current.section.findIndex((s) => sec.group?.id === s.group?.id) !== -1,
+    (v) =>
+      v.weekday === weekday &&
+      v.start < period &&
+      (v.exam.section.findIndex(
+        (a) => current.section.findIndex((b) => a.group && a.group?.id === b.group?.id) !== -1,
       ) !== -1 ||
-        sched.exam.instructor.findIndex(
-          (inst) => current.instructor.findIndex((ins) => ins.id === inst.id) !== -1,
+        v.exam.instructor.findIndex(
+          (a) => current.instructor.findIndex((b) => b.id === a.id) !== -1,
         ) !== -1),
   );
 
@@ -40,50 +61,34 @@ function isCurrentRegGood(
 
   if (entries.length >= maxPerDay) return false;
 
-  const currentExtendedStart = period - gap;
-  const currentExtendedEnd = period + size + gap;
+  const currExtendedStart = period - restGap;
+  const currExtendedEnd = period + size + restGap;
 
-  if (
-    entries.some((sched) => {
-      return (
-        sched.period <= currentExtendedEnd && sched.period + sched.size - 1 >= currentExtendedStart
-      );
-    }) ||
-    roomEntries.some((sched) => {
-      return sched.period <= period + size + 1 && sched.period + sched.size - 1 >= period - 1;
-    })
-  ) {
-    return false;
-  }
-
-  return true;
+  // check if some of group or instructor have too many load (2 by default) however room only check for overlap
+  return !(
+    entries.some((sched) => sched.start <= currExtendedEnd && sched.end >= currExtendedStart) ||
+    roomEntries.some((sched) => sched.start <= period + size + 1 && sched.end >= period - 1)
+  );
 }
 
 export async function generate(
-  exam: API.Exam[],
-  schedule: {
-    id: string;
-    exam: API.SchedulerExam['exam'];
-    weekday: WeekdayShort;
-    period: number;
-    size: number;
-  }[] = [],
+  exam: Parameters<typeof isCurrentRegGood>[0][],
+  schedule: Parameters<typeof isCurrentRegGood>[4] = [],
   option: {
     weekday?: WeekdayShort[];
     period?: number[];
     maxPerDay?: number;
+    restGap?: number;
   } = {},
 ) {
   const weekday = option.weekday ?? ['mon', 'tue', 'wed', 'thu', 'fri'];
   const rangeStart = option.period && option.period.length === 2 ? option.period[0] : 1;
   const rangeEnd = option.period && option.period.length === 2 ? option.period[1] : 50;
 
-  exam = exam.filter((sec) => {
-    return schedule.findIndex((sched) => sched.exam.id === sec.id) === -1;
-  });
+  exam = exam.filter((a) => schedule.findIndex((b) => b.exam.id === a.id) === -1);
 
-  exam.forEach((sec) => {
-    const size = sec.section[0].subject.lecture * 4;
+  exam.forEach((v) => {
+    const size = v.section[0].subject.lecture * 4;
 
     for (const day of weekday) {
       for (let i = rangeStart; i <= rangeEnd - size + 1; i++) {
@@ -91,24 +96,31 @@ export async function generate(
           {
             period: i,
             weekday: day,
-            exam: sec,
+            exam: v,
             size: size,
           },
           schedule,
         );
+
         if (isOverlap) continue;
 
-        if (!isCurrentRegGood(sec, day, i, size, 12, schedule, { maxPerDay: option.maxPerDay }))
+        if (
+          !isCurrentRegGood(v, day, i, size, schedule, {
+            maxPerDay: option.maxPerDay,
+            restGap: 12,
+          })
+        )
           continue;
 
         schedule = [
           ...schedule,
           {
             id: 'generated',
-            exam: sec,
-            period: i,
-            size: size,
+            exam: v,
+            start: i,
+            end: i + size - 1,
             weekday: day as WeekdayShort,
+            publish: false,
           },
         ];
 
@@ -120,12 +132,12 @@ export async function generate(
   for (let i = 0; i < schedule.length; i++) {
     if (schedule[i].id !== 'generated') continue;
 
-    const ret = await createSchedulerExam({
-      publish: false,
-      examId: schedule[i].exam.id,
-      start: schedule[i].period,
-      end: schedule[i].period + schedule[i].size - 1,
+    const ret = await apiRequest('/api/scheduler-exam').post<(typeof schedule)[number]>({
+      start: schedule[i].start,
+      end: schedule[i].end,
       weekday: schedule[i].weekday,
+      publish: schedule[i].publish,
+      examId: schedule[i].exam.id,
     });
 
     schedule[i].id = ret.id;

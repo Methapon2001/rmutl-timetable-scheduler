@@ -53,7 +53,7 @@ export function checkOverlap(
       }
 
       if (c.section.subject.id === current.section?.subject.id) a.overlapSubject.push(c);
-      if (c.section.room && c.section.room?.id === current.section?.room?.id) a.overlapRoom.push(c);
+      if (c.section.room && c.section.room.id === current.section?.room?.id) a.overlapRoom.push(c);
       if (c.section.group && c.section.group.id === current.section?.group?.id)
         a.overlapGroup.push(c);
 

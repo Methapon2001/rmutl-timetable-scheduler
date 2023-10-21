@@ -1,70 +1,87 @@
 <script lang="ts">
-  import { invalidate } from '$app/navigation';
-  import { editExam } from '$lib/api/exam';
+  import type { ComponentProps } from 'svelte';
+  import type { Building, Room } from '$lib/types';
+
+  import { checkOverlap } from './utils';
   import Table from './Table.svelte';
+  import apiRequest from '$lib/api';
+  import { invalidate } from '$app/navigation';
 
-  type WeekdayShort = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
-
-  type ExamData = Omit<
-    API.Exam, // eslint-disable-line no-undef
-    'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'
-  >;
-
-  type ScheduleExamData = {
-    exam: ExamData | null;
-    weekday: WeekdayShort;
-    period: number;
-    size: number;
+  export let state: ComponentProps<Table>['state'];
+  export let scheduler: ComponentProps<Table>['data'];
+  export let room: (Room & { building: Building })[];
+  export let handleSelect: (
+    weekday: ComponentProps<Table>['state']['weekday'],
+    period: number,
+  ) => void = () => {
+    // do nothing
+  };
+  export let callback: (data: unknown) => void = () => {
+    // do nothing
   };
 
-  export let state: {
-    selected: boolean;
-    exam: ExamData | null;
-    weekday: WeekdayShort;
-    period: number;
-    size: number;
-    isOverflow?: boolean;
-    isOverlap?: boolean;
-    allowOverlap?: boolean;
-    overlapInstructor?: ScheduleExamData[];
-    overlapRoom?: ScheduleExamData[];
-    overlapSubject?: ScheduleExamData[];
-    overlapGroup?: ScheduleExamData[];
-    overlapSection?: ScheduleExamData[];
-  };
+  let searchText = '';
 
-  export let scheduler: {
-    id: string;
-    exam: ExamData;
-    weekday: WeekdayShort;
-    period: number;
-    size: number;
-  }[];
+  function detectLocalOverlap(current: typeof state, localRoom: (typeof room)[number]) {
+    let localState = structuredClone(current);
 
-  export let room: API.Room[]; // eslint-disable-line no-undef
-  export let open: boolean;
-
-  async function handleSubmit(roomId: string) {
-    if (state.exam) {
-      const ret = await editExam({
-        id: state.exam.id,
-        roomId: roomId,
-        instructor: state.exam.instructor,
-        section: state.exam.section,
-      }).catch((r: Response) => console.error(r));
-
-      if (ret) state.exam = ret;
+    if (localState.exam) {
+      localState.exam.room = localRoom;
     }
 
-    open = !open;
+    localState.isOverflow = localState.period + localState.size - 1 > 25;
+
+    const { isOverlap, overlapGroup, overlapInstructor, overlapRoom, overlapSection } =
+      checkOverlap(localState, scheduler);
+
+    localState.isOverlap = isOverlap;
+    localState.overlapGroup = overlapGroup;
+    localState.overlapInstructor = overlapInstructor;
+    localState.overlapRoom = overlapRoom;
+    localState.overlapSection = overlapSection;
+
+    return localState;
+  }
+
+  function searchMatch(localRoom: (typeof room)[number], text: string) {
+    const lowerCase = text.toLowerCase();
+    return (
+      localRoom.name.toLowerCase().includes(lowerCase) ||
+      localRoom.building.code.toLowerCase().includes(lowerCase)
+    );
+  }
+
+  async function handleEdit(roomId: string) {
+    const exam = state.exam;
+
+    if (!exam) return;
+
+    const ret = await apiRequest('/api/exam').put({
+      id: exam.id,
+      section: exam.section,
+      instructor: exam.instructor,
+      roomId: roomId,
+    });
+
     await invalidate('data:scheduler-exam');
+    callback(ret);
   }
 </script>
 
 <h1 class="my-3 text-center text-xl font-bold">Room List</h1>
 
+<div class="bg-light px-4 py-2">
+  <input
+    type="text"
+    class="input col-span-3 bg-white shadow"
+    placeholder="Search"
+    bind:value="{searchText}"
+  />
+</div>
+
 <div class="table-small-container border-b">
-  {#each room as r (r.id)}
+  {#each room.filter((opt) => searchMatch(opt, searchText)) as r (r.id)}
+    {@const st = detectLocalOverlap(state, r)}
     <div id="room-{r.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
       <div class="mb-2 flex justify-between">
         <h6 class="text-center font-semibold">
@@ -73,18 +90,21 @@
         {#if state.exam}
           <button
             class="rounded bg-primary px-2 text-white disabled:bg-secondary"
-            on:click="{() => handleSubmit(r.id)}"
-            disabled="{state.exam?.room?.id == r.id}">Change</button
+            on:click="{() => handleEdit(r.id)}"
+            disabled="{state.exam?.room?.id === r.id}"
           >
+            Change
+          </button>
         {/if}
       </div>
       <Table
         bind:data="{scheduler}"
-        bind:state="{state}"
+        state="{st}"
         small="{true}"
-        forceVisual="{true}"
         selectable="{true}"
         room="{r}"
+        forceVisual="{true}"
+        on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
       />
     </div>
   {/each}

@@ -1,9 +1,24 @@
 import type { PageLoad } from './$types';
+import type {
+  Section,
+  Group,
+  Info,
+  LogInfo,
+  ResponseDataInfo,
+  Building,
+  Room,
+  Instructor,
+  Subject,
+  TimetableExam,
+  Exam,
+} from '$lib/types';
+
+import apiRequest from '$lib/api';
+
 import { redirect } from '@sveltejs/kit';
-import { PUBLIC_API_HOST } from '$env/static/public';
 import { info } from '$lib/stores';
 
-let currentInfo: API.Info | undefined = undefined;
+let currentInfo: Info | undefined = undefined;
 info.subscribe((v) => (currentInfo = v));
 
 export const load = (async ({ fetch, parent, depends }) => {
@@ -13,93 +28,52 @@ export const load = (async ({ fetch, parent, depends }) => {
 
   if (!session) throw redirect(302, '/login?redirect=/exam-timetable');
 
-  const schedulerExamData = async () => {
-    return await fetch(
-      `${PUBLIC_API_HOST}/api/scheduler-exam?limit=9999${
-        currentInfo ? `&year=${currentInfo.year}&semester=${currentInfo.semester}` : ''
-      }`,
-    ).then((res) => res.json());
-  };
+  const exam = apiRequest('/api/exam', fetch);
+  const timetableExam = apiRequest('/api/scheduler-exam', fetch);
+  const room = apiRequest('/api/room', fetch);
+  const instructor = apiRequest('/api/instructor', fetch);
+  const param = new URLSearchParams({ limit: '9999' });
 
-  const examData = async () => {
-    return await fetch(
-      `${PUBLIC_API_HOST}/api/exam?limit=9999&createdByUserId=${session.user.id}${
-        currentInfo ? `&year=${currentInfo.year}&semester=${currentInfo.semester}` : ''
-      }`,
-    ).then((res) => res.json());
-  };
-
-  const requestSection = async () => {
-    const res = await fetch(
-      `${PUBLIC_API_HOST}/api/section?limit=9999${
-        currentInfo ? `&year=${currentInfo.year}&semester=${currentInfo.semester}` : ''
-      }`,
-    );
-    const body = await res.json();
-    return body as {
-      data: API.Section[];
-      limit: number;
-      offset: number;
-      total: number;
-    };
-  };
-
-  const requestInstructor = async () => {
-    const res = await fetch(`${PUBLIC_API_HOST}/api/instructor?limit=9999`);
-    const body = await res.json();
-    return body as {
-      data: API.Instructor[];
-      limit: number;
-      offset: number;
-      total: number;
-    };
-  };
-
-  const requestRoom = async () => {
-    const res = await fetch(`${PUBLIC_API_HOST}/api/room?limit=9999`);
-    const body = await res.json();
-    return body as {
-      data: API.Room[];
-      limit: number;
-      offset: number;
-      total: number;
-    };
-  };
-
-  const requestSectionExamFiltered = async () => {
-    const res = await fetch(
-      `${PUBLIC_API_HOST}/api/section?limit=9999&exam_filtered=1${
-        currentInfo ? `&year=${currentInfo.year}&semester=${currentInfo.semester}` : ''
-      }`,
-    );
-    const body = await res.json();
-    return body as {
-      data: API.Section[];
-      limit: number;
-      offset: number;
-      total: number;
-    };
-  };
+  if (currentInfo !== undefined) {
+    param.set('semester', currentInfo.semester.toString());
+    param.set('year', currentInfo.year.toString());
+  }
 
   return {
-    schedulerExam: schedulerExamData() as Promise<{
-      data: API.SchedulerExam[];
-      limit: number;
-      offset: number;
-      total: number;
-    }>,
-    exam: examData() as Promise<{
-      data: API.Exam[];
-      limit: number;
-      offset: number;
-      total: number;
-    }>,
+    schedulerExam: timetableExam.get<
+      ResponseDataInfo<
+        LogInfo<
+          TimetableExam & {
+            exam: Exam & {
+              section: (Section & {
+                group: Group | null;
+                subject: Subject;
+              })[];
+              instructor: Instructor[];
+              room: (Room & { building: Building }) | null;
+            };
+          }
+        >
+      >
+    >(param),
+    exam: exam.get<
+      ResponseDataInfo<
+        LogInfo<
+          Exam & {
+            section: (Section & {
+              group: Group | null;
+              subject: Subject;
+            })[];
+            instructor: Instructor[];
+            room: (Room & { building: Building }) | null;
+          }
+        >
+      >
+    >(param),
+    info: currentInfo,
     lazy: {
-      section: requestSection(),
-      sectionExamFiltered: requestSectionExamFiltered(),
-      instructor: requestInstructor(),
-      room: requestRoom(),
-      info: currentInfo,
+      room: room.get<ResponseDataInfo<LogInfo<Room & { building: Building }>>>({ limit: '9999' }),
+      instructor: instructor.get<ResponseDataInfo<LogInfo<Instructor>>>({ limit: '9999' }),
     },
   };
 }) satisfies PageLoad;

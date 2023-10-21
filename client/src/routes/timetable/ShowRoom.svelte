@@ -1,8 +1,11 @@
 <script lang="ts">
   import type { ComponentProps } from 'svelte';
-  import Table from './Table.svelte';
-  import { checkOverlap } from './utils';
   import type { Building, Room } from '$lib/types';
+
+  import { checkOverlap } from './utils';
+  import Table from './Table.svelte';
+  import apiRequest from '$lib/api';
+  import { invalidate } from '$app/navigation';
 
   export let state: ComponentProps<Table>['state'];
   export let scheduler: ComponentProps<Table>['data'];
@@ -13,19 +16,20 @@
   ) => void = () => {
     // do nothing
   };
+  export let callback: (data: unknown) => void = () => {
+    // do nothing
+  };
 
   let searchText = '';
 
   function detectLocalOverlap(current: typeof state, localRoom: (typeof room)[number]) {
-    let localState = {
-      ...current,
-    };
+    let localState = structuredClone(current);
 
     if (localState.section) {
       localState.section.room = localRoom;
     }
 
-    localState.isOverflow = state.period + localState.size - 1 > 25;
+    localState.isOverflow = localState.period + localState.size - 1 > 25;
 
     const {
       isOverlap,
@@ -43,9 +47,7 @@
     localState.overlapRoom = overlapRoom;
     localState.overlapSubject = overlapSubject;
 
-    return {
-      ...localState,
-    };
+    return localState;
   }
 
   function searchMatch(localRoom: (typeof room)[number], text: string) {
@@ -54,6 +56,24 @@
       localRoom.name.toLowerCase().includes(lowerCase) ||
       localRoom.building.code.toLowerCase().includes(lowerCase)
     );
+  }
+
+  async function handleEdit(roomId: string) {
+    const section = state.section;
+
+    if (!section) return;
+
+    const ret = await apiRequest('/api/section').put({
+      id: section.id,
+      alt: section.alt ?? '',
+      capacity: section.capacity,
+      groupId: section.group?.id ?? '',
+      roomId: roomId,
+      instructor: section.instructor,
+    });
+
+    await invalidate('data:scheduler');
+    callback(ret);
   }
 </script>
 
@@ -81,11 +101,11 @@
         {#if state.section}
           <button
             class="rounded bg-primary px-2 text-white disabled:bg-secondary"
-            on:click="{() => {
-              return false;
-            }}"
-            disabled="{state.section?.room?.id == r.id}">Change</button
+            on:click="{() => handleEdit(r.id)}"
+            disabled="{state.section?.room?.id === r.id}"
           >
+            Change
+          </button>
         {/if}
       </div>
       <Table

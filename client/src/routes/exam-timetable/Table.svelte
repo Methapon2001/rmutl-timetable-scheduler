@@ -1,30 +1,37 @@
 <script lang="ts">
-  import { invalidate } from '$app/navigation';
-  import { deleteSchedulerExam } from '$lib/api/scheduler-exam';
-  import CrossIcon from '$lib/icons/CrossIcon.svelte';
+  import type {
+    Building,
+    Exam,
+    Group,
+    Instructor,
+    Room,
+    Section,
+    Subject,
+    TimetableExam,
+  } from '$lib/types';
   import { createEventDispatcher } from 'svelte';
-
-  type WeekdayShort = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
-  type ExamData = Omit<
-    API.Exam, // eslint-disable-line no-undef
-    'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'
-  >;
-
-  type ScheduleExamData = {
-    exam: ExamData | null;
-    weekday: WeekdayShort;
-    period: number;
-    size: number;
-  };
+  import CrossIcon from '$lib/icons/CrossIcon.svelte';
 
   const dispatch = createEventDispatcher<{
     select: {
-      weekday: WeekdayShort;
+      weekday: TimetableExamData['weekday'];
       period: number;
     };
+    remove: { id: string };
   }>();
 
-  const weekdayMapRow: Record<WeekdayShort, string> = {
+  type TimetableExamData = TimetableExam & {
+    exam: Exam & {
+      section: (Section & {
+        group: Group | null;
+        subject: Subject;
+      })[];
+      instructor: Instructor[];
+      room: (Room & { building: Building }) | null;
+    };
+  };
+
+  const tbGridWeekday: Record<TimetableExamData['weekday'], string> = {
     mon: '2/3',
     tue: '3/4',
     wed: '4/5',
@@ -36,101 +43,55 @@
 
   export let selectable = false;
   export let small = false;
-  export let data: {
-    id: string;
-    exam: ExamData;
-    weekday: WeekdayShort;
-    period: number;
-    size: number;
-  }[];
+  export let data: TimetableExamData[];
   export let state: {
     selected: boolean;
-    exam: ExamData | null;
-    weekday: WeekdayShort;
+    exam: TimetableExamData['exam'] | null;
+    weekday: TimetableExamData['weekday'];
     period: number;
     size: number;
     isOverflow?: boolean;
     isOverlap?: boolean;
-    allowOverlap?: boolean;
-    overlapInstructor?: ScheduleExamData[];
-    overlapRoom?: ScheduleExamData[];
-    overlapSubject?: ScheduleExamData[];
-    overlapGroup?: ScheduleExamData[];
-    overlapSection?: ScheduleExamData[];
+    overlapInstructor?: TimetableExamData[];
+    overlapRoom?: TimetableExamData[];
+    overlapSubject?: TimetableExamData[];
+    overlapGroup?: TimetableExamData[];
+    overlapSection?: TimetableExamData[];
   };
   export let noDelete = false;
   export let forceVisual = false;
 
-  export let group: API.SchedulerExam['exam']['section'][number]['group'] | undefined = undefined; // eslint-disable-line no-undef
-  export let room: API.SchedulerExam['exam']['room'] | undefined = undefined; // eslint-disable-line no-undef
-  export let instructor: API.SchedulerExam['exam']['instructor'][number] | undefined = undefined; // eslint-disable-line no-undef
+  export let group: Group | undefined = undefined;
+  export let room: (Room & { building: Building }) | undefined = undefined;
+  export let instructor: Instructor | undefined = undefined;
 
   $: visualize =
     (room && room?.id == state.exam?.room?.id) ||
-    state.exam?.section.findIndex((sec) => sec.group && sec.group?.id === group?.id) !== -1 ||
-    state.exam?.instructor.findIndex((inst) => inst.id == instructor?.id) !== -1 ||
+    state.exam?.section.findIndex((v) => v.group && v.group.id === group?.id) !== -1 ||
+    state.exam?.instructor.findIndex((v) => v.id == instructor?.id) !== -1 ||
     forceVisual;
 
   $: localData =
     room || group || instructor
       ? data.filter(
-          (obj) =>
-            (obj.exam.room && obj.exam.room?.id == room?.id) ||
-            obj.exam.section.findIndex((sec) => sec.group && sec.group.id === group?.id) !== -1 ||
-            obj.exam.instructor.findIndex((inst) => inst.id == instructor?.id) !== -1,
+          (v) =>
+            (v.exam.room && v.exam.room.id === room?.id) ||
+            v.exam.section.findIndex((x) => x.group && x.group.id === group?.id) !== -1 ||
+            v.exam.instructor.findIndex((x) => x.id === instructor?.id) !== -1,
         )
       : data;
-
-  $: processedData = processOverlaps(localData);
-
-  function processOverlaps(arr: typeof data) {
-    const processed = arr.map((current) => {
-      return {
-        ...current,
-        _overlap: arr.some(
-          (item) =>
-            item != current &&
-            item.weekday == current.weekday &&
-            item.period + item.size > current.period &&
-            item.period < current.period + current.size,
-        ),
-        _offset: -1,
-      };
-    });
-
-    for (let i = 0; i < processed.length; i++) {
-      if (processed[i]._overlap == false) continue;
-
-      const offsetList: number[] = [];
-
-      const mutualOverlap = processed.filter(
-        (item) =>
-          item.weekday == processed[i].weekday &&
-          processed[i].period < item.period + item.size &&
-          processed[i].period + processed[i].size > item.period,
-      );
-
-      mutualOverlap.forEach((item) => {
-        if (item._offset != -1) offsetList.push(item._offset);
-      });
-
-      let j = 0;
-
-      while (offsetList.includes(j)) j++;
-
-      processed[i]._offset = j;
-    }
-
-    return processed;
-  }
 
   function handleClick(weekday: string, period: number) {
     if (!selectable || !visualize) return;
 
     dispatch('select', {
-      weekday: weekday as WeekdayShort,
-      period: period,
+      weekday: weekday as TimetableExam['weekday'],
+      period,
     });
+  }
+
+  function handleRemove(id: string) {
+    dispatch('remove', { id });
   }
 </script>
 
@@ -142,13 +103,13 @@
     {#each { length: 50 } as _, period}
       <div class="flex flex-col items-center bg-slate-100 font-semibold">
         <small>{period + 1}</small>
-        <small class="text-secondary" hidden="{small}"
-          >{8 + Math.floor(period / 4)}:{['00', '15', '30', '45'][period % 4]}</small
-        >
+        <small class="text-secondary" hidden="{small}">
+          {8 + Math.floor(period / 4)}:{['00', '15', '30', '45'][period % 4]}
+        </small>
       </div>
     {/each}
 
-    {#each Object.keys(weekdayMapRow) as weekday}
+    {#each Object.keys(tbGridWeekday) as weekday}
       <div
         class="sticky left-0 z-40 col-span-3 select-none bg-slate-100 font-semibold capitalize"
         class:text-sm="{small}"
@@ -167,35 +128,30 @@
         class="pointer-events-none absolute z-30 w-full {state.isOverlap || state.isOverflow
           ? 'bg-red-600/70'
           : 'bg-green-600/70'}"
-        style:grid-row="{weekdayMapRow[state.weekday]}"
+        style:grid-row="{tbGridWeekday[state.weekday]}"
         style:grid-column="{`${state.period + 3}/${state.period + state.size + 3}`}"
       >
         <div class="h-full w-full"></div>
       </div>
     {/if}
 
-    {#each processedData as item}
-      {@const overlapMaxOffset = Math.max(...processedData.map((obj) => obj._offset)) + 1}
+    {#each localData as item}
       <div
         class="pointer-events-none absolute z-10 w-full border bg-blue-300 text-xs font-bold"
-        style:grid-row="{weekdayMapRow[item.weekday]}"
-        style:grid-column="{`${item.period + 3}/${item.period + item.size + 3}`}"
-        style:height="{item._overlap ? `${(100 / overlapMaxOffset).toPrecision(6)}%` : '100%'}"
-        style:top="{item._overlap
-          ? `${((item._offset * 100) / overlapMaxOffset).toPrecision(6)}%`
-          : '0%'}"
+        style:grid-row="{tbGridWeekday[item.weekday]}"
+        style:grid-column="{`${item.start + 3}/${item.end + 4}`}"
+        style:height="100%"
+        style:top="0"
       >
         {#if !small}
           <div class="relative flex h-full w-full items-center text-center">
             <div class="flex h-full flex-grow items-center overflow-hidden">
               <div class="w-full">
-                {#if !item._overlap}
-                  <h6 class="block overflow-hidden font-bold">
-                    {item.exam.section[0]?.subject.code}_SEC_{item.exam.section
-                      .map((v) => v.no)
-                      .join(', ')}
-                  </h6>
-                {/if}
+                <h6 class="block overflow-hidden font-bold">
+                  {item.exam.section[0]?.subject.code}_SEC_{item.exam.section
+                    .map((v) => v.no)
+                    .join(', ')}
+                </h6>
                 <p class="block">{item.exam.section[0].subject.name}</p>
               </div>
             </div>
@@ -203,18 +159,7 @@
               <div class="pointer-events-auto p-1 pl-0">
                 <button
                   class="rounded bg-red-600 p-0.5 text-white"
-                  on:click="{async () => {
-                    await deleteSchedulerExam({ id: item.id });
-                    await invalidate('data:scheduler');
-
-                    state = {
-                      period: item.period,
-                      size: item.size,
-                      weekday: item.weekday,
-                      exam: item.exam,
-                      selected: false,
-                    };
-                  }}"
+                  on:click="{() => handleRemove(item.id)}"
                 >
                   <CrossIcon height="{18}" width="{18}" />
                 </button>
@@ -224,11 +169,9 @@
         {:else}
           <div class="group relative flex h-full w-full items-center text-center text-xs">
             <div class="flex-grow">
-              {#if !item._overlap}
-                {item.exam.section[0]?.subject.code}_SEC_{item.exam.section
-                  .map((v) => v.no)
-                  .join(', ')}
-              {/if}
+              {item.exam.section[0]?.subject.code}_SEC_{item.exam.section
+                .map((v) => v.no)
+                .join(', ')}
             </div>
           </div>
         {/if}

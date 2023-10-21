@@ -1,17 +1,6 @@
 <script lang="ts">
   import CrossIcon from '$lib/icons/CrossIcon.svelte';
-  import type {
-    Building,
-    Course,
-    CourseDetail,
-    Group,
-    Instructor,
-    Plan,
-    PlanDetail,
-    Room,
-    Subject,
-    Timetable,
-  } from '$lib/types';
+  import type { Building, Group, Instructor, Room, Timetable } from '$lib/types';
   import { processOverlaps } from './utils';
   import { createEventDispatcher } from 'svelte';
 
@@ -22,9 +11,7 @@
       weekday: TimetableData['weekday'];
       period: number;
     };
-    remove: {
-      id: string;
-    };
+    remove: { id: string };
   }>();
 
   const tbGridWeekday: Record<TimetableData['weekday'], string> = {
@@ -58,12 +45,7 @@
   export let noDelete = false;
   export let forceVisual = false;
 
-  export let group:
-    | (Group & {
-        plan: Plan & { detail: (PlanDetail & { subject: Subject })[] };
-        course: Course & { detail: (CourseDetail & { subject: Subject })[] };
-      })
-    | undefined = undefined;
+  export let group: Group | undefined = undefined;
   export let room: (Room & { building: Building }) | undefined = undefined;
   export let instructor: Instructor | undefined = undefined;
 

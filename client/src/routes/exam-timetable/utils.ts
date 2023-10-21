@@ -1,80 +1,92 @@
-type WeekdayShort = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
+import type {
+  Building,
+  Exam,
+  Group,
+  Instructor,
+  Room,
+  Section,
+  Subject,
+  TimetableExam,
+} from '$lib/types';
+
+type TimetableData = TimetableExam & {
+  exam: Exam & {
+    section: (Section & {
+      group: Group | null;
+      subject: Subject;
+    })[];
+    instructor: Instructor[];
+    room: (Room & { building: Building }) | null;
+  };
+};
 
 export function checkOverlap(
   current: {
-    exam: API.SchedulerExam['exam'] | API.Exam | null;
-    weekday: WeekdayShort;
+    exam: TimetableData['exam'] | null;
+    weekday: TimetableData['weekday'];
     period: number;
     size: number;
   },
-  schedule: {
-    id: string;
-    exam: API.SchedulerExam['exam'];
-    weekday: WeekdayShort;
-    period: number;
-    size: number;
-  }[] = [],
-  overlapData = true,
+  schedule: TimetableData[] = [],
 ) {
-  const sharedData = schedule.filter((obj) => {
-    return (
-      obj.exam.room?.id == current.exam?.room?.id ||
-      obj.exam.instructor.findIndex(
-        (inst) => current.exam?.instructor.findIndex((ins) => ins.id === inst.id) !== -1,
+  const sharedData = schedule.filter(
+    (v) =>
+      (v.exam.room && v.exam.room.id === current.exam?.room?.id) ||
+      v.exam.instructor.findIndex(
+        (a) => current.exam?.instructor.findIndex((b) => b.id === a.id) !== -1,
       ) !== -1 ||
-      obj.exam.section.findIndex(
-        (sect) =>
-          current.exam?.section.findIndex(
-            (sec) => sec.id === sect.id || sec.group?.id === sect.group?.id,
-          ) !== -1,
-      ) !== -1
-    );
-  });
+      v.exam.section.findIndex(
+        (a) => current.exam?.section.findIndex((b) => b.group && b.group.id === a.group?.id) !== -1,
+      ) !== -1,
+  );
 
   const overlap = sharedData.filter(
     (item) =>
       item.weekday == current.weekday &&
-      item.period + item.size > current.period &&
-      item.period < current.period + current.size,
+      item.end >= current.period &&
+      item.start < current.period + current.size,
   );
 
-  return {
-    isOverlap: overlap.length > 0,
-    allowOverlap: false,
-    overlapRoom:
-      overlap.length > 0 && overlapData
-        ? overlap.filter((obj) => obj.exam.room?.id == current.exam?.room?.id)
-        : [],
-    overlapInstructor:
-      overlap.length > 0 && overlapData
-        ? overlap.filter((obj) => {
-            return (
-              obj.exam.instructor.findIndex(
-                (inst) => current.exam?.instructor.findIndex((ins) => ins.id === inst.id) !== -1,
-              ) !== -1
-            );
-          })
-        : [],
-    overlapSection:
-      overlap.length > 0 && overlapData
-        ? overlap.filter((obj) => {
-            return (
-              obj.exam.section.findIndex(
-                (sect) => current.exam?.section.findIndex((sec) => sec.id === sect.id) !== -1,
-              ) !== -1
-            );
-          })
-        : [],
-    overlapGroup:
-      overlap.length > 0 && overlapData
-        ? overlap.filter((obj) => {
-            return (
-              obj.exam.section.findIndex(
-                (sect) =>
-                  current.exam?.section.findIndex((sec) => sec.group?.id === sect.group?.id) !== -1,
-              ) !== -1
-            );
-          })
-        : [],
-  };
+  const overlapStatus = overlap.reduce<{
+    overlapInstructor: TimetableData[];
+    overlapRoom: TimetableData[];
+    overlapGroup: TimetableData[];
+    overlapSection: TimetableData[];
+  }>(
+    (a, c) => {
+      if (
+        c.exam.instructor.findIndex(
+          (a) => current.exam?.instructor.findIndex((b) => b.id === a.id) !== -1,
+        ) !== -1
+      ) {
+        a.overlapInstructor.push(c);
+      }
+
+      if (
+        c.exam.section.findIndex(
+          (a) => current.exam?.section.findIndex((b) => b.id === a.id) !== -1,
+        ) !== -1
+      ) {
+        a.overlapSection.push(c);
+      }
+
+      if (c.exam.room && c.exam.room.id === current.exam?.room?.id) a.overlapRoom.push(c);
+      if (
+        c.exam.section.findIndex((a) =>
+          current.exam?.section.findIndex((b) => b.group && b.group.id === a.group?.id),
+        )
+      )
+        a.overlapGroup.push(c);
+
+      return a;
+    },
+    {
+      overlapInstructor: [],
+      overlapRoom: [],
+      overlapGroup: [],
+      overlapSection: [],
+    },
+  );
+
+  return { isOverlap: overlap.length > 0, ...overlapStatus };
 }

@@ -1,4 +1,4 @@
-import { createScheduler } from '$lib/api/scheduler';
+import apiRequest from '$lib/api';
 import { checkOverlap } from './utils';
 import type {
   Section,
@@ -14,7 +14,7 @@ import type {
   Timetable,
 } from '$lib/types';
 
-type WeekdayShort = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
+type WeekdayShort = Timetable['weekday'];
 
 function isCurrentRegGood(
   current: Section & {
@@ -56,12 +56,12 @@ function isCurrentRegGood(
   const restGap = option.restGap ?? 2;
 
   const entries = schedule.filter(
-    (sched) =>
-      sched.weekday === weekday &&
-      sched.start < period &&
-      (sched.section.group?.id == current.group?.id ||
-        sched.section.instructor.findIndex(
-          (inst) => current.instructor.findIndex((ins) => ins.id === inst.id) !== -1,
+    (v) =>
+      v.weekday === weekday &&
+      v.start < period &&
+      ((v.section.group && v.section.group.id === current.group?.id) ||
+        v.section.instructor.findIndex(
+          (a) => current.instructor.findIndex((b) => b.id === a.id) !== -1,
         ) !== -1),
   );
 
@@ -99,7 +99,7 @@ export async function generate(
     weekday?: WeekdayShort[];
     period?: number[];
     target?: {
-      group?: Omit<API.Group, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>;
+      group?: Parameters<typeof isCurrentRegGood>[0]['group'];
       subjectType?: 'compulsory' | 'elective' | '*';
     };
     maxPerDay?: number;
@@ -113,18 +113,16 @@ export async function generate(
   const rangeEnd = option.period && option.period.length === 2 ? option.period[1] : 18;
 
   section = section
-    .filter((sec) => {
-      return (
-        schedule.findIndex((sched) => sched.section.id === sec.id) === -1 &&
-        (option.target?.group ? option.target.group.id === sec.group?.id : true)
-      );
-    })
-    .filter((sec) => {
-      return subjectTarget !== '*'
-        ? sec.group?.course.detail.find((c) => c.subject.id === sec.subject.id)?.type ===
-            subjectTarget
-        : true;
-    });
+    .filter(
+      (a) =>
+        schedule.findIndex((b) => b.section.id === a.id) === -1 &&
+        (option.target?.group ? option.target.group.id === a.group?.id : true),
+    )
+    .filter((v) =>
+      subjectTarget !== '*'
+        ? v.group?.course.detail.find((c) => c.subject.id === v.subject.id)?.type === subjectTarget
+        : true,
+    );
 
   section.forEach((v) => {
     const size = (v.type === 'lecture' ? v.subject.lecture : v.subject.lab) * 2;
@@ -172,7 +170,7 @@ export async function generate(
   for (let i = 0; i < schedule.length; i++) {
     if (schedule[i].id !== 'generated') continue;
 
-    const ret = await createScheduler({
+    const ret = await apiRequest('/api/scheduler').post<(typeof schedule)[number]>({
       start: schedule[i].start,
       end: schedule[i].end,
       weekday: schedule[i].weekday,

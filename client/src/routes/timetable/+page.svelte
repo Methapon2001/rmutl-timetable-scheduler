@@ -6,10 +6,8 @@
   import { invalidate, invalidateAll } from '$app/navigation';
   import { createPDF, drawDetailTable, drawSchedule } from '$lib/utils/pdf';
   import { resetData } from '$lib/api/reset';
-  import { createScheduler } from '$lib/api/scheduler';
   import { checkOverlap, processOverlaps } from './utils';
 
-  import { publish } from '$lib/api/publish';
   import { exportSchedule } from '$lib/api/export-data';
 
   import type { Section, Subject } from '$lib/types';
@@ -139,7 +137,7 @@
     if (state.isOverlap) confirmOverlap = confirm('Overlap Detected!!! Do you want to continue?');
     if (state.isOverlap && !confirmOverlap) return;
 
-    await createScheduler({
+    await apiRequest('/api/scheduler').post({
       weekday: state.weekday,
       start: state.period,
       end: state.period + state.size - 1,
@@ -398,10 +396,7 @@
       .delete({ id })
       .catch((e) => console.error(e));
 
-    if (!ret)
-      return toast.error(
-        'Failed to delete course!\nThis record may currenly in use. \nSee console for more info.',
-      );
+    if (!ret) return toast.error('Failed to delete. \nSee console for more info.');
 
     await invalidate('data:scheduler');
   }
@@ -804,7 +799,7 @@
         const flag = confirm('Are you sure?.');
 
         if (flag) {
-          await publish(!isPublish);
+          await apiRequest('/api/publish').post({ publish: !isPublish });
           await invalidate('data:scheduler');
         }
       }}"
@@ -818,7 +813,7 @@
 
         if (flag) {
           await resetData('scheduler');
-          invalidate('data:scheduler');
+          await invalidate('data:scheduler');
         }
       }}"
     >
@@ -881,6 +876,16 @@
       room="{roomData.data}"
       state="{state}"
       handleSelect="{handleSelect}"
+      callback="{() => {
+        if (!state.section) return;
+
+        const selected = filteredSection.find((v) => v.id === state.section?.id);
+        if (selected && !handleSelectSection(selected)) {
+          resetState();
+        }
+
+        showRoomState = false;
+      }}"
     />
   {/await}
 </Modal>
@@ -907,6 +912,13 @@
       callback="{async () => {
         await invalidateAll();
         editState = false;
+
+        if (!state.section) return;
+
+        const selected = filteredSection.find((v) => v.id === state.section?.id);
+        if (selected && !handleSelectSection(selected)) {
+          resetState();
+        }
       }}"
     />
   </div>
