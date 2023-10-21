@@ -27,9 +27,9 @@
     roomId: string;
   };
 
-  function triggerEdit(section: typeof currentData) {
+  function triggerEdit(exam: typeof currentData) {
     editState = true;
-    currentData = section;
+    currentData = exam;
   }
 
   async function handleDelete(id: string) {
