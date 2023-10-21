@@ -130,7 +130,7 @@
   <slot />
 </main>
 
-<style lang="postcss">
+<style>
   nav {
     color: var(--color-primary-inverse);
     background-color: var(--color-primary);

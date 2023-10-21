@@ -1,41 +1,65 @@
 import type { PageLoad } from './$types';
-import { PUBLIC_API_HOST } from '$env/static/public';
+import type {
+  Section,
+  Group,
+  LogInfo,
+  ResponseDataInfo,
+  Building,
+  Room,
+  Instructor,
+  Subject,
+  Timetable,
+  TimetableExam,
+  Exam,
+  Info,
+} from '$lib/types';
+
+import apiRequest from '$lib/api';
 import { info } from '$lib/stores';
 
-let currentInfo: API.Info | undefined = undefined;
+let currentInfo: Info | undefined = undefined;
 info.subscribe((v) => (currentInfo = v));
 
-export const load = (async ({ fetch, depends }) => {
-  depends('data:scheduler');
+export const load = (async ({ fetch }) => {
+  const timetable = apiRequest('/api/scheduler', fetch);
+  const timetableExam = apiRequest('/api/scheduler-exam', fetch);
+  const param = new URLSearchParams({ limit: '9999', publish: 'true' });
 
-  const schedulerData = async () => {
-    return await fetch(
-      `${PUBLIC_API_HOST}/api/scheduler?limit=9999&publish=true${
-        currentInfo ? `&year=${currentInfo.year}&semester=${currentInfo.semester}` : ''
-      }`,
-    ).then((res) => res.json());
-  };
-
-  const schedulerExam = async () => {
-    return await fetch(
-      `${PUBLIC_API_HOST}/api/scheduler-exam?limit=9999&publish=true${
-        currentInfo ? `&year=${currentInfo.year}&semester=${currentInfo.semester}` : ''
-      }`,
-    ).then((res) => res.json());
-  };
+  if (currentInfo !== undefined) {
+    param.set('semester', currentInfo.semester.toString());
+    param.set('year', currentInfo.year.toString());
+  }
 
   return {
-    scheduler: schedulerData() as Promise<{
-      data: API.Scheduler[];
-      limit: number;
-      offset: number;
-      total: number;
-    }>,
-    schedulerExam: schedulerExam() as Promise<{
-      data: API.SchedulerExam[];
-      limit: number;
-      offset: number;
-      total: number;
-    }>,
+    scheduler: timetable.get<
+      ResponseDataInfo<
+        LogInfo<
+          Timetable & {
+            section: Section & {
+              group: Group | null;
+              room: (Room & { building: Building }) | null;
+              instructor: Instructor[];
+              subject: Subject;
+            };
+          }
+        >
+      >
+    >(param),
+    schedulerExam: timetableExam.get<
+      ResponseDataInfo<
+        LogInfo<
+          TimetableExam & {
+            exam: Exam & {
+              section: (Section & {
+                group: Group | null;
+                subject: Subject;
+              })[];
+              instructor: Instructor[];
+              room: (Room & { building: Building }) | null;
+            };
+          }
+        >
+      >
+    >(param),
   };
 }) satisfies PageLoad;
