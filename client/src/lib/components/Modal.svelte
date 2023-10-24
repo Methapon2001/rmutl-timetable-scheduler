@@ -19,7 +19,7 @@
   <div class="modal" transition:fade="{{ duration: 150 }}" class:center="{center}">
     <div
       transition:fly="{{ x: center ? 0 : 100, y: center ? 100 : 0 }}"
-      class="modal-content max-w-md md:max-w-xl"
+      class="modal-content {!maxWidth ? 'max-w-md md:max-w-xl' : ''}"
       style:width="{width}"
       style:max-width="{maxWidth ? maxWidth + ' !important' : ''}"
       on:outclick="{() => (open = false)}"
