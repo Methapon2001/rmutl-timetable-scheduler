@@ -6,6 +6,7 @@
   export let width = '48rem';
   export let open = false;
   export let center = false;
+  export let maxWidth: string | undefined = undefined;
 </script>
 
 <svelte:window
@@ -20,6 +21,7 @@
       transition:fly="{{ x: center ? 0 : 100, y: center ? 100 : 0 }}"
       class="modal-content max-w-md md:max-w-xl"
       style:width="{width}"
+      style:max-width="{maxWidth ? maxWidth + ' !important' : ''}"
       on:outclick="{() => (open = false)}"
       use:clickOutside
     >
