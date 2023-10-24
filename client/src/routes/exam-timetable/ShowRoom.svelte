@@ -100,10 +100,10 @@
       <Table
         bind:data="{scheduler}"
         state="{st}"
-        small="{true}"
         selectable="{true}"
         room="{r}"
         forceVisual="{true}"
+        noDelete="{true}"
         on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
       />
     </div>

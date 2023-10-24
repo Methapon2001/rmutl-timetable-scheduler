@@ -97,10 +97,10 @@
       <Table
         bind:data="{scheduler}"
         state="{st}"
-        small="{true}"
         selectable="{true}"
         instructor="{i}"
         forceVisual="{true}"
+        noDelete="{true}"
         on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
       />
     </div>

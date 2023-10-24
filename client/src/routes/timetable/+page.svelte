@@ -362,12 +362,10 @@
       obj.subject.name.toLocaleLowerCase().includes(text.toLocaleLowerCase()) ||
       obj.instructor.some((ins) => ins.name.toLocaleLowerCase().includes(text.toLocaleLowerCase()));
 
-    if (filterSelected.length > 0) {
-      return filterSelected.some((txt) => filterFn(txt));
+    if (filterSelected.length > 0 && !filterSelected.some((txt) => filterFn(txt))) {
+      return false;
     }
-    if (searchText && filterSelected.length > 0) {
-      return [searchText, ...filterSelected].some((txt) => filterFn(txt));
-    }
+
     return filterFn(searchText);
   });
 
@@ -867,7 +865,7 @@
   </div>
 </Modal>
 
-<Modal bind:open="{showRoomState}">
+<Modal bind:open="{showRoomState}" width="50%" maxWidth="50%">
   {#await data.lazy.room}
     Loading...
   {:then roomData}
