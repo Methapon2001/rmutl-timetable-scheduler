@@ -1,120 +1,51 @@
-import { FastifyReply, FastifyRequest } from "fastify";
 import xl from "excel4node";
+import { FastifyReply, FastifyRequest } from "fastify";
 import { PrismaClient } from "@prisma/client";
+import {
+  buildingSelect,
+  groupSelect,
+  instructorSelect,
+  logInfoSelect,
+  roomSelect,
+  scheduleSelect,
+  sectionSelect,
+  subjectSelect,
+} from "./model";
 
 const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
 
-const userSelect = {
-  id: true,
-  username: true,
-  role: true,
-};
-
-const subjectSelect = {
-  id: true,
-  code: true,
-  name: true,
-  credit: true,
-  lecture: true,
-  lab: true,
-  learn: true,
-};
-
-const courseSelect = {
-  id: true,
-  name: true,
-};
-
-const groupSelect = {
-  id: true,
-  name: true,
-  course: {
-    select: courseSelect,
-  },
-};
-
-const buildingSelect = {
-  id: true,
-  code: true,
-  name: true,
-};
-
-const roomSelect = {
-  id: true,
-  name: true,
-  type: true,
-  building: {
-    select: buildingSelect,
-  },
-};
-
-const instructorSelect = {
-  id: true,
-  name: true,
-};
-
-const childSectionSelect = {
-  id: true,
-  no: true,
-  alt: true,
-  lab: true,
-  type: true,
-  capacity: true,
-  group: {
-    select: groupSelect,
-  },
-  room: {
-    select: roomSelect,
-  },
-  subject: {
-    select: subjectSelect,
-  },
-  instructor: {
-    select: instructorSelect,
-  },
-};
-
-const sectionSelect = {
-  ...childSectionSelect,
-  parent: {
-    select: childSectionSelect,
-  },
-  child: {
-    select: childSectionSelect,
-  },
-};
-
-const schedulerSelect = {
-  id: true,
-  weekday: true,
-  start: true,
-  end: true,
-  publish: true,
+const select = {
+  ...scheduleSelect,
+  ...logInfoSelect,
   section: {
-    select: sectionSelect,
-  },
-  createdAt: true,
-  createdBy: {
-    select: userSelect,
-  },
-  updatedAt: true,
-  updatedBy: {
-    select: userSelect,
+    select: {
+      ...sectionSelect,
+      room: {
+        select: {
+          ...roomSelect,
+          building: { select: buildingSelect },
+        },
+      },
+      group: {
+        select: groupSelect,
+      },
+      instructor: { select: instructorSelect },
+      subject: { select: subjectSelect },
+      parent: { select: sectionSelect },
+    },
   },
 };
 
 export async function exportGroupSchedule(
   req: FastifyRequest,
-  res: FastifyReply
+  res: FastifyReply,
 ) {
   const data = await prisma.scheduler.findMany({
-    select: schedulerSelect,
+    select: select,
     where: {
-      info: {
-        current: true,
-      },
+      info: { current: true },
       createdByUserId: req.user.id,
     },
   });
@@ -128,7 +59,7 @@ export async function exportGroupSchedule(
             item.id !== current.id &&
             item.weekday == current.weekday &&
             item.end >= current.start &&
-            item.start <= current.end
+            item.start <= current.end,
         ),
         _offset: -1,
       };
@@ -139,13 +70,12 @@ export async function exportGroupSchedule(
         continue;
 
       const offsetList: number[] = [];
-
       const mutualOverlap = processed.filter(
         (item) =>
           processed[i].id !== item.id &&
           item.weekday === processed[i].weekday &&
           processed[i].start <= item.end &&
-          processed[i].end >= item.start
+          processed[i].end >= item.start,
       );
 
       mutualOverlap.forEach((item) => {
@@ -153,9 +83,7 @@ export async function exportGroupSchedule(
       });
 
       let j = 0;
-
       while (offsetList.includes(j)) j++;
-
       processed[i]._offset = j;
 
       for (let k = 0; k < processed.length; k++) {
@@ -226,14 +154,15 @@ export async function exportGroupSchedule(
     });
 
     ws.cell(1, 1, 17, 53, false).style({
-      alignment: {
-        vertical: "center",
-      },
+      alignment: { vertical: "center" },
       ...styleBorder,
     });
 
     ws.cell(1, 1, 15, 14, true)
-      .string([{ bold: true, size: 48 }, title])
+      .string([
+        { bold: true, size: Math.min(Math.round((48 * 13) / title.length)) },
+        title,
+      ])
       .style(styleCenter);
 
     ws.cell(1, 15, 2, 15, true).string("ที่").style(styleCenter);
@@ -294,8 +223,8 @@ export async function exportGroupSchedule(
           String(
             `${8 + Math.floor((period - 1) / 2)}:${
               (period - 1) % 2 === 0 ? "0" : "3"
-            }0-${8 + Math.floor(period / 2)}:${period % 2 === 0 ? "0" : "3"}0`
-          )
+            }0-${8 + Math.floor(period / 2)}:${period % 2 === 0 ? "0" : "3"}0`,
+          ),
         )
         .style({
           alignment: { horizontal: "center" },
@@ -313,7 +242,7 @@ export async function exportGroupSchedule(
     const { ws, styleCenter, styleBorder } = createWorksheetLayout(groupName);
 
     const p = processOverlaps(
-      data.filter((vSchedule) => vSchedule.section.group?.id === groupId)
+      data.filter((vSchedule) => vSchedule.section.group?.id === groupId),
     );
 
     const maxOverlap = Math.max(...p.map((obj) => obj._offset), 2) + 1;
@@ -332,7 +261,7 @@ export async function exportGroupSchedule(
       4 + (15 - 1) * 2,
       18 + maxOverlap * weekdayMap["wed"] + maxOverlap - 1,
       3 + 18 * 2,
-      true
+      true,
     )
       .string("Activity")
       .style({
@@ -349,19 +278,19 @@ export async function exportGroupSchedule(
         1,
         18 + maxOverlap * vWeekday + maxOverlap - 1,
         3,
-        true
+        true,
       )
         .string(
           ["จันทร์", "อังคาร", "พุธ", "พฤ", "ศุกร์", "เสาร์", "อาทิตย์"][
             vWeekday
-          ]
+          ],
         )
         .style({ ...styleCenter, ...styleBorder });
       ws.cell(
         18 + maxOverlap * vWeekday + maxOverlap - 1,
         1,
         18 + maxOverlap * vWeekday + maxOverlap - 1,
-        53
+        53,
       ).style({
         border: {
           bottom: {
@@ -390,44 +319,48 @@ export async function exportGroupSchedule(
       lab: 0,
       learn: 0,
     };
+    let detailCount = 0;
 
-    p.forEach((vProcessed, idx) => {
-      ws.cell(3 + idx, 16)
-        .string(vProcessed.section.subject.code)
-        .style(styleCenter);
-      ws.cell(3 + idx, 20).string(vProcessed.section.subject.name);
-      ws.cell(3 + idx, 32)
-        .number(vProcessed.section.subject.lecture)
-        .style(styleCenter);
-      ws.cell(3 + idx, 33)
-        .number(vProcessed.section.subject.lab / 3)
-        .style(styleCenter);
-      ws.cell(3 + idx, 34)
-        .number(
-          vProcessed.section.subject.lecture +
-            vProcessed.section.subject.lab / 3
-        )
-        .style(styleCenter);
-      ws.cell(3 + idx, 35).string(
-        vProcessed.section.subject.code +
-          "_SEC_" +
-          vProcessed.section.no +
-          (vProcessed.section.alt ? `, ${vProcessed.section.alt}` : "")
-      );
-      ws.cell(3 + idx, 48)
-        .number(vProcessed.section.subject.lecture)
-        .style(styleCenter);
-      ws.cell(3 + idx, 49)
-        .number(vProcessed.section.subject.lab)
-        .style(styleCenter);
-      ws.cell(3 + idx, 50)
-        .number(
-          vProcessed.section.subject.lecture + vProcessed.section.subject.lab
-        )
-        .style(styleCenter);
+    p.forEach((vProcessed) => {
+      if (vProcessed.section.parent === null) {
+        ws.cell(3 + detailCount, 16)
+          .string(vProcessed.section.subject.code)
+          .style(styleCenter);
+        ws.cell(3 + detailCount, 20).string(vProcessed.section.subject.name);
+        ws.cell(3 + detailCount, 32)
+          .number(vProcessed.section.subject.lecture)
+          .style(styleCenter);
+        ws.cell(3 + detailCount, 33)
+          .number(vProcessed.section.subject.lab / 3)
+          .style(styleCenter);
+        ws.cell(3 + detailCount, 34)
+          .number(
+            vProcessed.section.subject.lecture +
+              vProcessed.section.subject.lab / 3,
+          )
+          .style(styleCenter);
+        ws.cell(3 + detailCount, 35).string(
+          vProcessed.section.subject.code +
+            "_SEC_" +
+            vProcessed.section.no +
+            (vProcessed.section.alt ? `, ${vProcessed.section.alt}` : ""),
+        );
+        ws.cell(3 + detailCount, 48)
+          .number(vProcessed.section.subject.lecture)
+          .style(styleCenter);
+        ws.cell(3 + detailCount, 49)
+          .number(vProcessed.section.subject.lab)
+          .style(styleCenter);
+        ws.cell(3 + detailCount, 50)
+          .number(
+            vProcessed.section.subject.lecture + vProcessed.section.subject.lab,
+          )
+          .style(styleCenter);
 
-      total.lecture += vProcessed.section.subject.lecture;
-      total.lab += vProcessed.section.subject.lab;
+        total.lecture += vProcessed.section.subject.lecture;
+        total.lab += vProcessed.section.subject.lab;
+        detailCount++;
+      }
 
       if (!vProcessed._overlap) {
         ws.cell(
@@ -435,19 +368,20 @@ export async function exportGroupSchedule(
           4 + (vProcessed.start - 1) * 2,
           18 + maxOverlap * weekdayMap[vProcessed.weekday] + maxOverlap - 1,
           3 + vProcessed.end * 2,
-          true
+          true,
         )
           .string(
             vProcessed.section.subject.code +
               "_SEC_" +
               vProcessed.section.no +
               (vProcessed.section.alt ? `, ${vProcessed.section.alt}` : "") +
+              (vProcessed.section.lab ? `-L${vProcessed.section.lab}` : "") +
               (vProcessed.section.room
                 ? "\n" +
                   vProcessed.section.room.building.code +
                   "-" +
                   vProcessed.section.room.name
-                : "")
+                : ""),
           )
           .style({
             ...styleBorder,
@@ -463,7 +397,7 @@ export async function exportGroupSchedule(
           4 + (vProcessed.start - 1) * 2,
           18 + maxOverlap * weekdayMap[vProcessed.weekday] + vProcessed._offset,
           3 + vProcessed.end * 2,
-          true
+          true,
         )
           .string(vProcessed.section.subject.name)
           .style({ ...styleBorder, ...styleCenter });
