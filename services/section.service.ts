@@ -612,6 +612,13 @@ export async function searchSection(
       },
       {
         subject: {
+          code: {
+            contains: search,
+          },
+        },
+      },
+      {
+        subject: {
           name: {
             contains: search,
           },
