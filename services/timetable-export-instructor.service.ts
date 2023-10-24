@@ -50,6 +50,23 @@ export async function exportInstructorSchedule(
       },
       createdByUserId: req.user.id,
     },
+    orderBy: [
+      {
+        section: {
+          subject: { code: "asc" },
+        },
+      },
+      {
+        section: {
+          no: "asc",
+        },
+      },
+      {
+        section: {
+          lab: "asc",
+        },
+      },
+    ],
   });
 
   const processOverlaps = (arg: typeof data) => {
@@ -355,6 +372,8 @@ export async function exportInstructorSchedule(
         vProcessed.section.subject.code +
           "_SEC_" +
           vProcessed.section.no +
+          (vProcessed.section.alt ? `, ${vProcessed.section.alt}` : "") +
+          (vProcessed.section.lab ? `-L${vProcessed.section.lab}` : "") +
           (vProcessed.section.group
             ? ` (${vProcessed.section.group.name})`
             : ""),
