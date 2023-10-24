@@ -48,6 +48,23 @@ export async function exportGroupSchedule(
       info: { current: true },
       createdByUserId: req.user.id,
     },
+    orderBy: [
+      {
+        section: {
+          subject: { code: "asc" },
+        },
+      },
+      {
+        section: {
+          no: "asc",
+        },
+      },
+      {
+        section: {
+          lab: "asc",
+        },
+      },
+    ],
   });
 
   const processOverlaps = (arg: typeof data) => {
