@@ -2,11 +2,9 @@ import { Prisma, PrismaClient, Scheduler } from "@prisma/client";
 import { FastifyReply, FastifyRequest } from "fastify";
 import {
   buildingSelect,
-  courseSelect,
   groupSelect,
   instructorSelect,
   logInfoSelect,
-  planSelect,
   roomSelect,
   scheduleSelect,
   sectionSelect,
@@ -40,7 +38,7 @@ const select: Prisma.SchedulerSelect = {
 
 export async function createScheduler(
   request: FastifyRequest<{ Body: Scheduler }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   if (
     request.body.weekday === "wed" &&
@@ -96,7 +94,7 @@ export async function requestScheduler(
       semester: number;
     } & Pick<Scheduler, "publish" | "createdByUserId" | "updatedByUserId">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
   const { limit, offset, year, semester, groupId, ...where } = request.query;
@@ -157,7 +155,7 @@ export async function updateScheduler(
     Params: Pick<Scheduler, "id">;
     Body: Omit<Scheduler, "id">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 
@@ -181,7 +179,7 @@ export async function deleteScheduler(
   request: FastifyRequest<{
     Params: Pick<Scheduler, "id">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 
@@ -204,7 +202,7 @@ export async function resetScheduler(
       semester: number;
     };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id: userId } = request.user;
 
