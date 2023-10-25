@@ -837,9 +837,14 @@
     </div>
   {/if}
 
-  <div class="alloc-control">
-    <div class="grid grid-cols-6 rounded bg-primary font-semibold text-white">
-      <div class="col-span-5 flex items-center px-4 py-2">
+  <div class="alloc-control" title="Section Size">
+    <div class="grid grid-cols-12 rounded bg-primary font-semibold text-white">
+      <div class="flex items-center justify-center col-span-4 px-2">
+        <span class="text-center">
+          Section Size
+        </span>
+      </div>
+      <div class="col-span-7 flex items-center py-4">
         <input
           class="w-full"
           type="range"
@@ -850,8 +855,8 @@
           bind:value="{state.size}"
         />
       </div>
-      <div class="col-span-1 px-4">
-        <span class="block py-2 text-center">
+      <div class="flex items-center justify-center col-span-1 px-2">
+        <span class="block text-center">
           {state.size}
         </span>
       </div>
