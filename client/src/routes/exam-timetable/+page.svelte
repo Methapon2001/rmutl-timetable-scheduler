@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { PageData } from './$types';
-  import { onMount, type ComponentProps, onDestroy } from 'svelte';
+  import { onMount, type ComponentProps, onDestroy, tick } from 'svelte';
   import toast from 'svelte-french-toast';
   import autoTable from 'jspdf-autotable';
 
@@ -93,6 +93,9 @@
   };
 
   function resetState() {
+    let currentRoom = state.exam?.room;
+    let currentInst = state.exam?.instructor;
+    let currentGroup = state.exam?.section.map((v) => v.group).filter((v) => v !== null);
     state = {
       period: 1,
       size: 1,
@@ -100,6 +103,17 @@
       exam: null,
       selected: false,
     };
+
+    tick().then(() => {
+      if (currentRoom)
+        document.getElementById(`room-${currentRoom.id}`)?.scrollIntoView({ block: 'nearest' });
+      if (currentInst && currentInst.length > 0)
+        document.getElementById(`inst-${currentInst[0].id}`)?.scrollIntoView({ block: 'nearest' });
+      if (currentGroup && currentGroup.length > 0)
+        document
+          .getElementById(`inst-${currentGroup[0]!.id}`)
+          ?.scrollIntoView({ block: 'nearest' });
+    });
   }
 
   function handleSelect(weekday: ComponentProps<Table>['state']['weekday'], period: number) {

@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { PageData } from './$types';
-  import { onMount, type ComponentProps, onDestroy } from 'svelte';
+  import { onMount, type ComponentProps, onDestroy, tick } from 'svelte';
   import toast from 'svelte-french-toast';
 
   import { invalidate, invalidateAll } from '$app/navigation';
@@ -89,6 +89,9 @@
   };
 
   function resetState() {
+    let currentRoom = state.section?.room;
+    let currentInst = state.section?.instructor;
+
     state = {
       period: 1,
       size: 1,
@@ -96,6 +99,13 @@
       section: null,
       selected: false,
     };
+
+    tick().then(() => {
+      if (currentRoom)
+        document.getElementById(`room-${currentRoom.id}`)?.scrollIntoView({ block: 'nearest' });
+      if (currentInst && currentInst.length > 0)
+        document.getElementById(`inst-${currentInst[0].id}`)?.scrollIntoView({ block: 'nearest' });
+    });
   }
 
   function handleSelect(weekday: ComponentProps<Table>['state']['weekday'], period: number) {
@@ -136,6 +146,8 @@
     if (state.isOverlap && !state.allowOverlap) return alert('Overlap Detected!!! Not Allowed.');
     if (state.isOverlap) confirmOverlap = confirm('Overlap Detected!!! Do you want to continue?');
     if (state.isOverlap && !confirmOverlap) return;
+
+    console.log(ws.readyState);
 
     await apiRequest('/api/scheduler').post({
       weekday: state.weekday,
@@ -288,7 +300,7 @@
 
       docSchedule.assignSchedule(processed);
       docScheduleDetail.setHeader(grp.name);
-      docScheduleDetail.addDetail(processed, {onlyParent :true});
+      docScheduleDetail.addDetail(processed, { onlyParent: true });
 
       doc.addPage();
     });
@@ -306,7 +318,7 @@
 
       docSchedule.assignSchedule(processed);
       docScheduleDetail.setHeader(inst.name);
-      docScheduleDetail.addDetail(processed, {showGroup :true});
+      docScheduleDetail.addDetail(processed, { showGroup: true });
 
       doc.addPage();
     });
@@ -839,10 +851,8 @@
 
   <div class="alloc-control" title="Section Size">
     <div class="grid grid-cols-12 rounded bg-primary font-semibold text-white">
-      <div class="flex items-center justify-center col-span-4 px-2">
-        <span class="text-center">
-          Section Size
-        </span>
+      <div class="col-span-4 flex items-center justify-center px-2">
+        <span class="text-center"> Section Size </span>
       </div>
       <div class="col-span-7 flex items-center py-4">
         <input
@@ -855,7 +865,7 @@
           bind:value="{state.size}"
         />
       </div>
-      <div class="flex items-center justify-center col-span-1 px-2">
+      <div class="col-span-1 flex items-center justify-center px-2">
         <span class="block text-center">
           {state.size}
         </span>
