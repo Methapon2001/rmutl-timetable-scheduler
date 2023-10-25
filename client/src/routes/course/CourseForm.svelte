@@ -121,7 +121,7 @@
   </section>
   <section id="input-compulsory" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
-      <label for="form-course-detail-compulsory" class="font-semibold">Compulsory</label>
+      <label for="form-course-detail-compulsory" class="font-semibold">Compulsory (บังคับ)</label>
     </div>
     <div class="col-span-4" class:invalid="{err.detail}">
       {#await subjectOptions()}
@@ -144,7 +144,7 @@
   </section>
   <section id="input-elective" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
-      <label for="form-course-detail-elective" class="font-semibold">Elective</label>
+      <label for="form-course-detail-elective" class="font-semibold">Elective (เลือก)</label>
     </div>
     <div class="col-span-4" class:invalid="{err.detail}">
       {#await subjectOptions()}
