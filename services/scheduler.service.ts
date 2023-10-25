@@ -32,6 +32,7 @@ const select: Prisma.SchedulerSelect = {
       },
       instructor: { select: instructorSelect },
       subject: { select: subjectSelect },
+      parent: { select: sectionSelect },
     },
   },
 };

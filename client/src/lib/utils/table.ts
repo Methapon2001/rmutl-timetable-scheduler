@@ -7,6 +7,7 @@ export function processOverlaps(
       room: (Room & { building: Building }) | null;
       instructor: Instructor[];
       subject: Subject;
+      parent: Section | null;
     };
   })[],
 ) {

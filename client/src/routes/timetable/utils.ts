@@ -6,6 +6,7 @@ type TimetableData = Timetable & {
     subject: Subject;
     instructor: Instructor[];
     room: (Room & { building: Building }) | null;
+    parent: Section | null;
   };
 };
 
