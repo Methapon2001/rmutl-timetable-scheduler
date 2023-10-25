@@ -111,7 +111,7 @@
         document.getElementById(`inst-${currentInst[0].id}`)?.scrollIntoView({ block: 'nearest' });
       if (currentGroup && currentGroup.length > 0)
         document
-          .getElementById(`inst-${currentGroup[0]!.id}`)
+          .getElementById(`group-${currentGroup[0]!.id}`)
           ?.scrollIntoView({ block: 'nearest' });
     });
   }
@@ -357,8 +357,15 @@
       .catch((e) => console.error(e));
 
     if (!ret) return toast.error('Failed to delete. \nSee console for more info.');
+    const currentSched = schedulerExam.find((v) => v.id === id);
 
     await invalidate('data:scheduler-exam');
+
+    if (currentSched) {
+      handleSelectExam(currentSched.exam);
+      state.weekday = currentSched.weekday;
+      state.period = currentSched.start;
+    }
   }
 </script>
 
