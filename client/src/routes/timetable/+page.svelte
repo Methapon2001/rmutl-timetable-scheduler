@@ -563,6 +563,7 @@
         {#if pov === 'instructor'}
           {#each instructor as i (i.id)}
             <a
+              on:click="{() => (filterSelected = [i.name])}"
               href="#inst-{i.id}"
               class="inline-block whitespace-nowrap border-r px-4 py-2 last:border-r-0"
               class:bg-slate-200="{i.id === tableSelectState}">{i.name}</a
@@ -571,6 +572,7 @@
         {:else}
           {#each group as g (g.id)}
             <a
+              on:click="{() => (filterSelected = [g.name])}"
               href="#group-{g.id}"
               class="inline-block whitespace-nowrap border-r px-4 py-2 last:border-r-0"
               class:bg-slate-200="{g.id === tableSelectState}">{g.name}</a
@@ -590,7 +592,11 @@
           bind:value="{searchText}"
         />
         <button
-          class="input flex !w-full items-center justify-center bg-white text-secondary shadow"
+          class="input flex !w-full items-center justify-center shadow"
+          class:bg-white="{filterSelected.length === 0}"
+          class:text-secondary="{filterSelected.length === 0}"
+          class:bg-blue-400="{filterSelected.length > 0}"
+          class:text-white="{filterSelected.length > 0}"
           on:click="{() => (showFilter = !showFilter)}"
         >
           <FilterIcon />
