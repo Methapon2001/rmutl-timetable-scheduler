@@ -34,6 +34,7 @@ export const load = (async ({ fetch, parent, depends }) => {
   const section = apiRequest('/api/section', fetch);
   const timetable = apiRequest('/api/scheduler', fetch);
   const room = apiRequest('/api/room', fetch);
+  const instructor = apiRequest('/api/instructor', fetch);
   const param = new URLSearchParams({ limit: '9999' });
 
   if (currentInfo !== undefined) {
@@ -83,6 +84,7 @@ export const load = (async ({ fetch, parent, depends }) => {
     >(param),
     info: currentInfo,
     lazy: {
+      instructor: instructor.get<ResponseDataInfo<LogInfo<Instructor>>>({ limit: '9999' }),
       room: room.get<ResponseDataInfo<LogInfo<Room & { building: Building }>>>({ limit: '9999' }),
     },
   };

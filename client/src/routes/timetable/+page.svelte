@@ -21,6 +21,7 @@
   import Table from './Table.svelte';
   import NewForm from '../section/SectionNewForm.svelte';
   import EditForm from '../section/SectionEditForm.svelte';
+  import ShowInstructor from './ShowInstructor.svelte';
   import ShowRoom from './ShowRoom.svelte';
 
   export let data: PageData;
@@ -399,6 +400,7 @@
   }
 
   let showRoomState = false;
+  let showInstructorState = false;
   let tableSelectState: string;
 
   async function handleDelete(id: string) {
@@ -432,6 +434,11 @@
               <div id="inst-{i.id}" class="p-4 pr-2" style:scrollbar-gutter="stable">
                 <div class="mb-2 flex justify-between">
                   <h6 class="font-semibold">Instructor - {i.name}</h6>
+                  <button
+                    class="rounded bg-primary px-2 font-semibold text-white"
+                    on:click="{() => (showInstructorState = true)}"
+                    >{state.selected ? 'Change' : 'View All'}</button
+                  >
                 </div>
                 <Table
                   bind:data="{scheduler}"
@@ -545,6 +552,11 @@
             >
               <div class="mb-2 flex justify-between">
                 <h6 class="font-semibold">Instructor - {i.name}</h6>
+                <button
+                  class="rounded bg-primary px-2 font-semibold text-white"
+                  on:click="{() => (showInstructorState = true)}"
+                  >{state.selected ? 'Change' : 'View All'}</button
+                >
               </div>
               <Table
                 bind:data="{scheduler}"
@@ -901,6 +913,29 @@
     <ShowRoom
       scheduler="{scheduler}"
       room="{roomData.data}"
+      state="{state}"
+      handleSelect="{handleSelect}"
+      callback="{() => {
+        if (!state.section) return;
+
+        const selected = filteredSection.find((v) => v.id === state.section?.id);
+        if (selected && !handleSelectSection(selected)) {
+          resetState();
+        }
+
+        showRoomState = false;
+      }}"
+    />
+  {/await}
+</Modal>
+
+<Modal bind:open="{showInstructorState}" width="50%" maxWidth="50%">
+  {#await data.lazy.instructor}
+    Loading...
+  {:then instructorData}
+    <ShowInstructor
+      scheduler="{scheduler}"
+      instructor="{instructorData.data}"
       state="{state}"
       handleSelect="{handleSelect}"
       callback="{() => {
