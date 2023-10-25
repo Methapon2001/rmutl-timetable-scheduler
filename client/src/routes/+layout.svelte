@@ -14,17 +14,17 @@
   let innerWidth: number;
   let route: string | null;
   let menuList1 = [
-    { path: '/', text: 'Home' },
-    { path: '/subject', text: 'Subject' },
-    { path: '/instructor', text: 'Instructor' },
-    { path: '/building', text: 'Building' },
-    { path: '/room', text: 'Room' },
-    { path: '/course', text: 'Course' },
-    { path: '/plan', text: 'Plan' },
-    { path: '/group', text: 'Group' },
-    { path: '/section', text: 'Section' },
-    { path: '/request-section', text: 'Request Section' },
-    { path: '/exam', text: 'Exam' },
+    { path: '/', text: 'Home (หน้าแรก)' },
+    { path: '/subject', text: 'Subject (รายวิชา)' },
+    { path: '/instructor', text: 'Instructor (ผู้สอน)' },
+    { path: '/building', text: 'Building (ตึกเรียน)' },
+    { path: '/room', text: 'Room (ห้องเรียน)' },
+    { path: '/course', text: 'Course (หลักสูตร)' },
+    { path: '/plan', text: 'Plan (แผนการเรียน)' },
+    { path: '/group', text: 'Group (กลุ่มเรียน)' },
+    { path: '/section', text: 'Section (กลุ่มรายวิชา)' },
+    { path: '/request-section', text: 'Request Section (คำขอเปิดรายวิชา)' },
+    { path: '/exam', text: 'Exam (การสอบ)' },
     { path: '/timetable', text: 'Timetable (Study)' },
     { path: '/exam-timetable', text: 'Timetable (Exam)' },
   ];
@@ -71,8 +71,8 @@
   {#if data.session}
     <ul data-sveltekit-preload-data="off">
       {#if data.session.user.role == 'admin'}
-        <li><a class:active="{route == '/user'}" href="{'/user'}" role="button">User</a></li>
-        <li><a class:active="{route == '/info'}" href="{'/info'}" role="button">Info</a></li>
+        <li><a class:active="{route == '/user'}" href="{'/user'}" role="button">User (ผู้ใช้)</a></li>
+        <li><a class:active="{route == '/info'}" href="{'/info'}" role="button">Info (ภาคเรียน)</a></li>
       {/if}
       {#each [{ path: '/logout', text: 'Logout' }] as { path, text }}
         <li><a class:active="{route == path}" href="{path}" role="button">{text}</a></li>
