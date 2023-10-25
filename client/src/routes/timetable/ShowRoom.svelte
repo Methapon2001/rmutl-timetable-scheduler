@@ -67,7 +67,7 @@
       id: section.id,
       alt: section.alt ?? '',
       capacity: section.capacity,
-      groupId: section.group?.id ?? '',
+      groupId: section.group?.id ?? null,
       roomId: roomId,
       instructor: section.instructor,
     });
