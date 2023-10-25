@@ -343,11 +343,22 @@ export function drawDetailTable(
       doc.setFontSize(sourceSetting.fontSize);
     },
 
-    addDetail: (data: ProcessedOverlapReturnType) => {
+    addDetail: (
+      data: ProcessedOverlapReturnType,
+      opts?: {
+        showGroup?: boolean;
+        onlyParent? : boolean;
+      },
+    ) => {
+      let showGroup = opts && opts.showGroup != undefined ? opts.showGroup : false;
+      let onlyParent = opts && opts.onlyParent != undefined ? opts.onlyParent : false;
+
+      let filteredData = onlyParent ? data.filter((data) => data.section.parent == null) : data;
+
       doc.setFontSize(options.fontSize - 1);
       doc.setLineWidth(options.borderWidth);
 
-      data.forEach((sched, idx) => {
+      filteredData.forEach((sched, idx) => {
         doc.text(
           (idx + 1).toString(),
           x +
@@ -399,7 +410,9 @@ export function drawDetailTable(
         );
         doc.text(
           `${sched.section.subject.code}_SEC_${sched.section.no.toString()}${
-            sched.section.alt ? `, ${sched.section.alt}` : ''
+            sched.section.lab ? `-L${sched.section.lab}` : ''
+          }${sched.section.alt ? `, ${sched.section.alt}` : ''}${
+            sched.section.group && showGroup ? ` (${sched.section.group?.name})` : ''
           }`,
           x +
             schedule.colHeaderWidth +
@@ -410,7 +423,7 @@ export function drawDetailTable(
         );
       });
 
-      const [totalLecture, totalLab, totalLearn] = data.reduce<number[]>(
+      const [totalLecture, totalLab, totalLearn] = filteredData.reduce<number[]>(
         (acc, sched) => {
           acc[0] += sched.section.subject.lecture;
           acc[1] += sched.section.subject.lab;

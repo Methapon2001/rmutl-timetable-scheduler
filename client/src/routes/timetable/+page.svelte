@@ -288,7 +288,7 @@
 
       docSchedule.assignSchedule(processed);
       docScheduleDetail.setHeader(grp.name);
-      docScheduleDetail.addDetail(processed);
+      docScheduleDetail.addDetail(processed, {onlyParent :true});
 
       doc.addPage();
     });
@@ -306,7 +306,7 @@
 
       docSchedule.assignSchedule(processed);
       docScheduleDetail.setHeader(inst.name);
-      docScheduleDetail.addDetail(processed);
+      docScheduleDetail.addDetail(processed, {showGroup :true});
 
       doc.addPage();
     });
