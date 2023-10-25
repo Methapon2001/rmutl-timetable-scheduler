@@ -167,7 +167,7 @@
     }
   }
 
-  type SectionArg = NonNullable<(typeof state)['section']>;
+  type SectionArg = Omit<NonNullable<(typeof state)['section']>, 'parent'>;
 
   function getRequiredHour(section: SectionArg) {
     return section.type === 'lecture' ? section.subject.lecture : section.subject.lab;
