@@ -19,7 +19,7 @@ type RouteBody = {
     detail: (Omit<types.PlanDetail, 'id'> & { subjectId: types.Subject['id'] })[];
   } & { courseId: string };
   '/api/info': types.Info;
-  '/api/group': types.Group;
+  '/api/group': types.Group & { courseId: types.Course['id']; planId: types.Plan['id'] };
   '/api/scheduler': types.Timetable & { sectionId: types.Section['id'] };
   '/api/exam': types.Exam & {
     roomId: types.Room['id'] | null;
