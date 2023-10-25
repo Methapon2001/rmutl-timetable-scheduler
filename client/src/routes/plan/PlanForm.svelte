@@ -7,6 +7,7 @@
     PlanDetail,
     Course,
     CourseDetail,
+    Plan,
   } from '$lib/types';
   import toast from 'svelte-french-toast';
 
@@ -36,6 +37,7 @@
   export let name = '';
   export let detail: (Omit<PlanDetail, 'id'> & { subjectId: string })[] = [];
   export let courseId = '';
+  export let autoCreateGroup = false;
 
   /**
    * Necessary for edit mode
@@ -123,7 +125,19 @@
       .post(parsed.data)
       .catch((e) => console.error(e));
 
-    if (ret) await postSubmit(ret);
+    if (ret) {
+      if (autoCreateGroup) {
+        const plan = (ret as { data: Plan }).data;
+
+        await apiRequest('/api/group').post({
+          name,
+          courseId,
+          planId: plan.id,
+        });
+      }
+
+      await postSubmit(ret);
+    }
   }
 
   function handleError(error: ZodError) {
@@ -207,6 +221,16 @@
     {#if err.courseId}
       <div class="col-span-4 col-start-3 text-red-600">{err.courseId.join()}</div>
     {/if}
+  </section>
+
+  <section id="form-auto-group" class="grid grid-cols-6">
+    <label for="auto-group" class="col-span-4 col-start-3">
+      <input id="auto-group" type="checkbox" bind:value="{autoCreateGroup}" /> Auto create group
+      with this plan
+      {#if name}
+        ({name})
+      {/if}
+    </label>
   </section>
 
   {#if courseId}
@@ -296,9 +320,10 @@
       {/if}
     {/each}
 
-    <button type="button" class="button w-full" on:click="{() => addDetail()}"
-      >Add Semester/Year</button
-    >
+    <button type="button" class="button w-full" on:click="{() => addDetail()}">
+      Add Semester/Year
+    </button>
   {/if}
+
   <button type="submit" class="button w-full">Save</button>
 </form>
