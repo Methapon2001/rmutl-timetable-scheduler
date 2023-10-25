@@ -408,7 +408,15 @@
 
     if (!ret) return toast.error('Failed to delete. \nSee console for more info.');
 
+    const currentSched = scheduler.find((v) => v.id === id);
+
     await invalidate('data:scheduler');
+
+    if (currentSched) {
+      handleSelectSection(currentSched.section);
+      state.weekday = currentSched.weekday;
+      state.period = currentSched.start;
+    }
   }
 </script>
 
