@@ -167,7 +167,7 @@
     }
   }
 
-  type SectionArg = Omit<NonNullable<(typeof state)['section']>, 'parent'>;
+  type SectionArg = NonNullable<(typeof state)['section']>;
 
   function getRequiredHour(section: SectionArg) {
     return section.type === 'lecture' ? section.subject.lecture : section.subject.lab;
@@ -672,7 +672,7 @@
               </div>
             </button>
 
-            {#each section.child as child}
+            {#each filteredSection.filter((x) => x.parent?.id === section.id) as child}
               <button
                 class="grid w-full grid-cols-5 flex-row rounded border capitalize outline-none"
                 class:bg-white="{state.section?.id !== child.id}"
