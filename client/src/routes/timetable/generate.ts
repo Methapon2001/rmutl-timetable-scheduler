@@ -56,6 +56,11 @@ function isCurrentRegGood(
   const consecutiveGap = option.consecutiveGap ?? 2;
   const restGap = option.restGap ?? 2;
 
+  const detail = current.group?.course.detail.find((a) => a.subject.id === current.subject.id);
+
+  if (weekday === 'thu' && detail?.type === 'compulsory') return false;
+  if (weekday !== 'thu' && detail?.type === 'elective') return false;
+
   const entries = schedule.filter(
     (v) =>
       v.weekday === weekday &&
