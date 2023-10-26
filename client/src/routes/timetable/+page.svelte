@@ -74,9 +74,9 @@
     }, {}),
   );
 
-  $: isPublish = data.scheduler.data.some((v) => {
-    return v.createdBy.id === data.session?.user.id && v.publish === true;
-  });
+  $: isPublish = data.scheduler.data.some(
+    (v) => v.createdBy.id === data.session?.user.id && v.publish === true,
+  );
 
   let pov: 'instructor' | 'group' = 'group';
   let leftOverHours = 0;
