@@ -26,17 +26,22 @@
 
   export let data: PageData;
 
-  let ws: WebSocket;
-  onMount(() => {
+  let ws: WebSocket | undefined = undefined;
+
+  function initWebSocket() {
     ws = new WebSocket(getWebsocketURL());
     ws.onopen = () => console.log('WebSocket Connected.');
     ws.onmessage = (event) => {
-      if (event.data === 'Schedule updated.') invalidate('data:scheduler');
+      if (JSON.parse(event.data).update === 1) {
+        console.log('[WS]: Data change detected, syncing data');
+        invalidate('data:scheduler');
+      }
     };
     ws.onclose = () => console.log('WebSocket Closed');
-  });
+  }
 
-  onDestroy(() => ws.close());
+  onMount(initWebSocket);
+  onDestroy(() => ws?.close());
 
   let scheduler: ComponentProps<Table>['data'] = [];
 
@@ -148,7 +153,9 @@
     if (state.isOverlap) confirmOverlap = confirm('Overlap Detected!!! Do you want to continue?');
     if (state.isOverlap && !confirmOverlap) return;
 
-    console.log(ws.readyState);
+    if (ws?.readyState !== WebSocket.OPEN) {
+      initWebSocket();
+    }
 
     await apiRequest('/api/scheduler').post({
       weekday: state.weekday,
@@ -411,8 +418,6 @@
     if (!ret) return toast.error('Failed to delete. \nSee console for more info.');
 
     const currentSched = scheduler.find((v) => v.id === id);
-
-    await invalidate('data:scheduler');
 
     if (currentSched) {
       handleSelectSection(currentSched.section);
@@ -902,7 +907,12 @@
 
 <Modal bind:open="{showState}">
   <div id="show-modal" class="my-8 p-4">
-    <GenerateModal sections="{data.section.data}" schedule="{scheduler}" group="{group}" />
+    <GenerateModal
+      sections="{data.section.data}"
+      schedule="{scheduler}"
+      group="{group}"
+      ws="{ws}"
+    />
   </div>
 </Modal>
 

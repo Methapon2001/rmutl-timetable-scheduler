@@ -13,6 +13,7 @@ import type {
   CourseDetail,
   Timetable,
 } from '$lib/types';
+import { invalidateAll } from '$app/navigation';
 
 type WeekdayShort = Timetable['weekday'];
 
@@ -173,19 +174,26 @@ export async function generate(
     }
   });
 
+  const promises: Promise<(typeof schedule)[number]>[] = [];
+
   for (let i = 0; i < schedule.length; i++) {
     if (schedule[i].id !== 'generated') continue;
 
-    const ret = await apiRequest('/api/scheduler').post<(typeof schedule)[number]>({
-      start: schedule[i].start,
-      end: schedule[i].end,
-      weekday: schedule[i].weekday,
-      publish: schedule[i].publish,
-      sectionId: schedule[i].section.id,
-    });
-
-    schedule[i].id = ret.id;
+    promises.push(
+      apiRequest('/api/scheduler').post<(typeof schedule)[number]>(
+        {
+          start: schedule[i].start,
+          end: schedule[i].end,
+          weekday: schedule[i].weekday,
+          publish: schedule[i].publish,
+          sectionId: schedule[i].section.id,
+        },
+        {
+          noUpdateSignal: 'true',
+        },
+      ),
+    );
   }
 
-  return schedule;
+  return await Promise.all(promises);
 }
