@@ -38,7 +38,10 @@ const select: Prisma.SchedulerSelect = {
 };
 
 export async function createScheduler(
-  request: FastifyRequest<{ Body: Scheduler }>,
+  request: FastifyRequest<{
+    Querystring: { noUpdateSignal: boolean }; // this is to type request which will be used later on response
+    Body: Scheduler;
+  }>,
   reply: FastifyReply,
 ) {
   if (
