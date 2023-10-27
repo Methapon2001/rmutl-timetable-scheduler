@@ -8,6 +8,8 @@ import {
 } from "../services/scheduler-exam.service";
 import schedulerExamSchema from "./validation/scheduler-exam.schema";
 
+const UPDATE_SIGNAL = { update: 2 };
+
 export default async (server: FastifyInstance) => {
   function broadcast(message: string) {
     server.websocketServer.clients.forEach((client) => {
@@ -18,7 +20,7 @@ export default async (server: FastifyInstance) => {
   server.post("/api/scheduler-exam", {
     onRequest: auth(),
     onResponse: (_request, _reply) => {
-      broadcast("Schedule exam updated.");
+      broadcast(JSON.stringify(UPDATE_SIGNAL));
     },
     handler: createSchedulerExam,
     schema: {
@@ -46,7 +48,7 @@ export default async (server: FastifyInstance) => {
   server.put("/api/scheduler-exam/:id", {
     onRequest: auth(),
     onResponse: (_request, _reply) => {
-      broadcast("Schedule exam updated.");
+      broadcast(JSON.stringify(UPDATE_SIGNAL));
     },
     handler: updateSchedulerExam,
     schema: {
@@ -58,7 +60,7 @@ export default async (server: FastifyInstance) => {
   server.delete("/api/scheduler-exam/:id", {
     onRequest: auth(),
     onResponse: (_request, _reply) => {
-      broadcast("Schedule exam updated.");
+      broadcast(JSON.stringify(UPDATE_SIGNAL));
     },
     handler: deleteSchedulerExam,
     schema: {
