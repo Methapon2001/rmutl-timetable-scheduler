@@ -86,10 +86,16 @@ function apiRequest<TRoute extends keyof RouteData>(resource: TRoute, fetcher = 
         })
       ).json();
     },
-    post: async <R = unknown>(data: Omit<RouteData[TRoute]['post'], 'id'>): Promise<R> => {
+    post: async <R = unknown>(
+      data: Omit<RouteData[TRoute]['post'], 'id'>,
+      query?: string | Record<string, string> | URLSearchParams,
+    ): Promise<R> => {
       const session = await refresh(fetcher);
+      const params =
+        query instanceof URLSearchParams ? query.toString() : new URLSearchParams(query).toString();
+
       return (
-        await fetcher(url, {
+        await fetcher(url + (params ? `?${params}` : ''), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -99,10 +105,15 @@ function apiRequest<TRoute extends keyof RouteData>(resource: TRoute, fetcher = 
         })
       ).json();
     },
-    put: async <R = unknown>(data: RouteData[TRoute]['put']): Promise<R> => {
+    put: async <R = unknown>(
+      data: RouteData[TRoute]['put'],
+      query?: string | Record<string, string> | URLSearchParams,
+    ): Promise<R> => {
       const session = await refresh(fetcher);
+      const params =
+        query instanceof URLSearchParams ? query.toString() : new URLSearchParams(query).toString();
       return (
-        await fetcher(`${url}/${data.id}`, {
+        await fetcher(`${url}/${data.id}` + (params ? `?${params}` : ''), {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -112,10 +123,15 @@ function apiRequest<TRoute extends keyof RouteData>(resource: TRoute, fetcher = 
         })
       ).json();
     },
-    delete: async <R = unknown>(data: Pick<RouteData[TRoute]['delete'], 'id'>): Promise<R> => {
-      const session = await refresh();
+    delete: async <R = unknown>(
+      data: Pick<RouteData[TRoute]['delete'], 'id'>,
+      query?: string | Record<string, string> | URLSearchParams,
+    ): Promise<R> => {
+      const session = await refresh(fetcher);
+      const params =
+        query instanceof URLSearchParams ? query.toString() : new URLSearchParams(query).toString();
       return (
-        await fetcher(`${url}/${data.id}`, {
+        await fetcher(`${url}/${data.id}` + (params ? `?${params}` : ''), {
           method: 'DELETE',
           headers: {
             Authorization: `Bearer ${session?.token.access}`,
