@@ -41,7 +41,10 @@ const select: Prisma.SchedulerExamSelect = {
 };
 
 export async function createSchedulerExam(
-  request: FastifyRequest<{ Body: SchedulerExam }>,
+  request: FastifyRequest<{
+    Querystring: { noUpdateSignal: boolean }; // this is to type request which will be used later on response
+    Body: SchedulerExam;
+  }>,
   reply: FastifyReply,
 ) {
   const info = await prisma.info.findFirst({

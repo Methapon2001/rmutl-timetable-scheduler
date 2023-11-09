@@ -19,8 +19,10 @@ export default async (server: FastifyInstance) => {
 
   server.post("/api/scheduler-exam", {
     onRequest: auth(),
-    onResponse: (_request, _reply) => {
-      broadcast(JSON.stringify(UPDATE_SIGNAL));
+    onResponse: (request, _reply) => {
+      if (!request.query.noUpdateSignal) {
+        broadcast(JSON.stringify(UPDATE_SIGNAL));
+      }
     },
     handler: createSchedulerExam,
     schema: {
