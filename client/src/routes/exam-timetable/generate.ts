@@ -129,19 +129,26 @@ export async function generate(
     }
   });
 
+  const promises: Promise<(typeof schedule)[number]>[] = [];
+
   for (let i = 0; i < schedule.length; i++) {
     if (schedule[i].id !== 'generated') continue;
 
-    const ret = await apiRequest('/api/scheduler-exam').post<(typeof schedule)[number]>({
-      start: schedule[i].start,
-      end: schedule[i].end,
-      weekday: schedule[i].weekday,
-      publish: schedule[i].publish,
-      examId: schedule[i].exam.id,
-    });
-
-    schedule[i].id = ret.id;
+    promises.push(
+      apiRequest('/api/scheduler-exam').post<(typeof schedule)[number]>(
+        {
+          start: schedule[i].start,
+          end: schedule[i].end,
+          weekday: schedule[i].weekday,
+          publish: schedule[i].publish,
+          examId: schedule[i].exam.id,
+        },
+        {
+          noUpdateSignal: 'true',
+        },
+      ),
+    );
   }
 
-  return schedule;
+  return await Promise.all(promises);
 }
