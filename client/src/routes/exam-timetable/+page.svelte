@@ -26,19 +26,22 @@
 
   export let data: PageData;
 
-  let ws: WebSocket;
-  onMount(() => {
+  let ws: WebSocket | undefined = undefined;
+
+  function initWebSocket() {
     ws = new WebSocket(getWebsocketURL());
     ws.onopen = () => console.log('WebSocket Connected.');
     ws.onmessage = (event) => {
-      if (event.data === 'Schedule exam updated.') invalidate('data:scheduler-exam');
+      if (JSON.parse(event.data).update === 2) {
+        console.log('[WS]: Data change detected, syncing data');
+        invalidate('data:scheduler');
+      }
     };
     ws.onclose = () => console.log('WebSocket Closed');
-  });
+  }
 
-  onDestroy(() => {
-    ws.close();
-  });
+  onMount(initWebSocket);
+  onDestroy(() => ws?.close());
 
   $: isPublish = data.schedulerExam.data.some((sched) => {
     return sched.createdBy.id === data.session?.user.id && sched.publish === true;
@@ -142,6 +145,10 @@
   async function submitData() {
     if (!state.exam) return;
     if (state.isOverlap) return alert('Overlap Detected!!! Not Allowed.');
+
+    if (ws?.readyState !== WebSocket.OPEN) {
+      initWebSocket();
+    }
 
     await apiRequest('/api/scheduler-exam').post({
       weekday: state.weekday,
@@ -352,12 +359,12 @@
   let tableSelectState: string;
 
   async function handleDelete(id: string) {
+    const currentSched = schedulerExam.find((v) => v.id === id);
     const ret = await apiRequest('/api/scheduler-exam')
       .delete({ id })
       .catch((e) => console.error(e));
 
     if (!ret) return toast.error('Failed to delete. \nSee console for more info.');
-    const currentSched = schedulerExam.find((v) => v.id === id);
 
     await invalidate('data:scheduler-exam');
 
@@ -665,7 +672,10 @@
 
     <button
       class="w-full rounded border bg-slate-900 px-8 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
-      on:click="{() => generate(data.exam.data, schedulerExam, { maxPerDay: maxPerDay })}"
+      on:click="{() => {
+        generate(data.exam.data, schedulerExam, { maxPerDay: maxPerDay });
+        ws?.send(JSON.stringify({ update: 2 }));
+      }}"
     >
       Generate
     </button>
@@ -806,7 +816,7 @@
   </div>
 </Modal>
 
-<style lang="postcss">
+<style>
   .table-small-container {
     height: calc(194px + 1rem + 1.5rem + 1rem + 1rem);
     overflow-y: auto;
