@@ -375,14 +375,31 @@
   let showState = false;
   let searchText = '';
 
-  $: filteredSection = data.section.data.filter((obj) => {
-    const filterFn = (text: string) =>
-      obj.subject.code.toLocaleLowerCase().includes(text.toLocaleLowerCase()) ||
-      obj.group?.name.toLocaleLowerCase().includes(text.toLocaleLowerCase()) ||
-      obj.subject.name.toLocaleLowerCase().includes(text.toLocaleLowerCase()) ||
-      obj.instructor.some((ins) => ins.name.toLocaleLowerCase().includes(text.toLocaleLowerCase()));
+  $: filteredSection = data.section.data.filter((v) => {
+    const filterFn = (text: string, exact = false) => {
+      const lowerCase = text.toLocaleLowerCase();
+      const subjectCodeLowerCase = v.subject.code.toLocaleLowerCase();
+      const subjectNameLowerCase = v.subject.name.toLocaleLowerCase();
+      const groupLowerCase = v.group?.name.toLocaleLowerCase();
 
-    if (filterSelected.length > 0 && !filterSelected.some((txt) => filterFn(txt))) {
+      if (exact) {
+        return (
+          lowerCase === subjectCodeLowerCase ||
+          lowerCase === subjectNameLowerCase ||
+          lowerCase === groupLowerCase ||
+          v.instructor.some((a) => a.name.toLocaleLowerCase() === text)
+        );
+      }
+
+      return (
+        subjectNameLowerCase.includes(lowerCase) ||
+        subjectCodeLowerCase.includes(lowerCase) ||
+        (groupLowerCase && groupLowerCase.includes(lowerCase)) ||
+        v.instructor.some((a) => a.name.toLocaleLowerCase().includes(lowerCase))
+      );
+    };
+
+    if (filterSelected.length > 0 && !filterSelected.some((txt) => filterFn(txt, true))) {
       return false;
     }
 
@@ -411,13 +428,15 @@
   let tableSelectState: string;
 
   async function handleDelete(id: string) {
+    const currentSched = scheduler.find((v) => v.id === id);
+
     const ret = await apiRequest('/api/scheduler')
       .delete({ id })
       .catch((e) => console.error(e));
 
     if (!ret) return toast.error('Failed to delete. \nSee console for more info.');
 
-    const currentSched = scheduler.find((v) => v.id === id);
+    await invalidate('data:scheduler');
 
     if (currentSched) {
       handleSelectSection(currentSched.section);
