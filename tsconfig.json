@@ -1,11 +1,15 @@
 {
-  "ts-node": {
-    "files": true
-  },
   "compilerOptions": {
-    "declaration": true,
-    "strict": true,
     "lib": ["esnext"],
-    "esModuleInterop": true
+
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+
+    "strict": true,
+    "skipLibCheck": true,
+
+    "module": "commonJs",
+    "outDir": "dist"
   },
+  "exclude": ["client", "dist", "node_modules"]
 }
