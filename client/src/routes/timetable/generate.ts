@@ -13,7 +13,6 @@ import type {
   CourseDetail,
   Timetable,
 } from '$lib/types';
-import { invalidateAll } from '$app/navigation';
 
 type WeekdayShort = Timetable['weekday'];
 
