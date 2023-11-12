@@ -9,10 +9,11 @@ const prisma = new PrismaClient({
 const select = infoSelect;
 
 export async function createInfo(
+  // TODO: clone previous semester group
   request: FastifyRequest<{
-    Body: Info;
+    Body: Info & { withPreviousData: boolean };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const exist = await prisma.info.findFirst({
     where: {
@@ -57,7 +58,7 @@ export async function requestInfo(
       offset: number;
     } & Info;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
   const { limit, offset, ...where } = request.query;
@@ -98,7 +99,7 @@ export async function updateInfo(
     Params: Pick<Info, "id">;
     Body: Omit<Info, "id">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 
@@ -148,7 +149,7 @@ export async function deleteInfo(
   request: FastifyRequest<{
     Params: Pick<Info, "id">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 

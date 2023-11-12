@@ -13,7 +13,7 @@ export let action = async (
       semester: number;
     };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   const info = await prisma.info.findFirst({
     where: {
@@ -47,7 +47,7 @@ export const actionPublishExam = async (
       semester: number;
     };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   const info = await prisma.info.findFirst({
     where: {

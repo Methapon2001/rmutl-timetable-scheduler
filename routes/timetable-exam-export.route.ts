@@ -9,14 +9,14 @@ export default async (server: FastifyInstance) => {
     schema: {
       querystring: {
         type: "object",
-        required: ['year', "semester", "midtermDate", "finalDate"],
+        required: ["year", "semester", "midtermDate", "finalDate"],
         properties: {
-          year: {type: "number"},
-          semester: {type: "number"},
+          year: { type: "number" },
+          semester: { type: "number" },
           midtermDate: { type: "string" },
-          finalDate: { type: "string"},
-        }
-      }
-    }
+          finalDate: { type: "string" },
+        },
+      },
+    },
   });
 };

@@ -9,7 +9,7 @@ const prisma = new PrismaClient({
 
 export async function createUser(
   request: FastifyRequest<{ Body: User }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   request.body.password = await hash(request.body.password);
 
@@ -31,7 +31,7 @@ export async function requestUser(
       offset: number;
     } & Pick<User, "username" | "role">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
   const { limit, offset, ...where } = request.query;
@@ -74,7 +74,7 @@ export async function updateUser(
     Params: Pick<User, "id">;
     Body: Omit<User, "id">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 
@@ -108,7 +108,7 @@ export async function deleteUser(
   request: FastifyRequest<{
     Params: Pick<User, "id">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 

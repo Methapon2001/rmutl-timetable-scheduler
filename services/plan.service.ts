@@ -33,7 +33,7 @@ export async function createPlan(
       detail: Pick<PlanDetail, "semester" | "year" | "subjectId">[];
     };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { detail: planDetail, ...planData } = request.body;
 
@@ -52,8 +52,8 @@ export async function createPlan(
     !planDetail.every(
       (detail) =>
         courseSubjectList.findIndex(
-          ({ subject: courseSubject }) => courseSubject.id === detail.subjectId
-        ) !== -1
+          ({ subject: courseSubject }) => courseSubject.id === detail.subjectId,
+        ) !== -1,
     )
   ) {
     return reply.code(403).send({
@@ -86,7 +86,7 @@ export async function requestPlan(
       offset: number;
     } & Pick<Plan, "name" | "createdByUserId" | "updatedByUserId">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
   const { limit, offset, ...where } = request.query;
@@ -131,7 +131,7 @@ export async function updatePlan(
       detail: Pick<PlanDetail, "semester" | "year" | "subjectId">[];
     };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
   const { detail: planDetail, ...planData } = request.body;
@@ -151,8 +151,8 @@ export async function updatePlan(
     !planDetail.every(
       (detail) =>
         courseSubjectList.findIndex(
-          ({ subject: courseSubject }) => courseSubject.id === detail.subjectId
-        ) !== -1
+          ({ subject: courseSubject }) => courseSubject.id === detail.subjectId,
+        ) !== -1,
     )
   ) {
     return reply.code(403).send({
@@ -188,7 +188,7 @@ export async function deletePlan(
   request: FastifyRequest<{
     Params: Pick<Plan, "id">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 

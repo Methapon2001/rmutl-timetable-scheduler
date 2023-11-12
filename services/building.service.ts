@@ -10,7 +10,7 @@ const select = { ...buildingSelect, ...logInfoSelect };
 
 export async function createBuilding(
   request: FastifyRequest<{ Body: Building }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const building = await prisma.building.create({
     data: {
@@ -35,7 +35,7 @@ export async function requestBuilding(
       offset: number;
     } & Pick<Building, "name" | "createdByUserId" | "updatedByUserId">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
   const { limit, offset, search, ...where } = request.query;
@@ -82,7 +82,7 @@ export async function updateBuilding(
     Params: Pick<Building, "id">;
     Body: Omit<Building, "id">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 
@@ -106,7 +106,7 @@ export async function deleteBuilding(
   request: FastifyRequest<{
     Params: Pick<Building, "id">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 
@@ -126,7 +126,7 @@ export async function searchBuilding(
   request: FastifyRequest<{
     Querystring: { search: string; limit: number; offset: number };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { limit, offset, search } = request.query;
 

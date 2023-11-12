@@ -22,7 +22,7 @@ export async function createCourse(
   request: FastifyRequest<{
     Body: Course & { detail: Pick<CourseDetail, "type" | "subjectId">[] };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { detail: courseDetail, ...courseData } = request.body;
 
@@ -51,7 +51,7 @@ export async function requestCourse(
       offset: number;
     } & Pick<Course, "name" | "createdByUserId" | "updatedByUserId">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
   const { limit, offset, ...where } = request.query;
@@ -96,7 +96,7 @@ export async function updateCourse(
       detail: Pick<CourseDetail, "type" | "subjectId">[];
     };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
   const { detail: courseDetail, ...courseData } = request.body;
@@ -129,7 +129,7 @@ export async function deleteCourse(
   request: FastifyRequest<{
     Params: Pick<Course, "id">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 

@@ -111,7 +111,7 @@ export async function exportScheduleExam(
       finalDate: string;
     };
   }>,
-  res: FastifyReply
+  res: FastifyReply,
 ) {
   const data = await prisma.schedulerExam.findMany({
     select: schedulerExamSelect,
@@ -246,7 +246,7 @@ export async function exportScheduleExam(
       .string(
         val.exam.section[0].subject.code +
           " " +
-          val.exam.section[0].subject.name
+          val.exam.section[0].subject.name,
       )
       .style({
         ...styleTopLeft,
@@ -254,7 +254,7 @@ export async function exportScheduleExam(
       });
 
     ws.cell(2 + idx, 2)
-      .string('SEC_' + val.exam.section.map((v) => v.no).join(", "))
+      .string("SEC_" + val.exam.section.map((v) => v.no).join(", "))
       .style({
         ...styleTopLeft,
         ...styleBorder,
@@ -263,17 +263,17 @@ export async function exportScheduleExam(
     ws.cell(2 + idx, 3)
       .string(
         new Date(
-          midtermDate.getTime() + timestampDay * weekdayMapNum[val.weekday]
+          midtermDate.getTime() + timestampDay * weekdayMapNum[val.weekday],
         ).getDate() +
           " " +
           monthName[
             new Date(
-              midtermDate.getTime() + timestampDay * weekdayMapNum[val.weekday]
+              midtermDate.getTime() + timestampDay * weekdayMapNum[val.weekday],
             ).getMonth()
           ] +
           " " +
           new Date(
-            midtermDate.getTime() + timestampDay * weekdayMapNum[val.weekday]
+            midtermDate.getTime() + timestampDay * weekdayMapNum[val.weekday],
           ).getFullYear() +
           "\n" +
           (8 +
@@ -286,7 +286,7 @@ export async function exportScheduleExam(
             Math.floor(val.end / 4) +
             ":" +
             ["00", "15", "30", "45"][val.end % 4]) +
-          " น."
+          " น.",
       )
       .style({
         ...styleTopLeft,
@@ -295,17 +295,17 @@ export async function exportScheduleExam(
     ws.cell(2 + idx, 4)
       .string(
         new Date(
-          finalDate.getTime() + timestampDay * weekdayMapNum[val.weekday]
+          finalDate.getTime() + timestampDay * weekdayMapNum[val.weekday],
         ).getDate() +
           " " +
           monthName[
             new Date(
-              finalDate.getTime() + timestampDay * weekdayMapNum[val.weekday]
+              finalDate.getTime() + timestampDay * weekdayMapNum[val.weekday],
             ).getMonth()
           ] +
           " " +
           new Date(
-            finalDate.getTime() + timestampDay * weekdayMapNum[val.weekday]
+            finalDate.getTime() + timestampDay * weekdayMapNum[val.weekday],
           ).getFullYear() +
           "\n" +
           (8 +
@@ -318,7 +318,7 @@ export async function exportScheduleExam(
             Math.floor(val.end / 4) +
             ":" +
             ["00", "15", "30", "45"][val.end % 4]) +
-          " น."
+          " น.",
       )
       .style({
         ...styleTopLeft,

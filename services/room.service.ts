@@ -14,7 +14,7 @@ const select = {
 
 export async function createRoom(
   request: FastifyRequest<{ Body: Room }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const room = await prisma.room.create({
     data: {
@@ -42,7 +42,7 @@ export async function requestRoom(
       "name" | "type" | "buildingId" | "createdByUserId" | "updatedByUserId"
     >;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
   const { limit, offset, search, ...where } = request.query;
@@ -89,7 +89,7 @@ export async function updateRoom(
     Params: Pick<Room, "id">;
     Body: Omit<Room, "id">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 
@@ -113,7 +113,7 @@ export async function deleteRoom(
   request: FastifyRequest<{
     Params: Pick<Room, "id">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 
@@ -133,7 +133,7 @@ export async function searchRoom(
   request: FastifyRequest<{
     Querystring: { search: string; limit: number; offset: number };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { limit, offset, search } = request.query;
 

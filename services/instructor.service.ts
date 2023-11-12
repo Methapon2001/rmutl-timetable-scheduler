@@ -10,7 +10,7 @@ const select = { ...instructorSelect, ...logInfoSelect };
 
 export async function createInstructor(
   request: FastifyRequest<{ Body: Instructor }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const instructor = await prisma.instructor.create({
     data: {
@@ -35,7 +35,7 @@ export async function requestInstructor(
       offset: number;
     } & Pick<Instructor, "name" | "createdByUserId" | "updatedByUserId">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
   const { limit, offset, search, ...where } = request.query;
@@ -82,7 +82,7 @@ export async function updateInstructor(
     Params: Pick<Instructor, "id">;
     Body: Omit<Instructor, "id">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 
@@ -106,7 +106,7 @@ export async function deleteInstructor(
   request: FastifyRequest<{
     Params: Pick<Instructor, "id">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 
@@ -126,7 +126,7 @@ export async function searchInstructor(
   request: FastifyRequest<{
     Querystring: { search: string; limit: number; offset: number };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { limit, offset, search } = request.query;
 

@@ -37,7 +37,7 @@ const select = {
 
 export async function createGroup(
   request: FastifyRequest<{ Body: Group }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const info = await prisma.info.findFirst({
     where: {
@@ -79,7 +79,7 @@ export async function requestGroup(
       "name" | "courseId" | "createdByUserId" | "updatedByUserId"
     >;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
   const { limit, offset, search, semester, year, ...where } = request.query;
@@ -138,7 +138,7 @@ export async function updateGroup(
     Params: Pick<Group, "id">;
     Body: Omit<Group, "id">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 
@@ -177,7 +177,7 @@ export async function deleteGroup(
   request: FastifyRequest<{
     Params: Pick<Group, "id">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 
@@ -212,7 +212,7 @@ export async function searchGroup(
   request: FastifyRequest<{
     Querystring: { search: string; limit: number; offset: number };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { limit, offset, search } = request.query;
 
