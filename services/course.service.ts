@@ -17,7 +17,8 @@ const select = {
   detail: {
     select: { ...courseDetailSelect, subject: { select: subjectSelect } },
   },
-};
+} satisfies Prisma.CourseSelect;
+
 export async function createCourse(
   request: FastifyRequest<{
     Body: Course & { detail: Pick<CourseDetail, "type" | "subjectId">[] };

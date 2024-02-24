@@ -1,24 +1,17 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import { FastifyReply, FastifyRequest } from "fastify";
+import { userSelect } from "./model";
 
 const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
 
-const userSelect: Prisma.UserSelect = {
-  id: true,
-  username: true,
-  role: true,
-};
-
-const openedRequestSectionSelect: Prisma.OpenedRequestSectionSelect = {
+const openedRequestSectionSelect = {
   id: true,
   key: true,
-  opener: {
-    select: userSelect,
-  },
+  opener: { select: userSelect },
   createdAt: true,
-};
+} satisfies Prisma.OpenedRequestSectionSelect;
 
 export async function requestSectionStatus(
   request: FastifyRequest,

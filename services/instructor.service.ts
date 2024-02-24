@@ -6,7 +6,10 @@ const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
 
-const select = { ...instructorSelect, ...logInfoSelect };
+const select = {
+  ...instructorSelect,
+  ...logInfoSelect,
+} satisfies Prisma.InstructorSelect;
 
 export async function createInstructor(
   request: FastifyRequest<{ Body: Instructor }>,

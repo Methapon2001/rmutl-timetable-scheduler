@@ -15,7 +15,7 @@ const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
 
-const select: Prisma.SchedulerSelect = {
+const select = {
   ...scheduleSelect,
   ...logInfoSelect,
   section: {
@@ -35,7 +35,7 @@ const select: Prisma.SchedulerSelect = {
       parent: { select: sectionSelect },
     },
   },
-};
+} satisfies Prisma.SchedulerSelect;
 
 export async function createScheduler(
   request: FastifyRequest<{

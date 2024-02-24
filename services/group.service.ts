@@ -33,7 +33,7 @@ const select = {
       },
     },
   },
-};
+} satisfies Prisma.GroupSelect;
 
 export async function createGroup(
   request: FastifyRequest<{ Body: Group }>,

@@ -26,7 +26,8 @@ const select = {
   course: {
     select: courseSelect,
   },
-};
+} satisfies Prisma.PlanSelect;
+
 export async function createPlan(
   request: FastifyRequest<{
     Body: Plan & {

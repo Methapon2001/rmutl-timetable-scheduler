@@ -10,7 +10,7 @@ const select = {
   ...roomSelect,
   ...logInfoSelect,
   building: { select: buildingSelect },
-};
+} satisfies Prisma.RoomSelect;
 
 export async function createRoom(
   request: FastifyRequest<{ Body: Room }>,

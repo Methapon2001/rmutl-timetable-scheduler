@@ -16,7 +16,7 @@ const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
 
-const select: Prisma.SchedulerExamSelect = {
+const select = {
   ...scheduleExamSelect,
   ...logInfoSelect,
   exam: {
@@ -38,7 +38,7 @@ const select: Prisma.SchedulerExamSelect = {
       instructor: { select: instructorSelect },
     },
   },
-};
+} satisfies Prisma.SchedulerExamSelect;
 
 export async function createSchedulerExam(
   request: FastifyRequest<{

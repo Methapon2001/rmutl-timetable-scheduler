@@ -6,7 +6,10 @@ const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
 
-const select = { ...subjectSelect, ...logInfoSelect };
+const select = {
+  ...subjectSelect,
+  ...logInfoSelect,
+} satisfies Prisma.SubjectSelect;
 
 export async function createSubject(
   request: FastifyRequest<{ Body: Subject }>,

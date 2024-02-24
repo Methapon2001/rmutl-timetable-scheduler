@@ -24,7 +24,7 @@ const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
 
-const select: Prisma.SectionSelect = {
+const select = {
   ...sectionSelect,
   ...logInfoSelect,
   parent: { select: sectionSelect },
@@ -70,7 +70,7 @@ const select: Prisma.SectionSelect = {
   },
   instructor: { select: instructorSelect },
   subject: { select: subjectSelect },
-};
+} satisfies Prisma.SectionSelect;
 
 async function nextSectionNo(subjectId: string) {
   const manual = await prisma.section.findMany({

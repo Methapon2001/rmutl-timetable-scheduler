@@ -6,7 +6,10 @@ const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
 
-const select = { ...buildingSelect, ...logInfoSelect };
+const select = {
+  ...buildingSelect,
+  ...logInfoSelect,
+} satisfies Prisma.BuildingSelect;
 
 export async function createBuilding(
   request: FastifyRequest<{ Body: Building }>,

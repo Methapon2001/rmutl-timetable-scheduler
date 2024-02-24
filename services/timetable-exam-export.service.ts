@@ -170,47 +170,16 @@ export async function exportScheduleExam(
     },
   });
 
-  ws.column(1).setWidth(30);
-  ws.column(2).setWidth(30);
-  ws.column(3).setWidth(30);
-  ws.column(4).setWidth(30);
-  ws.column(5).setWidth(30);
-  ws.cell(1, 1)
-    .string("วิชา")
-    .style({
-      ...styleCenter,
-      ...styleBorder,
-    });
-  ws.cell(1, 2)
-    .string("กลุ่มเรียน")
-    .style({
-      ...styleCenter,
-      ...styleBorder,
-    });
-  ws.cell(1, 3)
-    .string("กลางภาค")
-    .style({
-      ...styleCenter,
-      ...styleBorder,
-    });
-  ws.cell(1, 4)
-    .string("ปลายภาค")
-    .style({
-      ...styleCenter,
-      ...styleBorder,
-    });
-  ws.cell(1, 5)
-    .string("ห้องสอบ")
-    .style({
-      ...styleCenter,
-      ...styleBorder,
-    });
-  ws.cell(1, 6)
-    .string("ผู้คุมสอบ")
-    .style({
-      ...styleCenter,
-      ...styleBorder,
-    });
+  for (let i = 1; i <= 5; i++) ws.column(i).setWidth(30);
+
+  const columnStyle = { ...styleCenter, ...styleBorder };
+
+  ws.cell(1, 1).string("วิชา").style(columnStyle);
+  ws.cell(1, 2).string("กลุ่มเรียน").style(columnStyle);
+  ws.cell(1, 3).string("กลางภาค").style(columnStyle);
+  ws.cell(1, 4).string("ปลายภาค").style(columnStyle);
+  ws.cell(1, 5).string("ห้องสอบ").style(columnStyle);
+  ws.cell(1, 6).string("ผู้คุมสอบ").style(columnStyle);
 
   const midtermDate = new Date();
   const finalDate = new Date();

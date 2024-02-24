@@ -22,7 +22,7 @@ const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
 
-const select: Prisma.ExamSelect = {
+const select = {
   ...examSelect,
   ...logInfoSelect,
   room: {
@@ -39,7 +39,7 @@ const select: Prisma.ExamSelect = {
     },
   },
   instructor: { select: instructorSelect },
-};
+} satisfies Prisma.ExamSelect;
 
 export async function createExam(
   request: FastifyRequest<{

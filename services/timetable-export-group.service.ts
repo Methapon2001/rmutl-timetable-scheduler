@@ -1,6 +1,6 @@
 import xl from "excel4node";
 import { FastifyReply, FastifyRequest } from "fastify";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import {
   buildingSelect,
   groupSelect,
@@ -36,7 +36,7 @@ const select = {
       parent: { select: sectionSelect },
     },
   },
-};
+} satisfies Prisma.SchedulerSelect;
 
 export async function exportGroupSchedule(
   req: FastifyRequest,
@@ -54,16 +54,8 @@ export async function exportGroupSchedule(
           subject: { code: "asc" },
         },
       },
-      {
-        section: {
-          no: "asc",
-        },
-      },
-      {
-        section: {
-          lab: "asc",
-        },
-      },
+      { section: { no: "asc" } },
+      { section: { lab: "asc" } },
     ],
   });
 
