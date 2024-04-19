@@ -6,122 +6,71 @@ import {
   Role,
 } from "@prisma/client";
 import { FastifyReply, FastifyRequest } from "fastify";
+import {
+  buildingSelect,
+  courseDetailSelect,
+  courseSelect,
+  groupSelect,
+  instructorSelect,
+  logInfoSelect,
+  planDetailSelect,
+  planSelect,
+  roomSelect,
+  sectionSelect,
+  subjectSelect,
+} from "./model";
 
 const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
 
-const userSelect: Prisma.UserSelect = {
-  id: true,
-  username: true,
-  role: true,
-};
-
-const subjectSelect: Prisma.SubjectSelect = {
-  id: true,
-  code: true,
-  name: true,
-  credit: true,
-  lecture: true,
-  lab: true,
-  learn: true,
-};
-
-const courseDetailSelect: Prisma.CourseDetailSelect = {
-  id: true,
-  type: true,
-  subject: {
-    select: subjectSelect,
-  },
-};
-
-const courseSelect: Prisma.CourseSelect = {
-  id: true,
-  name: true,
-  detail: {
-    select: courseDetailSelect,
-  },
-};
-
-const groupSelect: Prisma.GroupSelect = {
-  id: true,
-  name: true,
-  course: {
-    select: courseSelect,
-  },
-};
-
-const buildingSelect: Prisma.BuildingSelect = {
-  id: true,
-  code: true,
-  name: true,
-};
-
-const roomSelect: Prisma.RoomSelect = {
-  id: true,
-  name: true,
-  type: true,
-  building: {
-    select: buildingSelect,
-  },
-};
-
-const instructorSelect: Prisma.InstructorSelect = {
-  id: true,
-  name: true,
-};
-
-const childSectionSelect: Prisma.SectionSelect = {
-  id: true,
-  no: true,
-  alt: true,
-  lab: true,
-  type: true,
-  capacity: true,
-  group: {
-    select: groupSelect,
-  },
-  room: {
-    select: roomSelect,
-  },
-  subject: {
-    select: subjectSelect,
-  },
-  instructor: {
-    select: instructorSelect,
-  },
-};
-
-const sectionSelect: Prisma.SectionSelect = {
-  ...childSectionSelect,
-  parent: {
-    select: childSectionSelect,
-  },
+const select = {
+  ...sectionSelect,
+  ...logInfoSelect,
+  parent: { select: sectionSelect },
   child: {
-    select: childSectionSelect,
-    orderBy: [
-      {
-        subject: {
-          name: "asc",
+    select: {
+      ...sectionSelect,
+      room: {
+        select: {
+          ...roomSelect,
+          building: { select: buildingSelect },
         },
       },
-      {
-        no: "asc",
+      instructor: { select: instructorSelect },
+      subject: { select: subjectSelect },
+      group: { select: groupSelect },
+    },
+    orderBy: [{ no: "asc" }, { lab: "asc" }],
+  },
+  group: {
+    select: {
+      ...groupSelect,
+      plan: {
+        select: { ...planSelect, detail: { select: planDetailSelect } },
       },
-      {
-        lab: "asc",
+      course: {
+        select: {
+          ...courseSelect,
+          detail: {
+            select: {
+              ...courseDetailSelect,
+              subject: { select: subjectSelect },
+            },
+          },
+        },
       },
-    ],
+    },
   },
-  createdAt: true,
-  createdBy: {
-    select: userSelect,
+  room: {
+    select: {
+      ...roomSelect,
+      building: { select: buildingSelect },
+    },
   },
-  updatedAt: true,
-  updatedBy: {
-    select: userSelect,
-  },
-};
+  instructor: { select: instructorSelect },
+  subject: { select: subjectSelect },
+} satisfies Prisma.SectionSelect;
 
 async function nextSectionNo(subjectId: string) {
   const manual = await prisma.section.findMany({
@@ -172,7 +121,7 @@ export async function createSection(
   request: FastifyRequest<{
     Body: CreateBody;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const sectionNo =
     request.body.manual && request.body.no
@@ -247,7 +196,7 @@ export async function createSection(
         create: child,
       },
     },
-    select: sectionSelect,
+    select: select,
   });
 
   return reply.status(200).send({
@@ -275,7 +224,7 @@ export async function requestSection(
       | "updatedByUserId"
     >;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
   const { limit, offset, search, year, semester, exam_filtered, ...where } =
@@ -294,13 +243,13 @@ export async function requestSection(
 
   const section = id
     ? await prisma.section.findUnique({
-        select: sectionSelect,
+        select: select,
         where: {
           id: id,
         },
       })
     : await prisma.section.findMany({
-        select: sectionSelect,
+        select: select,
         where: {
           ...sectionWhere,
           info: {
@@ -355,13 +304,21 @@ export async function updateSection(
       instructor?: Instructor[];
     };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 
   const rec = await prisma.section.findUnique({
     select: {
       createdByUserId: true,
+      parent: {
+        select: {
+          child: { select: { id: true } },
+        },
+      },
+      child: {
+        select: { id: true },
+      },
     },
     where: {
       id: id,
@@ -390,7 +347,7 @@ export async function updateSection(
   }
 
   const section = await prisma.section.update({
-    select: sectionSelect,
+    select: select,
     where: {
       id: id,
     },
@@ -406,6 +363,20 @@ export async function updateSection(
     },
   });
 
+  if (request.body.groupId) {
+    const relatedId = rec.parent
+      ? rec.parent.child.map((v) => v.id)
+      : rec.child.map((v) => v.id);
+
+    relatedId.forEach(async (v) => {
+      if (id === v) return;
+      await prisma.section.update({
+        where: { id: v },
+        data: { groupId: request.body.groupId },
+      });
+    });
+  }
+
   return reply.status(200).send({
     data: section,
   });
@@ -415,7 +386,7 @@ export async function deleteSection(
   request: FastifyRequest<{
     Params: Pick<Section, "id">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 
@@ -488,7 +459,7 @@ export async function deleteSection(
   });
 
   const section = await prisma.section.delete({
-    select: sectionSelect,
+    select: select,
     where: {
       id: id,
     },
@@ -570,7 +541,7 @@ export async function resetSection(
       semester: number;
     };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id: userId } = request.user;
 
@@ -601,7 +572,7 @@ export async function searchSection(
   request: FastifyRequest<{
     Querystring: { search: string; limit: number; offset: number };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { limit, offset, search } = request.query;
 
@@ -641,6 +612,13 @@ export async function searchSection(
       },
       {
         subject: {
+          code: {
+            contains: search,
+          },
+        },
+      },
+      {
+        subject: {
           name: {
             contains: search,
           },
@@ -659,7 +637,7 @@ export async function searchSection(
   };
 
   const section = await prisma.section.findMany({
-    select: sectionSelect,
+    select: select,
     where: sectionWhere,
     orderBy: [
       {

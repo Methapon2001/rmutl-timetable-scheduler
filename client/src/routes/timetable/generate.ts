@@ -1,19 +1,51 @@
-import { createScheduler } from '$lib/api/scheduler';
+import apiRequest from '$lib/api';
 import { checkOverlap } from './utils';
+import type {
+  Section,
+  Course,
+  Group,
+  Plan,
+  PlanDetail,
+  Building,
+  Room,
+  Instructor,
+  Subject,
+  CourseDetail,
+  Timetable,
+} from '$lib/types';
 
-type WeekdayShort = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
+type WeekdayShort = Timetable['weekday'];
 
 function isCurrentRegGood(
-  current: API.Section,
+  current: Section & {
+    parent: Section | null;
+    child: (Section & {
+      room: (Room & { building: Building }) | null;
+      instructor: Instructor[];
+      subject: Subject;
+      group: Group | null;
+    })[];
+    group:
+      | (Group & {
+          plan: Plan & { detail: (PlanDetail & { subject: Subject })[] };
+          course: Course & { detail: (CourseDetail & { subject: Subject })[] };
+        })
+      | null;
+    room: (Room & { building: Building }) | null;
+    instructor: Instructor[];
+    subject: Subject;
+  },
   weekday: WeekdayShort,
   period: number,
-  schedule: {
-    id: string;
-    section: API.Scheduler['section'];
-    weekday: WeekdayShort;
-    period: number;
-    size: number;
-  }[],
+  schedule: (Timetable & {
+    section: Section & {
+      group: Group | null;
+      room: (Room & { building: Building }) | null;
+      instructor: Instructor[];
+      subject: Subject;
+      parent: Section | null;
+    };
+  })[],
   option: {
     maxPerDay?: number;
     consecutiveGap?: number;
@@ -24,26 +56,31 @@ function isCurrentRegGood(
   const consecutiveGap = option.consecutiveGap ?? 2;
   const restGap = option.restGap ?? 2;
 
+  const detail = current.group?.course.detail.find((a) => a.subject.id === current.subject.id);
+
+  if (weekday === 'thu' && detail?.type === 'compulsory') return false;
+  if (weekday !== 'thu' && detail?.type === 'elective') return false;
+
   const entries = schedule.filter(
-    (sched) =>
-      sched.weekday === weekday &&
-      sched.period < period &&
-      (sched.section.group?.id == current.group?.id ||
-        sched.section.instructor.findIndex(
-          (inst) => current.instructor.findIndex((ins) => ins.id === inst.id) !== -1,
+    (v) =>
+      v.weekday === weekday &&
+      v.start < period &&
+      ((v.section.group && v.section.group.id === current.group?.id) ||
+        v.section.instructor.findIndex(
+          (a) => current.instructor.findIndex((b) => b.id === a.id) !== -1,
         ) !== -1),
   );
 
   if (entries.length < 1) return true;
   if (entries.length >= maxPerDay) return false;
 
-  entries.sort((a, b) => a.period - b.period);
+  entries.sort((a, b) => a.start - b.start);
 
   for (let i = 0; i < entries.length; i++) {
     const curr = entries[i];
 
     // if there is one entries that is longer than 5 hours (10 periods) then return false
-    if (curr.size >= 10 && curr.period + curr.size - 1 + restGap >= period) return false;
+    if (curr.end - curr.start + 1 >= 10 && curr.end + restGap >= period) return false;
 
     if (i === entries.length - 1) return true;
 
@@ -55,26 +92,20 @@ function isCurrentRegGood(
     // note:
     //    this does not considered overlap situation as it should be checked before call this.
     //    this does not considered section that comes after current that will be registered.
-    if (curr.period + curr.size - 1 + consecutiveGap >= next.period) {
-      if (next.period + next.size - 1 + restGap >= period) return false;
+    if (curr.end + consecutiveGap >= next.start) {
+      if (next.end + restGap >= period) return false;
     }
   }
 }
 
 export async function generate(
-  section: API.Section[],
-  schedule: {
-    id: string;
-    section: API.Scheduler['section'];
-    weekday: WeekdayShort;
-    period: number;
-    size: number;
-  }[] = [],
+  section: Parameters<typeof isCurrentRegGood>[0][],
+  schedule: Parameters<typeof isCurrentRegGood>[3] = [],
   option: {
     weekday?: WeekdayShort[];
     period?: number[];
     target?: {
-      group?: Omit<API.Group, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>;
+      group?: Parameters<typeof isCurrentRegGood>[0]['group'];
       subjectType?: 'compulsory' | 'elective' | '*';
     };
     maxPerDay?: number;
@@ -88,21 +119,19 @@ export async function generate(
   const rangeEnd = option.period && option.period.length === 2 ? option.period[1] : 18;
 
   section = section
-    .filter((sec) => {
-      return (
-        schedule.findIndex((sched) => sched.section.id === sec.id) === -1 &&
-        (option.target?.group ? option.target.group.id === sec.group?.id : true)
-      );
-    })
-    .filter((sec) => {
-      return subjectTarget !== '*'
-        ? sec.group?.course.detail.find((c) => c.subject.id === sec.subject.id)?.type ===
-            subjectTarget
-        : true;
-    });
+    .filter(
+      (a) =>
+        schedule.findIndex((b) => b.section.id === a.id) === -1 &&
+        (option.target?.group ? option.target.group.id === a.group?.id : true),
+    )
+    .filter((v) =>
+      subjectTarget !== '*'
+        ? v.group?.course.detail.find((c) => c.subject.id === v.subject.id)?.type === subjectTarget
+        : true,
+    );
 
-  section.forEach((sec) => {
-    const size = (sec.type === 'lecture' ? sec.subject.lecture : sec.subject.lab) * 2;
+  section.forEach((v) => {
+    const size = (v.type === 'lecture' ? v.subject.lecture : v.subject.lab) * 2;
 
     for (const day of weekday) {
       for (let i = rangeStart; i <= rangeEnd - size + 1; i++) {
@@ -110,7 +139,7 @@ export async function generate(
           {
             period: i,
             weekday: day,
-            section: sec,
+            section: v,
             size: size,
           },
           schedule,
@@ -119,7 +148,7 @@ export async function generate(
         if (isOverlap) continue;
 
         if (
-          !isCurrentRegGood(sec, day, i, schedule, {
+          !isCurrentRegGood(v, day, i, schedule, {
             maxPerDay: option.maxPerDay,
             consecutiveGap: option.consecutiveGap,
             restGap: option.restGap,
@@ -131,9 +160,10 @@ export async function generate(
           ...schedule,
           {
             id: 'generated',
-            section: sec,
-            period: i,
-            size: size,
+            section: v,
+            start: i,
+            end: i + size - 1,
+            publish: false,
             weekday: day as WeekdayShort,
           },
         ];
@@ -143,19 +173,26 @@ export async function generate(
     }
   });
 
+  const promises: Promise<(typeof schedule)[number]>[] = [];
+
   for (let i = 0; i < schedule.length; i++) {
     if (schedule[i].id !== 'generated') continue;
 
-    const ret = await createScheduler({
-      sectionId: schedule[i].section.id,
-      start: schedule[i].period,
-      end: schedule[i].period + schedule[i].size - 1,
-      weekday: schedule[i].weekday,
-      publish: false,
-    });
-
-    schedule[i].id = ret.id;
+    promises.push(
+      apiRequest('/api/scheduler').post<(typeof schedule)[number]>(
+        {
+          start: schedule[i].start,
+          end: schedule[i].end,
+          weekday: schedule[i].weekday,
+          publish: schedule[i].publish,
+          sectionId: schedule[i].section.id,
+        },
+        {
+          noUpdateSignal: 'true',
+        },
+      ),
+    );
   }
 
-  return schedule;
+  return await Promise.all(promises);
 }

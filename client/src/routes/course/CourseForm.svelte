@@ -1,222 +1,169 @@
 <script lang="ts">
-  import { type ZodError, z } from 'zod';
-  import { invalidate } from '$app/navigation';
-  import { blurOnEscape } from '$lib/utils/directives';
-  import { getZodErrorMessage } from '$lib/utils/zod';
-  import { createCourse, editCourse } from '$lib/api/course';
-  import { onMount } from 'svelte';
-  import Select from '$lib/components/Select.svelte';
+  import type { ZodError } from 'zod';
+  import type { CourseDetail, ResponseDataInfo, LogInfo, Subject } from '$lib/types';
   import toast from 'svelte-french-toast';
 
-  const schema = z.object({
-    id: z.string().nonempty(),
-    name: z.string().min(3),
-    detail: z.object({
-      compulsory: z.string().array(),
-      elective: z.string().array(),
-    }),
-  });
+  import { courseSchema } from '$lib/types';
+  import { invalidate } from '$app/navigation';
+  import { blurOnEscape } from '$lib/element';
+  import { getZodErrorMessage } from '$lib/utils/zod';
+  import apiRequest from '$lib/api';
 
-  const newSchema = schema.omit({
-    id: true,
-  });
+  import Select from '$lib/components/Select.svelte';
 
-  export let subjectOptions: {
-    label: string;
-    value: string;
-    disabled?: boolean;
-    preselected?: boolean;
-  }[];
+  let firstInput: HTMLInputElement | null = null;
+  let validateError: ZodError | null = null;
+
+  $: err = {
+    id: getZodErrorMessage(validateError, ['id']),
+    name: getZodErrorMessage(validateError, ['name']),
+    detail: getZodErrorMessage(validateError, ['detail'], false),
+  };
 
   export let edit = false;
-  export let editData: typeof form.data = {
-    id: '',
-    name: '',
-    detail: {
-      compulsory: [],
-      elective: [],
-    },
-  };
 
-  export let callback: () => void = function () {
-    // do nothing.
-  };
+  export let id = '';
+  export let name = '';
+  export let detail: (Omit<CourseDetail, 'id'> & { subjectId: string })[] = [];
 
-  let form: {
-    data: z.infer<typeof schema>;
-    error: ZodError | undefined;
-  } = {
-    data: {
-      id: '',
-      name: '',
-      detail: {
-        compulsory: [],
-        elective: [],
-      },
-    },
-    error: undefined,
-  };
+  /**
+   * Necessary for edit mode
+   */
+  let compulsory: string[] = detail.filter((v) => v.type === 'compulsory').map((v) => v.subjectId);
+  let elective: string[] = detail.filter((v) => v.type === 'elective').map((v) => v.subjectId);
 
-  let firstInput: HTMLInputElement;
+  $: detail = [
+    ...compulsory.map((v) => ({ type: 'compulsory' as const, subjectId: v })),
+    ...elective.map((v) => ({ type: 'elective' as const, subjectId: v })),
+  ];
 
-  async function handleSubmit() {
-    return edit ? await handleEdit() : await handleCreate();
+  const subject = apiRequest('/api/subject').get<ResponseDataInfo<LogInfo<Subject>>>({
+    limit: '9999',
+  });
+
+  const subjectOptions = async () =>
+    (await subject).data
+      .sort((a, b) => a.name.localeCompare(b.name) || a.code.localeCompare(b.code))
+      .map((v) => ({ label: `${v.code} ${v.name}`, value: v.id }));
+
+  function resetState() {
+    id = name = '';
+    compulsory = elective = [];
   }
 
-  async function handleCreate() {
-    form.error = undefined;
-
-    const result = newSchema
-      .transform((val) => ({
-        ...val,
-        detail: [
-          ...val.detail.compulsory.map((v) => ({ subjectId: v, type: 'compulsory' })),
-          ...val.detail.elective.map((v) => ({ subjectId: v, type: 'elective' })),
-        ],
-      }))
-      .safeParse(form.data);
-
-    if (!result.success) {
-      form.error = result.error;
-      return;
-    }
-
-    const ret = await createCourse(result.data).catch((r: Response) => console.error(r));
-
-    if (ret) {
-      form.data = {
-        id: '',
-        name: '',
-        detail: {
-          compulsory: [],
-          elective: [],
-        },
-      };
-
-      await invalidate('data:course');
-
-      callback();
-
-      firstInput.focus();
-
-      toast.success('Course Created!');
-    } else {
-      toast.error('Fail to create Course!');
-    }
-  }
+  export let callback: (data: unknown) => void = () => {
+    // do nothing
+  };
 
   async function handleEdit() {
-    form.error = undefined;
+    validateError = null;
 
-    const result = schema
-      .transform((val) => ({
-        ...val,
-        detail: [
-          ...val.detail.compulsory.map((v) => ({ subjectId: v, type: 'compulsory' })),
-          ...val.detail.elective.map((v) => ({ subjectId: v, type: 'elective' })),
-        ],
-      }))
-      .safeParse(form.data);
+    const parsed = courseSchema.safeParse({ id, name, detail });
 
-    if (!result.success) {
-      form.error = result.error;
-      return;
-    }
+    if (!parsed.success) return handleError(parsed.error);
 
-    const ret = await editCourse(result.data).catch((r: Response) => console.error(r));
+    const ret = await apiRequest('/api/course')
+      .put(parsed.data)
+      .catch((e) => console.error(e));
 
-    if (ret) {
-      form.data = {
-        id: '',
-        name: '',
-        detail: {
-          compulsory: [],
-          elective: [],
-        },
-      };
-
-      await invalidate('data:course');
-
-      callback();
-
-      toast.success('Edit Complete!');
-    } else {
-      toast.error('Fail to Edit course!');
-    }
+    if (ret) await postSubmit(ret);
   }
 
-  onMount(() => {
-    if (edit && editData) {
-      form.data = editData;
-    }
-  });
+  async function handleNew() {
+    validateError = null;
+
+    const parsed = courseSchema.omit({ id: true }).safeParse({ id, name, detail });
+
+    if (!parsed.success) return handleError(parsed.error);
+
+    const ret = await apiRequest('/api/course')
+      .post(parsed.data)
+      .catch((e) => console.error(e));
+
+    if (ret) await postSubmit(ret);
+  }
+
+  function handleError(error: ZodError) {
+    validateError = error;
+  }
+
+  async function postSubmit(data: unknown) {
+    firstInput?.focus();
+    await invalidate('data:course');
+    toast.success('Success');
+    resetState();
+    callback(data);
+  }
 </script>
 
-<form on:submit|preventDefault="{() => handleSubmit()}" class="space-y-4">
+<form on:submit|preventDefault="{() => (edit ? handleEdit() : handleNew())}" class="space-y-4">
   <section id="input-name" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
-      <label for="" class="font-semibold">
+      <label for="form-course-name" class="font-semibold">
         Name <span class="text-red-600">*</span>
       </label>
     </div>
     <div class="col-span-4">
       <input
+        id="form-course-name"
         type="text"
         placeholder="Course Name"
-        class="input
-        {form.error && getZodErrorMessage(form.error, ['name']).length > 0
-          ? 'border border-red-600'
-          : ''}"
-        bind:value="{form.data.name}"
+        class="input"
+        class:border-red-600="{err.name}"
+        bind:value="{name}"
         bind:this="{firstInput}"
         use:blurOnEscape
       />
     </div>
-    <div class="col-span-4 col-start-3 text-red-600">
-      {form.error ? getZodErrorMessage(form.error, ['name']) : ''}
-    </div>
+    {#if err.name}
+      <div class="col-span-4 col-start-3 text-red-600">{err.name.join()}</div>
+    {/if}
   </section>
   <section id="input-compulsory" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
-      <label for="" class="font-semibold">
-        Compulsory
-      </label>
+      <label for="form-course-detail-compulsory" class="font-semibold">Compulsory (บังคับ)</label>
     </div>
-    <div
-      class="col-span-4"
-      class:invalid="{form.error && getZodErrorMessage(form.error, ['compulsory']).length > 0}"
-    >
-      <Select
-        options="{subjectOptions.filter((v) => !form.data.detail.elective.includes(v.value))}"
-        bind:value="{form.data.detail.compulsory}"
-        multiple
-        placeholder="Select Subject"
-      />
+    <div class="col-span-4" class:invalid="{err.detail}">
+      {#await subjectOptions()}
+        <Select options="{[]}" placeholder="Loading..." />
+      {:then options}
+        {@const filtered = options.filter((v) => !elective.includes(v.value))}
+        <Select
+          id="form-room-building"
+          options="{filtered}"
+          bind:value="{compulsory}"
+          placeholder="Select Compulsory Subject"
+          multiple
+        />
+      {/await}
     </div>
-    <div class="col-span-4 col-start-3 text-red-600">
-      {form.error ? getZodErrorMessage(form.error, ['compulsory']) : ''}
-    </div>
+
+    {#if err.detail}
+      <div class="col-span-4 col-start-3 text-red-600">{err.detail.join()}</div>
+    {/if}
   </section>
   <section id="input-elective" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
-      <label for="" class="font-semibold">
-        Elective
-      </label>
+      <label for="form-course-detail-elective" class="font-semibold">Elective (เลือก)</label>
     </div>
-    <div
-      class="col-span-4"
-      class:invalid="{form.error && getZodErrorMessage(form.error, ['compulsory']).length > 0}"
-    >
-      <Select
-        options="{subjectOptions.filter((v) => !form.data.detail.compulsory.includes(v.value))}"
-        bind:value="{form.data.detail.elective}"
-        multiple
-        placeholder="Select Subject"
-      />
+    <div class="col-span-4" class:invalid="{err.detail}">
+      {#await subjectOptions()}
+        <Select options="{[]}" placeholder="Loading..." />
+      {:then options}
+        {@const filtered = options.filter((v) => !compulsory.includes(v.value))}
+        <Select
+          id="form-room-building"
+          options="{filtered}"
+          bind:value="{elective}"
+          placeholder="Select Elective Subject"
+          multiple
+        />
+      {/await}
     </div>
-    <div class="col-span-4 col-start-3 text-red-600">
-      {form.error ? getZodErrorMessage(form.error, ['elective']) : ''}
-    </div>
+
+    {#if err.detail}
+      <div class="col-span-4 col-start-3 text-red-600">{err.detail.join()}</div>
+    {/if}
   </section>
 
   <button type="submit" class="button w-full">Save</button>

@@ -22,17 +22,17 @@ export default async (server: FastifyInstance) => {
           semester: number;
         };
       }>,
-      res
+      res,
     ) => {
       const { target } = req.query;
 
       switch (target) {
         case "scheduler":
-          broadcast("Schedule updated.");
+          broadcast(JSON.stringify({ update: 1 }));
           resetScheduler(req, res);
           break;
         case "schedulerExam":
-          broadcast("Schedule exam updated.");
+          broadcast(JSON.stringify({ update: 2 }));
           resetSchedulerExam(req, res);
           break;
         case "exam":
@@ -58,7 +58,7 @@ export default async (server: FastifyInstance) => {
             enum: ["scheduler", "schedulerExam", "exam", "section"],
           },
           year: { type: "number" },
-          semester: {type: "number"}
+          semester: { type: "number" },
         },
       },
     },

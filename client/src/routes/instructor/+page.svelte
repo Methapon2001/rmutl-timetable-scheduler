@@ -1,48 +1,48 @@
 <script lang="ts">
   import type { PageData } from './$types';
+  import type { Instructor } from '$lib/types';
   import { page } from '$app/stores';
-  import { invalidate } from '$app/navigation';
-  import { blurOnEscape } from '$lib/utils/directives';
-  import { deleteInstructor } from '$lib/api/instructor';
-  import debounce from '$lib/utils/debounce';
-  import Modal from '$lib/components/Modal.svelte';
-  import Pagination from '$lib/components/Pagination.svelte';
-  import Instructor from './InstructorForm.svelte';
   import toast from 'svelte-french-toast';
 
-  const handleSearch = debounce(async (text: string) => {
-    const url = new URL(window.location.toString());
-    url.searchParams.set('search', text);
-    history.replaceState({}, '', url);
-    await invalidate('data:instructor');
-  }, 300);
+  import { invalidate } from '$app/navigation';
+  import { blurOnEscape } from '$lib/element';
+  import { searchHandler } from '$lib/utils/search';
+  import apiRequest from '$lib/api';
+
+  import Modal from '$lib/components/Modal.svelte';
+  import Pagination from '$lib/components/Pagination.svelte';
+  import Form from './InstructorForm.svelte';
+
+  const search = searchHandler('data:instructor');
 
   export let data: PageData;
 
   let newState = false;
   let editState = false;
-  let editData: {
-    id: string;
-    name: string;
-  };
 
-  function showEdit(instructor: { id: string; name: string }) {
+  let currentData: Instructor;
+
+  function triggerEdit(instructor: typeof currentData) {
+    currentData = instructor;
     editState = true;
-    editData = instructor;
   }
 
-  async function handleDelete(instructor: { id: string }) {
-    if (confirm('Are you sure?')) {
-      const ret = await deleteInstructor(instructor).catch((e: Response) => console.error(e));
+  async function handleDelete(id: string) {
+    const flag = confirm('Are you sure? This action cannot be undone.');
 
-      if (ret) {
-        await invalidate('data:instructor');
+    if (!flag) return;
 
-        toast.success('Delete Complete!');
-      } else {
-        toast.error('Fail to delete instructor!\nThis record is currenly in use.');
-      }
-    }
+    const ret = await apiRequest('/api/instructor')
+      .delete({ id })
+      .catch((e) => console.error(e));
+
+    if (!ret)
+      return toast.error(
+        'Failed to delete instructor!\nThis record may currenly in use. \nSee console for more info.',
+      );
+
+    await invalidate('data:instructor');
+    toast.success('Delete Complete!');
   }
 </script>
 
@@ -65,7 +65,7 @@
       placeholder="Search"
       autocomplete="off"
       value="{$page.url.searchParams.get('search')}"
-      on:input="{(e) => handleSearch(e.currentTarget.value)}"
+      on:input="{(e) => search(e.currentTarget.value)}"
       use:blurOnEscape
     />
   </div>
@@ -79,7 +79,7 @@
   <div id="new" class="bg-light p-4">
     <h1 class="mb-4 block text-center text-2xl font-bold">New Instructor</h1>
     <div class="mx-auto max-w-screen-md rounded bg-white p-4 shadow">
-      <Instructor />
+      <Form />
     </div>
   </div>
 {/if}
@@ -87,7 +87,7 @@
 <Modal bind:open="{editState}">
   <div id="edit" class="p-4">
     <h1 class="mb-4 block text-center text-2xl font-bold">Edit Instructor</h1>
-    <Instructor edit="{true}" editData="{editData}" callback="{() => (editState = false)}" />
+    <Form edit="{true}" {...currentData} callback="{() => (editState = false)}" />
   </div>
 </Modal>
 
@@ -102,39 +102,47 @@
       </tr>
     </thead>
     <tbody>
-      {#if data.instructor.total == 0}
+      {#if data.instructor === undefined}
+        <tr>
+          <td class="text-center text-red-600 text-secondary">Something went wrong!</td>
+        </tr>
+      {:else if data.instructor.total === 0}
         <tr>
           <td class="text-center text-secondary" colspan="4">No records found.</td>
         </tr>
+      {:else}
+        {#each data.instructor.data as instructor (instructor.id)}
+          <tr class="hover:bg-light">
+            <td>{instructor.name}</td>
+            <td class="fit-width whitespace-nowrap text-center text-sm">
+              <p class="font-semibold">{new Date(instructor.createdAt).toLocaleDateString()}</p>
+              <p class="text-dark">{new Date(instructor.createdAt).toLocaleTimeString()}</p>
+              <p class="capitalize text-secondary">{instructor.createdBy.username}</p>
+            </td>
+            <td class="fit-width whitespace-nowrap text-center text-sm">
+              <p class="font-semibold">{new Date(instructor.updatedAt).toLocaleDateString()}</p>
+              <p class="text-dark">{new Date(instructor.updatedAt).toLocaleTimeString()}</p>
+              <p class="capitalize text-secondary">{instructor.updatedBy.username}</p>
+            </td>
+            <td class="fit-width text-center">
+              <div class="space-x-4 whitespace-nowrap">
+                <button
+                  class="action-button text-blue-600"
+                  on:click="{() => triggerEdit(instructor)}"
+                >
+                  Edit
+                </button>
+                <button
+                  class="action-button text-red-600"
+                  on:click="{() => handleDelete(instructor.id)}"
+                >
+                  Delete
+                </button>
+              </div>
+            </td>
+          </tr>
+        {/each}
       {/if}
-      {#each data.instructor.data as instructor (instructor.id)}
-        <tr class="hover:bg-light">
-          <td>{instructor.name}</td>
-          <td class="fit-width whitespace-nowrap text-center text-sm">
-            <p class="font-semibold">{new Date(instructor.createdAt).toLocaleDateString()}</p>
-            <p class="text-dark">{new Date(instructor.createdAt).toLocaleTimeString()}</p>
-            <p class="capitalize text-secondary">{instructor.createdBy.username}</p>
-          </td>
-          <td class="fit-width whitespace-nowrap text-center text-sm">
-            <p class="font-semibold">{new Date(instructor.updatedAt).toLocaleDateString()}</p>
-            <p class="text-dark">{new Date(instructor.updatedAt).toLocaleTimeString()}</p>
-            <p class="capitalize text-secondary">{instructor.updatedBy.username}</p>
-          </td>
-          <td class="fit-width text-center">
-            <div class="space-x-4 whitespace-nowrap">
-              <button class="action-button text-blue-600" on:click="{() => showEdit(instructor)}">
-                Edit
-              </button>
-              <button
-                class="action-button text-red-600"
-                on:click="{() => handleDelete({ id: instructor.id })}"
-              >
-                Delete
-              </button>
-            </div>
-          </td>
-        </tr>
-      {/each}
     </tbody>
   </table>
 </div>

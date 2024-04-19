@@ -1,135 +1,91 @@
 <script lang="ts">
   import type { PageData } from './$types';
-  import { PUBLIC_API_WS } from '$env/static/public';
-  import { onMount, type ComponentProps, onDestroy } from 'svelte';
-  import { createPDF } from '$lib/utils/pdf';
-  import { createSchedulerExam } from '$lib/api/scheduler-exam';
-  import { invalidate } from '$app/navigation';
+  import { onMount, type ComponentProps, onDestroy, tick } from 'svelte';
   import toast from 'svelte-french-toast';
-  import Modal from '$lib/components/Modal.svelte';
-  import ModalCenter from '$lib/components/ModalCenter.svelte';
+  import autoTable from 'jspdf-autotable';
+
+  import { createPDF } from '$lib/utils/pdf';
+  import { resetData } from '$lib/api/reset';
+  import { invalidate, invalidateAll } from '$app/navigation';
   import { checkOverlap } from './utils';
-  import Table from './Table.svelte';
   import { generate } from './generate';
+
+  import { exportScheduleExam } from '$lib/api/export-data';
+
+  import viewport from '$lib/element';
+  import apiRequest, { getWebsocketURL } from '$lib/api';
+
+  import Modal from '$lib/components/Modal.svelte';
+  import Form from '../exam/ExamForm.svelte';
+  import ShowInstructor from './ShowInstructor.svelte';
+  import ShowRoom from './ShowRoom.svelte';
+
   import Filter from './Filter.svelte';
   import FilterIcon from '$lib/icons/FilterIcon.svelte';
-  import { exportScheduleExam } from '$lib/api/export-data';
-  import ExamNewForm from '../exam/ExamForm.svelte';
-  import ShowRoom from './ShowRoom.svelte';
-  import { resetData } from '$lib/api/reset';
-  import viewport from '$lib/utils/useViewportAction';
-  import ShowInstructor from './ShowInstructor.svelte';
-  import autoTable from 'jspdf-autotable';
-  import { publishExam } from '$lib/api/publish';
+  import Table from './Table.svelte';
 
   export let data: PageData;
 
-  let ws: WebSocket;
+  let ws: WebSocket | undefined = undefined;
 
-  onMount(() => {
-    ws = new WebSocket(PUBLIC_API_WS);
-
+  function initWebSocket() {
+    ws = new WebSocket(getWebsocketURL());
     ws.onopen = () => console.log('WebSocket Connected.');
-
     ws.onmessage = (event) => {
-      if (event.data === 'Schedule exam updated.') invalidate('data:scheduler-exam');
+      if (JSON.parse(event.data).update === 2) {
+        console.log('[WS]: Data change detected, syncing data');
+        invalidate('data:scheduler');
+      }
     };
-
     ws.onclose = () => console.log('WebSocket Closed');
-  });
+  }
 
-  onDestroy(() => {
-    ws.close();
-  });
-
-  const sectionOptions = async () => {
-    return (await data.lazy.section).data.map((section) => ({
-      label: `${section.subject.code} ${section.subject.name} Sec ${section.no}`,
-      value: section.id,
-      detail: section,
-    }));
-  };
-
-  const sectionExamFilteredOptions = async () => {
-    return (await data.lazy.sectionExamFiltered).data.map((section) => ({
-      label: `${section.subject.code} ${section.subject.name} Sec ${section.no}`,
-      value: section.id,
-      detail: section,
-    }));
-  };
-
-  const instructorOptions = async () => {
-    return (await data.lazy.instructor).data.map((instructor) => ({
-      label: instructor.name,
-      value: instructor.id,
-    }));
-  };
-
-  const roomOptions = async () => {
-    return (await data.lazy.room).data.map((room) => ({
-      label: `${room.building.code}-${room.name} (${room.type
-        .charAt(0)
-        .toLocaleUpperCase()}${room.type.slice(1)})`,
-      value: room.id,
-      detail: room,
-    }));
-  };
-
-  const formOptions = async () => {
-    return {
-      section: await sectionOptions(),
-      sectionExamFiltered: await sectionExamFilteredOptions(),
-      instructor: await instructorOptions(),
-      room: await roomOptions(),
-    };
-  };
+  onMount(initWebSocket);
+  onDestroy(() => ws?.close());
 
   $: isPublish = data.schedulerExam.data.some((sched) => {
     return sched.createdBy.id === data.session?.user.id && sched.publish === true;
   });
 
-  let schedulerExam: ComponentProps<Table>['data'];
+  let schedulerExam: ComponentProps<Table>['data'] = [];
 
-  $: schedulerExam = data.schedulerExam.data.map((obj) => {
-    return {
-      id: obj.id,
-      weekday: obj.weekday,
-      period: obj.start,
-      size: obj.end - obj.start + 1,
-      exam: obj.exam,
-    };
-  });
+  $: schedulerExam = data.schedulerExam.data;
+  $: instructor = Object.values(
+    data.exam.data.reduce<Record<string, (typeof data.exam.data)[number]['instructor'][number]>>(
+      (acc, curr) => {
+        curr.instructor.forEach((inst) => {
+          if (!acc[`${inst.id}`]) acc[`${inst.id}`] = inst;
+        });
+        return acc;
+      },
+      {},
+    ),
+  );
 
-  $: instructor = data.exam.data.reduce<
-    Omit<API.Instructor, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>[] // eslint-disable-line no-undef
-  >((acc, curr) => {
-    return acc
-      .concat(curr.instructor)
-      .filter((a, idx, arr) => arr.findIndex((b) => b.id === a.id) === idx);
-  }, []);
+  $: room = Object.values(
+    data.exam.data.reduce<Record<string, NonNullable<(typeof data.exam.data)[number]['room']>>>(
+      (acc, curr) => {
+        if (curr.room && !acc[`${curr.room.id}`]) {
+          acc[`${curr.room.id}`] = curr.room;
+        }
+        return acc;
+      },
+      {},
+    ),
+  );
 
-  $: room = data.exam.data.reduce<
-    Omit<API.Room, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>[] // eslint-disable-line no-undef
-  >((acc, curr) => {
-    return acc
-      .concat(curr.room ?? [])
-      .filter((a, idx, arr) => arr.findIndex((b) => b.id === a.id) === idx);
-  }, []);
-
-  $: group = data.exam.data.reduce<
-    Omit<API.Group, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>[] // eslint-disable-line no-undef
-  >((acc, curr) => {
-    let grp = curr.section
-      .map((sec) => sec.group)
-      .filter(
-        (
-          g,
-        ): g is Omit<API.Group, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'> => // eslint-disable-line no-undef
-          g !== null,
-      );
-
-    return acc.concat(grp).filter((a, idx, arr) => arr.findIndex((b) => b.id === a.id) === idx);
-  }, []);
+  $: group = Object.values(
+    data.exam.data.reduce<
+      Record<string, NonNullable<(typeof data.exam.data)[number]['section'][number]['group']>>
+    >((acc, curr) => {
+      curr.section.forEach((v) => {
+        if (v.group && !acc[`${v.group.id}`]) {
+          acc[`${v.group.id}`] = v.group;
+        }
+      });
+      return acc;
+    }, {}),
+  );
 
   let state: ComponentProps<Table>['state'] = {
     selected: false,
@@ -139,9 +95,10 @@
     size: 1,
   };
 
-  let pov: 'instructor' | 'group' = 'group';
-
   function resetState() {
+    let currentRoom = state.exam?.room;
+    let currentInst = state.exam?.instructor;
+    let currentGroup = state.exam?.section.map((v) => v.group).filter((v) => v !== null);
     state = {
       period: 1,
       size: 1,
@@ -149,6 +106,17 @@
       exam: null,
       selected: false,
     };
+
+    tick().then(() => {
+      if (currentRoom)
+        document.getElementById(`room-${currentRoom.id}`)?.scrollIntoView({ block: 'nearest' });
+      if (currentInst && currentInst.length > 0)
+        document.getElementById(`inst-${currentInst[0].id}`)?.scrollIntoView({ block: 'nearest' });
+      if (currentGroup && currentGroup.length > 0)
+        document
+          .getElementById(`group-${currentGroup[0]!.id}`)
+          ?.scrollIntoView({ block: 'nearest' });
+    });
   }
 
   function handleSelect(weekday: ComponentProps<Table>['state']['weekday'], period: number) {
@@ -158,23 +126,16 @@
     state.weekday = weekday;
     state.period = period;
 
-    handleDataChange();
+    detectOverlap();
   }
 
-  function handleDataChange() {
+  function detectOverlap() {
     state.isOverflow = state.period + state.size - 1 > 50;
 
-    const {
-      isOverlap,
-      allowOverlap,
-      overlapGroup,
-      overlapInstructor,
-      overlapRoom,
-      overlapSection,
-    } = checkOverlap(state, schedulerExam);
+    const { isOverlap, overlapGroup, overlapInstructor, overlapRoom, overlapSection } =
+      checkOverlap(state, schedulerExam);
 
     state.isOverlap = isOverlap;
-    state.allowOverlap = allowOverlap;
     state.overlapGroup = overlapGroup;
     state.overlapInstructor = overlapInstructor;
     state.overlapRoom = overlapRoom;
@@ -185,7 +146,11 @@
     if (!state.exam) return;
     if (state.isOverlap) return alert('Overlap Detected!!! Not Allowed.');
 
-    await createSchedulerExam({
+    if (ws?.readyState !== WebSocket.OPEN) {
+      initWebSocket();
+    }
+
+    await apiRequest('/api/scheduler-exam').post({
       weekday: state.weekday,
       start: state.period,
       end: state.period + state.size - 1,
@@ -207,37 +172,25 @@
     }
   }
 
-  // eslint-disable-next-line no-undef
-  function handleSelectExam(exam: API.SchedulerExam['exam']) {
+  type ExamArg = NonNullable<(typeof state)['exam']>;
+
+  function handleSelectExam(exam: ExamArg) {
     if (isPublish) {
       toast.error('Data is published, Cannot edit.');
       return false;
     }
 
-    if (schedulerExam.findIndex((schedule) => schedule.exam.id === exam.id) !== -1) return;
+    if (schedulerExam.findIndex((v) => v.exam.id === exam.id) !== -1) return;
 
-    if (!exam.instructor && !exam.section.filter(() => group != null)) {
-      toast.error('Section must assign at least one instructor or one group.', {
-        duration: 7500,
-      });
-      return false;
-    }
-
-    if (pov === 'group' && !exam.section.filter(() => group != null)) {
-      toast.error('Selected group pov but section is not assigned to any group.', {
-        duration: 7500,
-      });
-      return false;
-    }
-
-    if (pov === 'instructor' && exam.instructor.length === 0) {
-      toast.error('Selected instructor pov but no instructor is assigned to section.', {
+    if (!exam.room === null) {
+      toast.error('Exam must assign at least one room.', {
         duration: 7500,
       });
       return false;
     }
 
     let inputPrompt = 0;
+
     if (exam.section[0]?.subject.lecture === 0) {
       inputPrompt = Number(
         prompt('This subject does not have lecture hour. \nPlease input exam hour: '),
@@ -253,20 +206,13 @@
 
     state.size = inputPrompt * 4;
 
-    handleDataChange();
-
-    if (pov === 'group') {
-      document.querySelector(`#group-${state.exam?.section[0]?.group?.id}`)?.scrollIntoView({
-        behavior: 'smooth',
-      });
-    } else {
-      document.querySelector(`#inst-${state.exam?.instructor[0]?.id}`)?.scrollIntoView({
-        behavior: 'smooth',
-      });
-    }
+    detectOverlap();
 
     return true;
   }
+
+  let midDateExam: string;
+  let finalDateExam: string;
 
   async function exportPDF() {
     const midDay = new Date(midDateExam).getDay();
@@ -278,21 +224,10 @@
     }
 
     const doc = createPDF('portrait');
-
-    const weekdayMapNum = {
-      mon: 0,
-      tue: 1,
-      wed: 2,
-      thu: 3,
-      fri: 4,
-      sat: 5,
-      sun: 6,
-    };
-
+    const weekdayMapNum = { mon: 0, tue: 1, wed: 2, thu: 3, fri: 4, sat: 5, sun: 6 };
     const midTimestamp = new Date(midDateExam).getTime();
     const finalTimestamp = new Date(finalDateExam).getTime();
     const dayTimestamp = 86400000;
-
     const monthName = [
       'ม.ค.',
       'ก.พ.',
@@ -308,47 +243,39 @@
       'ธ.ค.',
     ];
 
-    let pdfData = schedulerExam.map((sched) => [
-      sched.exam.section[0]?.subject.code + ' ' + sched.exam.section[0]?.subject.name,
-      'SEC_' + sched.exam.section.map(v => v.no).join(', '),
-      new Date(midTimestamp + dayTimestamp * weekdayMapNum[sched.weekday]).getDate() +
+    let pdfData = schedulerExam.map((v) => [
+      v.exam.section[0]?.subject.code + ' ' + v.exam.section[0]?.subject.name,
+      'SEC_' + v.exam.section.map((x) => x.no).join(', '),
+      new Date(midTimestamp + dayTimestamp * weekdayMapNum[v.weekday]).getDate() +
         ' ' +
-        monthName[new Date(midTimestamp + dayTimestamp * weekdayMapNum[sched.weekday]).getMonth()] +
+        monthName[new Date(midTimestamp + dayTimestamp * weekdayMapNum[v.weekday]).getMonth()] +
         ' ' +
-        new Date(midTimestamp + dayTimestamp * weekdayMapNum[sched.weekday]).getFullYear() +
+        new Date(midTimestamp + dayTimestamp * weekdayMapNum[v.weekday]).getFullYear() +
         '\n' +
         (8 +
-          Math.floor((sched.period - 1) / 4) +
+          Math.floor((v.start - 1) / 4) +
           ':' +
-          ['00', '15', '30', '45'][(sched.period - 1) % 4] +
+          ['00', '15', '30', '45'][(v.start - 1) % 4] +
           ' น.') +
         ' - ' +
-        (8 +
-          Math.floor((sched.period - 1 + sched.size) / 4) +
-          ':' +
-          ['00', '15', '30', '45'][(sched.period - 1 + sched.size) % 4]) +
+        (8 + Math.floor(v.end / 4) + ':' + ['00', '15', '30', '45'][v.end % 4]) +
         ' น.',
-      new Date(finalTimestamp + dayTimestamp * weekdayMapNum[sched.weekday]).getDate() +
+      new Date(finalTimestamp + dayTimestamp * weekdayMapNum[v.weekday]).getDate() +
         ' ' +
-        monthName[
-          new Date(finalTimestamp + dayTimestamp * weekdayMapNum[sched.weekday]).getMonth()
-        ] +
+        monthName[new Date(finalTimestamp + dayTimestamp * weekdayMapNum[v.weekday]).getMonth()] +
         ' ' +
-        new Date(finalTimestamp + dayTimestamp * weekdayMapNum[sched.weekday]).getFullYear() +
+        new Date(finalTimestamp + dayTimestamp * weekdayMapNum[v.weekday]).getFullYear() +
         '\n' +
         (8 +
-          Math.floor((sched.period - 1) / 4) +
+          Math.floor((v.start - 1) / 4) +
           ':' +
-          ['00', '15', '30', '45'][(sched.period - 1) % 4] +
+          ['00', '15', '30', '45'][(v.start - 1) % 4] +
           ' น.') +
         ' - ' +
-        (8 +
-          Math.floor((sched.period - 1 + sched.size) / 4) +
-          ':' +
-          ['00', '15', '30', '45'][(sched.period - 1 + sched.size) % 4]) +
+        (8 + Math.floor(v.end / 4) + ':' + ['00', '15', '30', '45'][v.end % 4]) +
         ' น.',
-      sched.exam.room?.building.code + '-' + sched.exam.room?.name,
-      sched.exam.instructor.map((inst) => inst.name).join('\n'),
+      v.exam.room?.building.code ?? '' + '-' + v.exam.room?.name ?? '',
+      v.exam.instructor.map((x) => x.name).join('\n'),
     ]);
 
     autoTable(doc, {
@@ -404,48 +331,49 @@
       ) ||
       sec.instructor.some((ins) => ins.name.toLocaleLowerCase().includes(text.toLocaleLowerCase()));
 
-    if (filterSelected.length > 0) {
-      return filterSelected.some((txt) => filterFn(txt));
+    if (filterSelected.length > 0 && !filterSelected.some((txt) => filterFn(txt))) {
+      return false;
     }
-    if (searchText && filterSelected.length > 0) {
-      return [searchText, ...filterSelected].some((txt) => filterFn(txt));
-    }
+
     return filterFn(searchText);
   });
 
-  let tableSelectState: string;
   let newState = false;
   let editState = false;
-  let editData: {
+
+  let currentData: {
     id: string;
-    roomId: string;
     section: string[];
     instructor: string[];
+    roomId: string;
   };
 
-  function showEdit(exam: {
-    id: string;
-    section: {
-      id: string;
-    }[];
-    instructor: {
-      id: string;
-    }[];
-    roomId: string;
-  }) {
+  function triggerEdit(exam: typeof currentData) {
     editState = true;
-    editData = {
-      ...exam,
-      section: exam.section.map((sec) => sec.id),
-      instructor: exam.instructor.map((inst) => inst.id),
-    };
+    currentData = exam;
   }
+
   let showRoomState = false;
   let showInstructorState = false;
-
-  let midDateExam: string;
-  let finalDateExam: string;
   let showExportState = false;
+  let tableSelectState: string;
+
+  async function handleDelete(id: string) {
+    const currentSched = schedulerExam.find((v) => v.id === id);
+    const ret = await apiRequest('/api/scheduler-exam')
+      .delete({ id })
+      .catch((e) => console.error(e));
+
+    if (!ret) return toast.error('Failed to delete. \nSee console for more info.');
+
+    await invalidate('data:scheduler-exam');
+
+    if (currentSched) {
+      handleSelectExam(currentSched.exam);
+      state.weekday = currentSched.weekday;
+      state.period = currentSched.start;
+    }
+  }
 </script>
 
 <svelte:window on:keydown="{handleKeydown}" />
@@ -460,7 +388,7 @@
               <div class="mb-2 flex justify-between">
                 <h6 class="font-semibold">Instructor - {i.name}</h6>
                 <button
-                  class="bg-primary rounded px-2 font-semibold text-white"
+                  class="rounded bg-primary px-2 font-semibold text-white"
                   on:click="{() => (showInstructorState = true)}">View All</button
                 >
               </div>
@@ -468,6 +396,7 @@
                 bind:data="{schedulerExam}"
                 bind:state="{state}"
                 on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
+                on:remove="{(e) => handleDelete(e.detail.id)}"
                 small="{true}"
                 noDelete="{isPublish}"
                 selectable="{true}"
@@ -478,7 +407,7 @@
           {#if state.exam && !state.exam.instructor.length}
             <div class="flex h-full w-full items-center justify-center">
               <button
-                class="bg-primary rounded p-2 font-semibold text-white"
+                class="rounded bg-primary p-2 font-semibold text-white"
                 on:click="{() => (showInstructorState = true)}">Select Instructor</button
               >
             </div>
@@ -494,6 +423,7 @@
                 bind:data="{schedulerExam}"
                 bind:state="{state}"
                 on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
+                on:remove="{(e) => handleDelete(e.detail.id)}"
                 small="{true}"
                 noDelete="{isPublish}"
                 selectable="{true}"
@@ -507,7 +437,7 @@
         {#if data.exam.total === 0}
           <div class="p-8 text-center">
             <h1 class="mb-4 text-5xl font-extrabold">No Data</h1>
-            <h2 class="text-secondary text-3xl">
+            <h2 class="text-3xl text-secondary">
               No section created.<br />Must have section data in order for timetable to show.
             </h2>
           </div>
@@ -528,7 +458,7 @@
                 Room - {r.building.code}-{r.name} <span class="capitalize">({r.type})</span>
               </h6>
               <button
-                class="bg-primary rounded px-2 font-semibold text-white"
+                class="rounded bg-primary px-2 font-semibold text-white"
                 on:click="{() => (showRoomState = true)}">View All</button
               >
             </div>
@@ -536,6 +466,7 @@
               bind:data="{schedulerExam}"
               bind:state="{state}"
               on:select="{(e) => handleSelect(e.detail.weekday, e.detail.period)}"
+              on:remove="{(e) => handleDelete(e.detail.id)}"
               selectable="{true}"
               noDelete="{isPublish}"
               room="{r}"
@@ -545,7 +476,7 @@
         {#if state.exam && !state.exam.room}
           <div class="flex h-full w-full items-center justify-center">
             <button
-              class="bg-primary rounded p-2 font-semibold text-white"
+              class="rounded bg-primary p-2 font-semibold text-white"
               on:click="{() => (showRoomState = true)}">Select Room</button
             >
           </div>
@@ -563,7 +494,7 @@
     </div>
   </div>
   <div>
-    <div class="section-selector bg-light border-l">
+    <div class="section-selector border-l bg-light">
       <div class="relative m-4 grid grid-cols-4 items-center gap-4">
         <input
           type="text"
@@ -572,7 +503,7 @@
           bind:value="{searchText}"
         />
         <button
-          class="input text-secondary flex !w-full items-center justify-center bg-white shadow"
+          class="input flex !w-full items-center justify-center bg-white text-secondary shadow"
           on:click="{() => (showFilter = !showFilter)}"
         >
           <FilterIcon />
@@ -585,17 +516,17 @@
         <div class="w-full space-y-2 border-b p-4">
           <div class="mb-2 space-y-2 text-sm">
             <div class="flex gap-2">
-              <span class="bg-primary flex items-center rounded px-2 py-1 font-semibold text-white">
+              <span class="flex items-center rounded bg-primary px-2 py-1 font-semibold text-white">
                 {exam.section[0]?.subject.code ?? ''}
               </span>
-              <span class="bg-primary flex items-center rounded px-2 py-1 font-semibold text-white">
+              <span class="flex items-center rounded bg-primary px-2 py-1 font-semibold text-white">
                 {exam.section[0]?.subject.name ?? ''}
               </span>
             </div>
             <div class="flex gap-2">
               {#each exam.section as sec}
                 <span
-                  class="bg-primary flex items-center rounded px-2 py-1 font-semibold text-white"
+                  class="flex items-center rounded bg-primary px-2 py-1 font-semibold text-white"
                 >
                   SEC {sec.no}
                 </span>
@@ -608,9 +539,9 @@
             class:bg-green-600="{state.exam?.id === exam.id}"
             class:text-white="{state.exam?.id === exam.id}"
             class:line-through="{schedulerExam.findIndex((sched) => exam.id == sched.exam.id) !==
-              -1 || !data.lazy.info?.current}"
+              -1 || !data.info?.current}"
             class:text-red-600="{schedulerExam.findIndex((sched) => exam.id == sched.exam.id) !==
-              -1 || !data.lazy.info?.current}"
+              -1 || !data.info?.current}"
             on:click="{() => handleSelectExam(exam)}"
           >
             <div
@@ -631,15 +562,15 @@
             </div>
             <div class="flex h-full w-full items-center justify-center rounded-l font-semibold">
               <button
-                class="disabled:!text-secondary flex items-center justify-center !text-blue-500 underline"
+                class="flex items-center justify-center !text-blue-500 underline disabled:!text-secondary"
                 disabled="{(data.session?.user.id != exam.createdBy.id &&
                   data.session?.user.role != 'admin') ||
                   schedulerExam.findIndex((sched) => exam.id == sched.exam.id) !== -1}"
                 on:click|stopPropagation="{() =>
-                  showEdit({
+                  triggerEdit({
                     id: exam.id,
-                    section: exam.section,
-                    instructor: exam.instructor,
+                    section: exam.section.map((v) => v.id),
+                    instructor: exam.instructor.map((v) => v.id),
                     roomId: exam.room?.id ?? '',
                   })}"
               >
@@ -651,8 +582,8 @@
       {/each}
       <div class="p-4">
         <button
-          class="button disabled:bg-secondary disabled:border-secondary disabled:cursor-not-allowed"
-          disabled="{!data.lazy.info?.current}"
+          class="button disabled:cursor-not-allowed disabled:border-secondary disabled:bg-secondary"
+          disabled="{!data.info?.current}"
           on:click="{() => (newState = !newState)}">Add Exam</button
         >
       </div>
@@ -661,15 +592,6 @@
 </div>
 <div class="flex h-16 items-center justify-between overflow-hidden border p-4">
   <div class="pov-switch whitespace-nowrap pr-4">
-    <!-- <button
-      on:click="{() => {
-        pov = pov === 'group' ? 'instructor' : 'group';
-        resetState();
-      }}"
-      class="rounded border bg-slate-900 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
-    >
-      View: <span class="capitalize">{pov}</span>
-    </button> -->
     <button
       class="rounded border bg-slate-900 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
       on:click="{() => {
@@ -695,8 +617,8 @@
         const flag = confirm('Are you sure?.');
 
         if (flag) {
-          await publishExam(!isPublish);
-          await invalidate('data:scheduler');
+          await apiRequest('/api/publish-exam').post({ publish: !isPublish });
+          await invalidate('data:scheduler-exam');
         }
       }}"
     >
@@ -709,6 +631,7 @@
 
         if (flag) {
           await resetData('schedulerExam');
+          await invalidate('data:scheduler-exam');
         }
       }}"
     >
@@ -717,17 +640,16 @@
   </div>
   {#if state.exam}
     <div
-      class="border-primary bg-light flex justify-between gap-2 overflow-hidden rounded border pr-2 font-semibold shadow"
+      class="flex justify-between gap-2 overflow-hidden rounded border border-primary bg-light pr-2 font-semibold shadow"
     >
       <span class="bg-primary px-3 py-2 font-semibold text-white">Selected</span>
       <span class="truncate py-2">
         {state.exam?.section[0]?.subject.code ?? ''}
         {state.exam?.section[0]?.subject.name ?? ''}
       </span>
-      <span class=" whitespace-nowrap py-2">
-        SEC
-        {state.exam.section.map((sec) => sec.no).join(', ')}
-      </span>
+      <span class="whitespace-nowrap py-2"
+        >SEC {state.exam.section.map((sec) => sec.no).join(', ')}</span
+      >
 
       <button class="text-blue-600" on:click="{() => submitData()}"> OK </button>
       <button class="text-red-600" on:click="{() => resetState()}"> Cancel </button>
@@ -750,7 +672,10 @@
 
     <button
       class="w-full rounded border bg-slate-900 px-8 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
-      on:click="{() => generate(data.exam.data, schedulerExam, { maxPerDay: maxPerDay })}"
+      on:click="{() => {
+        generate(data.exam.data, schedulerExam, { maxPerDay: maxPerDay });
+        ws?.send(JSON.stringify({ update: 2 }));
+      }}"
     >
       Generate
     </button>
@@ -762,77 +687,84 @@
     <div id="new" class="p-4">
       <h1 class="mb-4 block text-center text-2xl font-bold">New Exam</h1>
       <div class="mx-auto max-w-screen-md">
-        {#await formOptions()}
-          Loading...
-        {:then options}
-          <ExamNewForm
-            sectionOptions="{options.section}"
-            sectionExamFilteredOptions="{options.sectionExamFiltered}"
-            instructorOptions="{options.instructor}"
-            roomOptions="{options.room}"
-          />
-        {/await}
+        <Form
+          callback="{async () => {
+            await invalidateAll();
+            newState = false;
+          }}"
+        />
       </div>
     </div>
   {/if}
 </Modal>
 
-<ModalCenter bind:open="{showRoomState}">
+<Modal bind:open="{showRoomState}" width="50%" maxWidth="50%">
   {#await data.lazy.room}
     Loading...
   {:then roomData}
     <ShowRoom
       scheduler="{schedulerExam}"
       room="{roomData.data}"
-      bind:state="{state}"
-      bind:open="{showRoomState}"
+      state="{state}"
+      handleSelect="{handleSelect}"
+      callback="{() => {
+        if (!state.exam) return;
+
+        const selected = filteredExam.find((v) => v.id === state.exam?.id);
+        if (selected && !handleSelectExam(selected)) {
+          resetState();
+        }
+
+        showRoomState = false;
+      }}"
     />
   {/await}
-</ModalCenter>
+</Modal>
 
-<ModalCenter bind:open="{showInstructorState}">
+<Modal bind:open="{showInstructorState}" width="50%" maxWidth="50%">
   {#await data.lazy.instructor}
     Loading...
   {:then instructorData}
     <ShowInstructor
       scheduler="{schedulerExam}"
       instructor="{instructorData.data}"
-      bind:state="{state}"
+      state="{state}"
+      handleSelect="{handleSelect}"
+      callback="{() => {
+        if (!state.exam) return;
+
+        const selected = filteredExam.find((v) => v.id === state.exam?.id);
+        if (selected && !handleSelectExam(selected)) {
+          resetState();
+        }
+      }}"
     />
   {/await}
-</ModalCenter>
+</Modal>
 
 <Modal bind:open="{editState}">
   <div id="edit" class="p-4">
     <h1 class="mb-4 block text-center text-2xl font-bold">Edit Exam</h1>
-    {#await formOptions()}
-      Loading...
-    {:then options}
-      <ExamNewForm
-        sectionOptions="{options.section}"
-        sectionExamFilteredOptions="{options.sectionExamFiltered}"
-        instructorOptions="{options.instructor}"
-        roomOptions="{options.room}"
-        editData="{editData}"
-        edit="{true}"
-        callback="{async () => {
-          editState = !editState;
-          await invalidate('data:scheduler-exam');
 
-          if (state.exam) {
-            const selected = filteredExam.find((val) => val.id === state.exam?.id);
+    <Form
+      {...currentData}
+      edit="{true}"
+      callback="{async () => {
+        await invalidateAll();
+        editState = false;
 
-            if (selected && !handleSelectExam(selected)) {
-              resetState();
-            }
-          }
-        }}"
-      />
-    {/await}
+        if (!state.exam) return;
+
+        const selected = filteredExam.find((v) => v.id === state.exam?.id);
+        if (selected && !handleSelectExam(selected)) {
+          resetState();
+        }
+      }}"
+    />
   </div>
 </Modal>
 
-<ModalCenter bind:open="{showExportState}">
+<Modal bind:open="{showExportState}" center>
   <div id="show-modal" class="my-8 space-y-4 p-4">
     <h1 class="text-center text-2xl font-bold">Export</h1>
     <section id="input-group" class="grid grid-cols-8">
@@ -854,20 +786,13 @@
         <label for="" class="font-semibold">Final Exam Start Date </label>
       </div>
       <div class="col-span-4">
-        <input
-          class="rounded border p-2"
-          type="date"
-          bind:value="{finalDateExam}"
-          on:change="{() => console.log(new Date(finalDateExam).getDate())}"
-        />
+        <input class="rounded border p-2" type="date" bind:value="{finalDateExam}" />
       </div>
     </section>
     <section class="grid grid-cols-2 gap-4">
       <button
         class="rounded border bg-slate-900 px-8 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
-        on:click="{() => {
-          exportPDF();
-        }}"
+        on:click="{() => exportPDF()}"
       >
         Export PDF
       </button>
@@ -876,12 +801,12 @@
         on:click="{() => {
           const midDay = new Date(midDateExam).getDay();
           const finalDay = new Date(finalDateExam).getDay();
-      
+
           if (midDay !== 1 || finalDay !== 1) {
             toast.error('Date select must be on monday.');
             return;
           }
-          
+
           exportScheduleExam(midDateExam, finalDateExam);
         }}"
       >
@@ -889,9 +814,9 @@
       </button>
     </section>
   </div>
-</ModalCenter>
+</Modal>
 
-<style lang="postcss">
+<style>
   .table-small-container {
     height: calc(194px + 1rem + 1.5rem + 1rem + 1rem);
     overflow-y: auto;

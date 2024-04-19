@@ -4,7 +4,8 @@
 
   export let sections: Parameters<typeof generate>[0];
   export let schedule: Parameters<typeof generate>[1];
-  export let group: Omit<API.Group, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>[]; // eslint-disable-line no-undef
+  export let group: NonNullable<Parameters<typeof generate>[0][number]['group']>[];
+  export let ws: WebSocket | undefined = undefined;
 
   const subjectTypeOptions = ['compulsory', 'elective'] as const;
 
@@ -18,6 +19,8 @@
         subjectType: subjectType ? subjectType : undefined,
       },
     });
+
+    ws?.send(JSON.stringify({ update: 1 }));
   }
 </script>
 

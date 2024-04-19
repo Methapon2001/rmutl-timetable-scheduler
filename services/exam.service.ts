@@ -7,115 +7,45 @@ import {
   Role,
 } from "@prisma/client";
 import { FastifyReply, FastifyRequest } from "fastify";
+import {
+  buildingSelect,
+  examSelect,
+  groupSelect,
+  instructorSelect,
+  logInfoSelect,
+  roomSelect,
+  sectionSelect,
+  subjectSelect,
+} from "./model";
 
 const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
 
-const userSelect: Prisma.UserSelect = {
-  id: true,
-  username: true,
-  role: true,
-};
-
-const subjectSelect: Prisma.SubjectSelect = {
-  id: true,
-  code: true,
-  name: true,
-  credit: true,
-  lecture: true,
-  lab: true,
-  learn: true,
-};
-
-const groupSelect: Prisma.GroupSelect = {
-  id: true,
-  name: true,
-};
-
-const buildingSelect: Prisma.BuildingSelect = {
-  id: true,
-  code: true,
-  name: true,
-};
-
-const roomSelect: Prisma.RoomSelect = {
-  id: true,
-  name: true,
-  type: true,
-  building: {
-    select: buildingSelect,
-  },
-};
-
-const instructorSelect: Prisma.InstructorSelect = {
-  id: true,
-  name: true,
-};
-
-const childSectionSelect: Prisma.SectionSelect = {
-  id: true,
-  no: true,
-  lab: true,
-  type: true,
-  capacity: true,
-  subject: {
-    select: subjectSelect,
-  },
-};
-
-const sectionSelect: Prisma.SectionSelect = {
-  ...childSectionSelect,
-  parent: {
-    select: childSectionSelect,
-  },
-  group: {
-    select: groupSelect,
-  },
-  child: {
-    select: childSectionSelect,
-    orderBy: [
-      {
-        subject: {
-          name: "asc",
-        },
-      },
-      {
-        no: "asc",
-      },
-      {
-        lab: "asc",
-      },
-    ],
-  },
-};
-
-const examSelect: Prisma.ExamSelect = {
-  id: true,
+const select = {
+  ...examSelect,
+  ...logInfoSelect,
   room: {
-    select: roomSelect,
+    select: {
+      ...roomSelect,
+      building: { select: buildingSelect },
+    },
   },
   section: {
-    select: sectionSelect,
+    select: {
+      ...sectionSelect,
+      group: { select: groupSelect },
+      subject: { select: subjectSelect },
+    },
   },
-  instructor: {
-    select: instructorSelect,
-  },
-  createdAt: true,
-  createdBy: {
-    select: userSelect,
-  },
-  updatedAt: true,
-  updatedBy: {
-    select: userSelect,
-  },
-};
+  instructor: { select: instructorSelect },
+} satisfies Prisma.ExamSelect;
 
 export async function createExam(
   request: FastifyRequest<{
     Body: Exam & { instructor: Instructor[]; section: Section[] };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const info = await prisma.info.findFirst({
     where: {
@@ -144,7 +74,7 @@ export async function createExam(
       createdByUserId: request.user.id,
       updatedByUserId: request.user.id,
     },
-    select: examSelect,
+    select: select,
   });
 
   return reply.status(200).send({
@@ -163,7 +93,7 @@ export async function requestExam(
       semester: number;
     } & Pick<Exam, "roomId" | "createdByUserId" | "updatedByUserId">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
   const { limit, offset, year, semester, search, ...where } = request.query;
@@ -176,13 +106,13 @@ export async function requestExam(
 
   const exam = id
     ? await prisma.exam.findUnique({
-        select: examSelect,
+        select: select,
         where: {
           id: id,
         },
       })
     : await prisma.exam.findMany({
-        select: examSelect,
+        select: select,
         where: { ...examWhere, info: { year, semester } },
         orderBy: {
           createdAt: "asc",
@@ -213,7 +143,7 @@ export async function updateExam(
       section?: Section[];
     };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 
@@ -250,7 +180,7 @@ export async function updateExam(
   }
 
   const exam = await prisma.exam.update({
-    select: examSelect,
+    select: select,
     where: {
       id: id,
     },
@@ -281,7 +211,7 @@ export async function deleteExam(
   request: FastifyRequest<{
     Params: Pick<Exam, "id">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 
@@ -319,7 +249,7 @@ export async function deleteExam(
   }
 
   const exam = await prisma.exam.delete({
-    select: examSelect,
+    select: select,
     where: {
       id: id,
     },
@@ -334,7 +264,7 @@ export async function searchExam(
   request: FastifyRequest<{
     Querystring: { search: string; limit: number; offset: number };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { limit, offset, search } = request.query;
 
@@ -391,7 +321,7 @@ export async function searchExam(
   };
 
   const exam = await prisma.exam.findMany({
-    select: examSelect,
+    select: select,
     where: examWhere,
     orderBy: {
       createdAt: "asc",
@@ -419,7 +349,7 @@ export async function resetExam(
       semester: number;
     };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id: userId } = request.user;
 

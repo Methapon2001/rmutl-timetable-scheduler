@@ -1,8 +1,10 @@
 import type { PageLoad } from './$types';
-import { redirect } from '@sveltejs/kit';
-import { PUBLIC_API_HOST } from '$env/static/public';
+import type { Building, ResponseDataInfo, Room, LogInfo } from '$lib/types';
 
-const api = new URL(`${PUBLIC_API_HOST}/api/room`);
+import { paginationRequestParams } from '$lib/utils/search';
+import apiRequest from '$lib/api';
+
+import { redirect } from '@sveltejs/kit';
 
 export const load = (async ({ fetch, parent, depends, url }) => {
   const { session } = await parent();
@@ -11,44 +13,11 @@ export const load = (async ({ fetch, parent, depends, url }) => {
 
   if (!session) throw redirect(302, '/login?redirect=/room');
 
-  const page = url.searchParams.get('page');
-  const search = url.searchParams.get('search');
-
-  if (search && search.length > 0) {
-    api.searchParams.set('search', search);
-  } else {
-    api.searchParams.delete('search');
-  }
-
-  api.searchParams.set('limit', String(20));
-  api.searchParams.set('offset', String((+(page ?? 1) - 1) * 20));
-
-  const requestRoom = async () => {
-    const res = await fetch(api);
-    const body = await res.json();
-    return body as {
-      data: API.Room[];
-      limit: number;
-      offset: number;
-      total: number;
-    };
-  };
-
-  const requestBuilding = async () => {
-    const res = await fetch(`${PUBLIC_API_HOST}/api/building?limit=9999`);
-    const body = await res.json();
-    return body as {
-      data: API.Building[];
-      limit: number;
-      offset: number;
-      total: number;
-    };
-  };
+  const room = apiRequest('/api/room', fetch);
 
   return {
-    room: requestRoom(),
-    lazy: {
-      building: requestBuilding(),
-    },
+    room: room.get<ResponseDataInfo<LogInfo<Room & { building: Building }>>>(
+      paginationRequestParams(url),
+    ),
   };
 }) satisfies PageLoad;

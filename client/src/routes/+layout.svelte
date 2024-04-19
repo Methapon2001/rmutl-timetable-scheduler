@@ -2,7 +2,7 @@
   import '../app.postcss';
   import type { LayoutData } from './$types';
   import { page } from '$app/stores';
-  import { clickOutside } from '$lib/utils/directives';
+  import { clickOutside } from '$lib/element';
   import MenuIcon from '$lib/icons/MenuIcon.svelte';
   import { Toaster } from 'svelte-french-toast';
   import { invalidateAll } from '$app/navigation';
@@ -14,17 +14,17 @@
   let innerWidth: number;
   let route: string | null;
   let menuList1 = [
-    { path: '/', text: 'Home' },
-    { path: '/subject', text: 'Subject' },
-    { path: '/instructor', text: 'Instructor' },
-    { path: '/building', text: 'Building' },
-    { path: '/room', text: 'Room' },
-    { path: '/course', text: 'Course' },
-    { path: '/plan', text: 'Plan' },
-    { path: '/group', text: 'Group' },
-    { path: '/section', text: 'Section' },
-    { path: '/request-section', text: 'Request Section' },
-    { path: '/exam', text: 'Exam' },
+    { path: '/', text: 'Home (หน้าแรก)' },
+    { path: '/subject', text: 'Subject (รายวิชา)' },
+    { path: '/instructor', text: 'Instructor (ผู้สอน)' },
+    { path: '/building', text: 'Building (ตึกเรียน)' },
+    { path: '/room', text: 'Room (ห้องเรียน)' },
+    { path: '/course', text: 'Course (หลักสูตร)' },
+    { path: '/plan', text: 'Plan (แผนการเรียน)' },
+    { path: '/group', text: 'Group (กลุ่มเรียน)' },
+    { path: '/section', text: 'Section (กลุ่มรายวิชา)' },
+    { path: '/request-section', text: 'Request Section (คำขอเปิดรายวิชา)' },
+    { path: '/exam', text: 'Exam (การสอบ)' },
     { path: '/timetable', text: 'Timetable (Study)' },
     { path: '/exam-timetable', text: 'Timetable (Exam)' },
   ];
@@ -34,6 +34,7 @@
   }
 
   $: route = $page.route.id;
+  $: infoData = data.info.data.sort((a, b) => b.year - a.year || b.semester - a.semester);
 
   let currentInfo = data.info.data.find((inf) => inf.current);
   let selectedInfo = currentInfo ? `${currentInfo.semester}/${currentInfo.year}` : '';
@@ -44,7 +45,6 @@
       const [semester, year] = selectedInfo.split('/');
       return +semester === inf.semester && +year === inf.year;
     });
-    console.log($info);
     await invalidateAll();
   }
 </script>
@@ -71,8 +71,8 @@
   {#if data.session}
     <ul data-sveltekit-preload-data="off">
       {#if data.session.user.role == 'admin'}
-        <li><a class:active="{route == '/user'}" href="{'/user'}" role="button">User</a></li>
-        <li><a class:active="{route == '/info'}" href="{'/info'}" role="button">Info</a></li>
+        <li><a class:active="{route == '/user'}" href="{'/user'}" role="button">User (ผู้ใช้)</a></li>
+        <li><a class:active="{route == '/info'}" href="{'/info'}" role="button">Info (ภาคเรียน)</a></li>
       {/if}
       {#each [{ path: '/logout', text: 'Logout' }] as { path, text }}
         <li><a class:active="{route == path}" href="{path}" role="button">{text}</a></li>
@@ -111,7 +111,7 @@
       on:change="{setInfo}"
     >
       {#key data.info.total}
-        {#each data.info.data as inf}
+        {#each infoData as inf}
           <option value="{`${inf.semester}/${inf.year}`}"
             >{inf.semester}/{inf.year} {inf.current ? '(Current)' : ''}</option
           >
@@ -130,7 +130,7 @@
   <slot />
 </main>
 
-<style lang="postcss">
+<style>
   nav {
     color: var(--color-primary-inverse);
     background-color: var(--color-primary);

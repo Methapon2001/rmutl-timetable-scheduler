@@ -6,7 +6,7 @@ declare module "excel4node" {
   /**
    * An instance of the Worksheet class contains all information specific to that worksheet
    */
-  class Worksheet {
+  export class Worksheet {
     /**
      * Accepts a validation options object with these available options. All options are optional with exception of sqref.
      */
@@ -17,7 +17,7 @@ declare module "excel4node" {
      */
     addConditionalFormattingRule(
       ref: string,
-      opt: AddConditionalFormattingRuleOptions
+      opt: AddConditionalFormattingRuleOptions,
     ): void;
 
     column(number: number): Column;
@@ -32,14 +32,14 @@ declare module "excel4node" {
       startRow: number,
       startColumn: number,
       endRow: number,
-      endColumn: number
+      endColumn: number,
     ): Cell;
     cell(
       startRow: number,
       startColumn: number,
       endRow: number,
       endColumn: number,
-      isMerged: boolean
+      isMerged: boolean,
     ): Cell;
 
     /**
@@ -99,7 +99,7 @@ declare module "excel4node" {
    */
   export function getExcelCellRef(
     row: number,
-    column: number
+    column: number,
   ): { row: number; column: number };
 
   /**

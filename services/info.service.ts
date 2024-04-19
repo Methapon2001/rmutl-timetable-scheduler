@@ -1,29 +1,20 @@
 import { Prisma, Info, PrismaClient } from "@prisma/client";
 import { FastifyReply, FastifyRequest } from "fastify";
+import { infoSelect } from "./model";
 
 const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
 
-const infoSelect = {
-  id: true,
-  year: true,
-  semester: true,
-  current: true,
-};
+const select = infoSelect;
 
 export async function createInfo(
+  // TODO: clone previous semester group
   request: FastifyRequest<{
-    Body: Info;
+    Body: Info & { withPreviousData: boolean };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
-  await prisma.info.updateMany({
-    data: {
-      current: false,
-    },
-  });
-
   const exist = await prisma.info.findFirst({
     where: {
       year: request.body.year,
@@ -37,12 +28,20 @@ export async function createInfo(
     });
   }
 
+  if (request.body.current) {
+    await prisma.info.updateMany({
+      data: {
+        current: false,
+      },
+    });
+  }
+
   const info = await prisma.info.create({
     data: {
       ...request.body,
-      current: true,
+      current: request.body.current !== undefined ? request.body.current : true,
     },
-    select: infoSelect,
+    select: select,
   });
 
   return reply.status(200).send({
@@ -59,7 +58,7 @@ export async function requestInfo(
       offset: number;
     } & Info;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
   const { limit, offset, ...where } = request.query;
@@ -71,10 +70,10 @@ export async function requestInfo(
         where: {
           id: id,
         },
-        select: infoSelect,
+        select: select,
       })
     : await prisma.info.findMany({
-        select: infoSelect,
+        select: select,
         orderBy: [{ year: "desc" }, { semester: "desc" }],
         where: infoWhere,
         skip: offset,
@@ -100,7 +99,7 @@ export async function updateInfo(
     Params: Pick<Info, "id">;
     Body: Omit<Info, "id">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 
@@ -150,12 +149,12 @@ export async function deleteInfo(
   request: FastifyRequest<{
     Params: Pick<Info, "id">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 
   const info = await prisma.info.delete({
-    select: infoSelect,
+    select: select,
     where: {
       id: id,
     },

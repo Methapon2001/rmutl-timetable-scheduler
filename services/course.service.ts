@@ -1,54 +1,29 @@
 import { Course, CourseDetail, Prisma, PrismaClient } from "@prisma/client";
 import { FastifyReply, FastifyRequest } from "fastify";
+import {
+  courseDetailSelect,
+  courseSelect,
+  logInfoSelect,
+  subjectSelect,
+} from "./model";
 
 const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
 
-const userSelect: Prisma.UserSelect = {
-  id: true,
-  username: true,
-  role: true,
-};
-
-const subjectSelect: Prisma.SubjectSelect = {
-  id: true,
-  code: true,
-  name: true,
-  credit: true,
-  lecture: true,
-  lab: true,
-};
-
-const detailSelect: Prisma.CourseDetailSelect = {
-  id: true,
-  type: true,
-  subject: {
-    select: subjectSelect,
-  },
-};
-
-const courseSelect: Prisma.CourseSelect = {
-  id: true,
-  name: true,
+const select = {
+  ...courseSelect,
+  ...logInfoSelect,
   detail: {
-    select: detailSelect,
+    select: { ...courseDetailSelect, subject: { select: subjectSelect } },
   },
-  createdAt: true,
-  createdBy: {
-    select: userSelect,
-  },
-  updatedAt: true,
-  updatedBy: {
-    select: userSelect,
-  },
-};
+} satisfies Prisma.CourseSelect;
 
 export async function createCourse(
   request: FastifyRequest<{
     Body: Course & { detail: Pick<CourseDetail, "type" | "subjectId">[] };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { detail: courseDetail, ...courseData } = request.body;
 
@@ -61,7 +36,7 @@ export async function createCourse(
       createdByUserId: request.user.id,
       updatedByUserId: request.user.id,
     },
-    select: courseSelect,
+    select: select,
   });
 
   return reply.status(200).send({
@@ -77,7 +52,7 @@ export async function requestCourse(
       offset: number;
     } & Pick<Course, "name" | "createdByUserId" | "updatedByUserId">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
   const { limit, offset, ...where } = request.query;
@@ -86,13 +61,13 @@ export async function requestCourse(
 
   const course = id
     ? await prisma.course.findUnique({
-        select: courseSelect,
+        select: select,
         where: {
           id: id,
         },
       })
     : await prisma.course.findMany({
-        select: courseSelect,
+        select: select,
         where: courseWhere,
         orderBy: {
           createdAt: "asc",
@@ -122,13 +97,13 @@ export async function updateCourse(
       detail: Pick<CourseDetail, "type" | "subjectId">[];
     };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
   const { detail: courseDetail, ...courseData } = request.body;
 
   const course = await prisma.course.update({
-    select: courseSelect,
+    select: select,
     where: {
       id: id,
     },
@@ -155,12 +130,12 @@ export async function deleteCourse(
   request: FastifyRequest<{
     Params: Pick<Course, "id">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 
   const course = await prisma.course.delete({
-    select: courseSelect,
+    select: select,
     where: {
       id: id,
     },

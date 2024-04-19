@@ -8,6 +8,8 @@ import {
 } from "../services/scheduler.service";
 import schedulerSchema from "./validation/scheduler.schema";
 
+const UPDATE_SIGNAL = { update: 1 };
+
 export default async (server: FastifyInstance) => {
   function broadcast(message: string) {
     server.websocketServer.clients.forEach((client) => {
@@ -17,8 +19,11 @@ export default async (server: FastifyInstance) => {
 
   server.post("/api/scheduler", {
     onRequest: auth(),
-    onResponse: (_request, _reply) => {
-      broadcast("Schedule updated.");
+    onResponse: (request, _reply) => {
+      // this is for consecutive or simultanous call to this route so this will not send update signal to other
+      if (!request.query.noUpdateSignal) {
+        broadcast(JSON.stringify(UPDATE_SIGNAL));
+      }
     },
     handler: createScheduler,
     schema: {
@@ -46,7 +51,7 @@ export default async (server: FastifyInstance) => {
   server.put("/api/scheduler/:id", {
     onRequest: auth(),
     onResponse: (_request, _reply) => {
-      broadcast("Schedule updated.");
+      broadcast(JSON.stringify(UPDATE_SIGNAL));
     },
     handler: updateScheduler,
     schema: {
@@ -58,7 +63,7 @@ export default async (server: FastifyInstance) => {
   server.delete("/api/scheduler/:id", {
     onRequest: auth(),
     onResponse: (_request, _reply) => {
-      broadcast("Schedule updated.");
+      broadcast(JSON.stringify(UPDATE_SIGNAL));
     },
     handler: deleteScheduler,
     schema: {

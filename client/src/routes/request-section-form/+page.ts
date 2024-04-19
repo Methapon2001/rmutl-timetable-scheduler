@@ -1,54 +1,31 @@
 import type { PageLoad } from './$types';
+import type { Instructor, Subject, LogInfo, ResponseDataInfo } from '$lib/types';
 import { error } from '@sveltejs/kit';
-import { PUBLIC_API_HOST } from '$env/static/public';
-
-const api = new URL(`${PUBLIC_API_HOST}/api/request-section/check`);
+import apiRequest from '$lib/api';
 
 export const load = (async ({ fetch, url }) => {
   const key = url.searchParams.get('key');
 
-  if (key) {
-    api.searchParams.set('key', key);
-  } else {
+  if (!key) {
     throw error(400, {
       message: 'Key is not provided.',
     });
   }
 
-  const res = await fetch(api);
-  const body = await res.json();
+  const ret = await apiRequest('/api/request-section/check').get<Record<string, unknown>>({ key });
 
-  if (body.data === null) {
+  if (ret.data === null) {
     throw error(400, {
       message: 'No form found.',
     });
   }
 
-  const instructor = async () => {
-    const res = await fetch(`${PUBLIC_API_HOST}/api/instructor?limit=9999`);
-    const body = await res.json();
-    return body as {
-      data: API.Instructor[];
-      limit: number;
-      offset: number;
-      total: number;
-    };
-  };
-
-  const subject = async () => {
-    const res = await fetch(`${PUBLIC_API_HOST}/api/subject?limit=9999`);
-    const body = await res.json();
-    return body as {
-      data: API.Subject[];
-      limit: number;
-      offset: number;
-      total: number;
-    };
-  };
+  const instructor = apiRequest('/api/instructor', fetch);
+  const subject = apiRequest('/api/subject', fetch);
 
   return {
     key: key,
-    instructor: instructor(),
-    subject: subject(),
+    instructor: instructor.get<ResponseDataInfo<LogInfo<Instructor>>>({ limit: `${9999}` }),
+    subject: subject.get<ResponseDataInfo<LogInfo<Subject>>>({ limit: `${9999}` }),
   };
 }) satisfies PageLoad;

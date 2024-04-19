@@ -1,19 +1,20 @@
-# RMUTL Computer Engineering Timetable System
+# RMUTL Computer Engineering Timetable Scheduler System
 
 ## Prerequisite
+
 - [Node.js LTS](https://nodejs.org/en/download)
-  * Linux can install using nvm `curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash`
-  * Version used in development is 18.x.x
+  - Linux can install using nvm `curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash`
+  - Version used in development is 18.x.x
 - [MariaDB/MySQL](https://mariadb.org/download)
-  * For windows, can use [XAMPP](https://www.apachefriends.org/) 
-  * For linux, can install from distro repositories
+  - For windows, can use [XAMPP](https://www.apachefriends.org/)
+  - For linux, can install from distro repositories
 
 ## Installation
-- `npm i -g pnpm`
+
+- (Optional) - As this project always use pnpm to manage deps, to install pnpm run - `npm i -g pnpm` or else use `npm` instead of `pnpm`
 - `git clone https://github.com/Methapon2001/rmutl-timetable-scheduler.git`
 - `cd rmutl-timetable-scheduler`
-- `pnpm i`
-- Create `.env` file
+- Create `.env` file. Secret is import as it is used for jwt authentication process
   ```env
   DATABASE_URL="mysql://username:password@localhost:port/database_name"
   APP_SECRET="my_secret"
@@ -21,13 +22,15 @@
   ```
 - `cd client`
 - `pnpm i`
-- Create `.env` file and replace hostname with IP Address or Domain name
+- (Optional) - Create `.env` file and replace hostname with IP Address or Domain name
   ```env
   PUBLIC_API_HOST="http://hostname"
   PUBLIC_API_WS="ws://hostname/websocket"
   ```
-- `pnpm build`
+- `pnpm run build`
 - `cd ..`
-- `pnpm db:push`
-- `pnpm db:seed`
-- `pnpm start` or using `pm2` to run server.
+- Go back to server side and run `pnpm i`
+- **_1st run only or database structure related commit_** run - `pnpm run db:push`
+- **_1st run only_** to create admin user run - `pnpm run db:seed`
+- **_Once every server related commit_** run - `pnpm run build`
+- `pnpm run start` or using `pm2` to run server.

@@ -1,123 +1,57 @@
 <script lang="ts">
   import type { PageData } from './$types';
+  import type { Section, Subject } from '$lib/types';
   import { page } from '$app/stores';
-  import { invalidate } from '$app/navigation';
-  import { blurOnEscape } from '$lib/utils/directives';
-  import { deleteSection } from '$lib/api/section';
-  import { resetData } from '$lib/api/reset';
-  import debounce from '$lib/utils/debounce';
-  import Modal from '$lib/components/Modal.svelte';
-  import Pagination from '$lib/components/Pagination.svelte';
-  import SectionNewForm from './NewForm.svelte';
-  import SectionEditForm from './EditForm.svelte';
   import toast from 'svelte-french-toast';
 
-  const handleSearch = debounce(async (text: string) => {
-    const url = new URL(window.location.toString());
-    url.searchParams.set('search', text);
-    history.replaceState({}, '', url);
-    await invalidate('data:section');
-  }, 300);
+  import { goto, invalidate } from '$app/navigation';
+  import { blurOnEscape } from '$lib/element';
 
-  const groupOptions = async () => {
-    return (await data.lazy.group).data.map((group) => ({
-      label: group.name,
-      value: group.id,
-    }));
-  };
+  import { searchHandler } from '$lib/utils/search';
+  import apiRequest from '$lib/api';
 
-  const roomOptions = async () => {
-    return (await data.lazy.room).data.map((room) => ({
-      label: `${room.building.code}-${room.name} (${room.type
-        .charAt(0)
-        .toLocaleUpperCase()}${room.type.slice(1)})`,
-      value: room.id,
-      detail: room,
-    }));
-  };
+  import Modal from '$lib/components/Modal.svelte';
+  import Pagination from '$lib/components/Pagination.svelte';
+  import NewForm from './SectionNewForm.svelte';
+  import EditForm from './SectionEditForm.svelte';
 
-  const subjectOptions = async () => {
-    return (await data.lazy.subject).data.map((subject) => ({
-      label: `${subject.code} ${subject.name}`,
-      value: subject.id,
-      detail: subject,
-    }));
-  };
-
-  const instructorOptions = async () => {
-    return (await data.lazy.instructor).data.map((instructor) => ({
-      label: instructor.name,
-      value: instructor.id,
-    }));
-  };
-
-  const formOptions = async () => {
-    return {
-      group: await groupOptions(),
-      subject: await subjectOptions(),
-      room: await roomOptions(),
-      instructor: await instructorOptions(),
-    };
-  };
+  const handleSearch = searchHandler('data:section');
 
   export let data: PageData;
 
   let newState = false;
   let editState = false;
-  let editData: {
-    id: string;
+
+  let currentData: Section & {
+    /** Overwrite alt type since it is optional when fetched from api */
     alt: string;
-    groupId: string;
     roomId: string;
-    instructor: string[];
-    capacity: number;
+    groupId: string;
+    instructorId: string[];
+    subject: Subject;
   };
 
-  let showData: {
-    no: number;
-    lab: number | null;
-    subject: { name: string };
-    type: string;
-  };
-
-  function showEdit(
-    editSectionData: {
-      id: string;
-      alt: string;
-      groupId: string;
-      roomId: string;
-      instructor: {
-        id: string;
-      }[];
-      capacity: number;
-    },
-    showSectionData: {
-      no: number;
-      type: string;
-      lab: number | null;
-      subject: { name: string };
-    },
-  ) {
+  function triggerEdit(section: typeof currentData) {
     editState = true;
-    editData = {
-      ...editSectionData,
-      instructor: editSectionData.instructor.map((inst) => inst.id),
-    };
-    showData = showSectionData;
+    currentData = section;
   }
 
-  async function handleDelete(section: { id: string }) {
-    if (confirm('Are you sure?')) {
-      const ret = await deleteSection(section).catch((e: Response) => console.error(e));
+  async function handleDelete(id: string) {
+    const flag = confirm('Are you sure? This action cannot be undone.');
 
-      if (ret) {
-        await invalidate('data:section');
+    if (!flag) return;
 
-        toast.success('Delete Complete!');
-      } else {
-        toast.error('Fail to delete section!\nThis record is currenly in use.');
-      }
-    }
+    const ret = await apiRequest('/api/section')
+      .delete({ id })
+      .catch((e) => console.error(e));
+
+    if (!ret)
+      return toast.error(
+        'Failed to delete section!\nThis record may currenly in use. \nSee console for more info.',
+      );
+
+    await invalidate('data:section');
+    toast.success('Delete Complete!');
   }
 </script>
 
@@ -147,49 +81,33 @@
 
   <button
     type="button"
-    class="button disabled:bg-secondary disabled:border-secondary w-full disabled:cursor-not-allowed md:w-fit"
-    disabled="{!data.lazy.info?.current}"
+    class="button w-full disabled:cursor-not-allowed disabled:border-secondary disabled:bg-secondary md:w-fit"
+    disabled="{!data.info?.current}"
     on:click="{() => (newState = !newState)}"
   >
     New Section
   </button>
-  <a href="/section/gen" class="button w-full text-center md:w-fit"> Generate Section </a>
+  <button
+    on:click="{() => goto('/section/gen')}"
+    class="button w-full disabled:cursor-not-allowed disabled:border-secondary disabled:bg-secondary md:w-fit"
+    disabled="{!data.info?.current}">Generate Section</button
+  >
 </div>
 
 {#if newState}
   <div id="new" class="bg-light p-4">
     <h1 class="mb-4 block text-center text-2xl font-bold">New Section</h1>
     <div class="mx-auto max-w-screen-md rounded bg-white p-4 shadow">
-      {#await formOptions()}
-        Loading...
-      {:then options}
-        <SectionNewForm
-          groupOptions="{options.group}"
-          roomOptions="{options.room}"
-          subjectOptions="{options.subject}"
-          instructorOptions="{options.instructor}"
-        />
-      {/await}
+      <NewForm />
     </div>
   </div>
 {/if}
 
 <Modal bind:open="{editState}">
   <div id="edit" class="p-4">
-    <h1 class="mb-4 block text-center text-2xl font-bold">Edit Section</h1>
-    {#await formOptions()}
-      Loading...
-    {:then options}
-      <SectionEditForm
-        groupOptions="{options.group}"
-        roomOptions="{options.room}"
-        instructorOptions="{options.instructor}"
-        edit="{true}"
-        editData="{editData}"
-        showData="{showData}"
-        callback="{() => (editState = false)}"
-      />
-    {/await}
+    <h1 class="block text-center text-2xl font-bold">Edit Section</h1>
+    <hr class="my-2" />
+    <EditForm {...currentData} />
   </div>
 </Modal>
 
@@ -214,12 +132,17 @@
     <tbody>
       {#if data.section.total == 0}
         <tr>
-          <td class="text-secondary text-center" colspan="11">No records found.</td>
+          <td class="text-center text-secondary" colspan="11">No records found.</td>
         </tr>
       {/if}
       {#each data.section.data as section (section.id)}
         <tr class="hover:bg-light">
-          <td class="whitespace-nowrap">{section.subject.code} {section.subject.name}</td>
+          <td class="whitespace-nowrap">
+            <span hidden="{section.parent !== null}">
+              {section.subject.code}
+              {section.subject.name}
+            </span>
+          </td>
           <td class="text-center">{section.no}</td>
           <td class="text-center">{section.alt ?? '-'}</td>
           <td class="text-center capitalize">{section.type}</td>
@@ -233,7 +156,7 @@
             {section.instructor.length ? '' : '-'}
             {#each section.instructor as instructor (instructor.id)}
               <p>
-                <span class="bg-light-hover whitespace-nowrap rounded px-2"
+                <span class="whitespace-nowrap rounded bg-light-hover px-2"
                   >{instructor.name ?? '-'}</span
                 >
               </p>
@@ -242,46 +165,42 @@
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(section.createdAt).toLocaleDateString()}</p>
             <p class="text-dark">{new Date(section.createdAt).toLocaleTimeString()}</p>
-            <p class="text-secondary capitalize">{section.createdBy.username}</p>
+            <p class="capitalize text-secondary">{section.createdBy.username}</p>
           </td>
           <td class="fit-width whitespace-nowrap text-center text-sm">
             <p class="font-semibold">{new Date(section.updatedAt).toLocaleDateString()}</p>
             <p class="text-dark">{new Date(section.updatedAt).toLocaleTimeString()}</p>
-            <p class="text-secondary capitalize">{section.updatedBy.username}</p>
+            <p class="capitalize text-secondary">{section.updatedBy.username}</p>
           </td>
           <td class="fit-width text-center">
             <div class="space-x-4 whitespace-nowrap">
               <button
-                class="action-button disabled:text-secondary text-blue-600"
+                class="action-button text-blue-600 disabled:text-secondary"
                 disabled="{(data.session?.user.id != section.createdBy.id &&
                   data.session?.user.role != 'admin') ||
-                  !data.lazy.info?.current}"
+                  !data.info?.current}"
                 on:click="{() =>
-                  showEdit(
-                    {
-                      id: section.id,
-                      alt: section.alt ?? '',
-                      groupId: section.group?.id ?? '',
-                      roomId: section.room?.id ?? '',
-                      instructor: section.instructor,
-                      capacity: section.capacity,
-                    },
-                    {
-                      no: section.no,
-                      type: section.type,
-                      lab: section.lab,
-                      subject: section.subject,
-                    },
-                  )}"
+                  triggerEdit({
+                    id: section.id,
+                    no: section.no, // no-edit, readonly
+                    lab: section.lab, // no-edit, readonly
+                    type: section.type, // no-edit, readonly
+                    alt: section.alt ?? '',
+                    capacity: section.capacity,
+                    groupId: section.group?.id ?? '',
+                    roomId: section.room?.id ?? '',
+                    instructorId: section.instructor.map((v) => v.id),
+                    subject: section.subject, // no-edit, readonly
+                  })}"
               >
                 Edit
               </button>
               <button
-                class="action-button disabled:text-secondary text-red-600"
+                class="action-button text-red-600 disabled:text-secondary"
                 disabled="{(data.session?.user.id != section.createdBy.id &&
                   data.session?.user.role != 'admin') ||
-                  !data.lazy.info?.current}"
-                on:click="{() => handleDelete({ id: section.id })}"
+                  !data.info?.current}"
+                on:click="{() => handleDelete(section.id)}"
               >
                 Delete
               </button>
@@ -291,21 +210,6 @@
       {/each}
     </tbody>
   </table>
-</div>
-<div class="flex w-full justify-end p-3">
-  <button
-    class="rounded border bg-red-600 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-red-700"
-    on:click="{async () => {
-      const flag = confirm('Are you sure? The record that using this data will also be deleted.');
-
-      if (flag) {
-        await resetData('section');
-        invalidate('data:section');
-      }
-    }}"
-  >
-    Reset
-  </button>
 </div>
 
 <div id="pagination">

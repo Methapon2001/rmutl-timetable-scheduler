@@ -1,38 +1,16 @@
 import { Room, Prisma, PrismaClient } from "@prisma/client";
 import { FastifyReply, FastifyRequest } from "fastify";
+import { buildingSelect, logInfoSelect, roomSelect } from "./model";
 
 const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
 
-const userSelect: Prisma.UserSelect = {
-  id: true,
-  username: true,
-  role: true,
-};
-
-const buildingSelect: Prisma.BuildingSelect = {
-  id: true,
-  code: true,
-  name: true,
-};
-
-const roomSelect: Prisma.RoomSelect = {
-  id: true,
-  name: true,
-  type: true,
-  building: {
-    select: buildingSelect,
-  },
-  createdAt: true,
-  createdBy: {
-    select: userSelect,
-  },
-  updatedAt: true,
-  updatedBy: {
-    select: userSelect,
-  },
-};
+const select = {
+  ...roomSelect,
+  ...logInfoSelect,
+  building: { select: buildingSelect },
+} satisfies Prisma.RoomSelect;
 
 export async function createRoom(
   request: FastifyRequest<{ Body: Room }>,
@@ -44,7 +22,7 @@ export async function createRoom(
       createdByUserId: request.user.id,
       updatedByUserId: request.user.id,
     },
-    select: roomSelect,
+    select: select,
   });
 
   return reply.status(200).send({
@@ -77,13 +55,13 @@ export async function requestRoom(
 
   const room = id
     ? await prisma.room.findUnique({
-        select: roomSelect,
+        select: select,
         where: {
           id: id,
         },
       })
     : await prisma.room.findMany({
-        select: roomSelect,
+        select: select,
         where: roomWhere,
         orderBy: {
           createdAt: "asc",
@@ -116,7 +94,7 @@ export async function updateRoom(
   const { id } = request.params;
 
   const room = await prisma.room.update({
-    select: roomSelect,
+    select: select,
     where: {
       id: id,
     },
@@ -140,7 +118,7 @@ export async function deleteRoom(
   const { id } = request.params;
 
   const room = await prisma.room.delete({
-    select: roomSelect,
+    select: select,
     where: {
       id: id,
     },
@@ -177,7 +155,7 @@ export async function searchRoom(
   };
 
   const room = await prisma.room.findMany({
-    select: roomSelect,
+    select: select,
     where: roomWhere,
     orderBy: {
       createdAt: "asc",

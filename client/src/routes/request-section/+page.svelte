@@ -1,71 +1,33 @@
 <script lang="ts">
   import type { PageData } from './$types';
-  import { PUBLIC_API_HOST } from '$env/static/public';
-  import { invalidate } from '$app/navigation';
-  import Modal from '$lib/components/Modal.svelte';
-  import NewForm from './NewForm.svelte';
+
   import toast from 'svelte-french-toast';
 
+  import { env } from '$env/dynamic/public';
+  import { invalidate } from '$app/navigation';
+  import { refresh } from '$lib/api/auth';
+
+  import Modal from '$lib/components/Modal.svelte';
+  import SectionNewForm from '../section/SectionNewForm.svelte';
+
+  const url = env.PUBLIC_API_HOST ? env.PUBLIC_API_HOST : window.location.origin;
   export let data: PageData;
 
-  const groupOptions = async () => {
-    return (await data.lazy.group).data.map((group) => ({
-      label: group.name,
-      value: group.id,
-    }));
-  };
+  let open = false;
 
-  const roomOptions = async () => {
-    return (await data.lazy.room).data.map((room) => ({
-      label: `${room.building.code}-${room.name} (${room.type
-        .charAt(0)
-        .toLocaleUpperCase()}${room.type.slice(1)})`,
-      value: room.id,
-      detail: room,
-    }));
-  };
-
-  const subjectOptions = async () => {
-    return (await data.lazy.subject).data.map((subject) => ({
-      label: `${subject.code} ${subject.name}`,
-      value: subject.id,
-      detail: subject,
-    }));
-  };
-
-  const instructorOptions = async () => {
-    return (await data.lazy.instructor).data.map((instructor) => ({
-      label: instructor.name,
-      value: instructor.id,
-    }));
-  };
-
-  let createState = false;
-  let createSubjectId: string;
-  let createInstructorId: string;
-  let requestId: string;
-
-  const formOptions = async () => {
-    return {
-      group: await groupOptions(),
-      subject: await subjectOptions(),
-      room: await roomOptions(),
-      instructor: await instructorOptions(),
-    };
-  };
+  let currentData: (typeof data)['requestSection']['data'][number] | undefined;
 
   async function requestSection(action: 'open' | 'close') {
-    let confirm: boolean;
-
-    if (action === 'close') {
-      confirm = window.confirm('All data will be deleted and cannot be undone, are you sure?');
-    } else {
-      confirm = true;
-    }
+    const confirm =
+      action === 'close'
+        ? window.confirm('All data will be deleted and cannot be undone, are you sure?')
+        : true;
 
     if (!confirm) return;
 
-    const res = await fetch(`${PUBLIC_API_HOST}/api/request-section/${action}`, {
+    data.session = await refresh();
+
+    const res = await fetch(`${url}/api/request-section/${action}`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${data.session?.token.access}`,
@@ -78,7 +40,7 @@
   }
 
   async function deleteRequestSection() {
-    const res = await fetch(`${PUBLIC_API_HOST}/api/request-section/${requestId}`, {
+    const res = await fetch(`${url}/api/request-section/${currentData?.id}`, {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${data.session?.token.access}`,
@@ -91,56 +53,51 @@
   }
 
   async function copyToClipboard(textToCopy: string) {
-  if (navigator.clipboard && window.isSecureContext) {
-    await navigator.clipboard.writeText(textToCopy);
-  } else {
-    const textarea = document.createElement('textarea');
-    textarea.value = textToCopy;
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(textToCopy);
+    } else {
+      const textarea = document.createElement('textarea');
+      textarea.value = textToCopy;
 
-    // Move the textarea outside the viewport to make it invisible
-    textarea.style.position = 'absolute';
-    textarea.style.left = '-99999999px';
+      // Move the textarea outside the viewport to make it invisible
+      textarea.style.position = 'absolute';
+      textarea.style.left = '-99999999px';
 
-    document.body.prepend(textarea);
+      document.body.prepend(textarea);
 
-    // highlight the content of the textarea element
-    textarea.select();
+      // highlight the content of the textarea element
+      textarea.select();
 
-    try {
-      document.execCommand('copy');
-    } catch (err) {
-      console.log(err);
-    } finally {
-      textarea.remove();
+      try {
+        document.execCommand('copy');
+      } catch (err) {
+        console.log(err);
+      } finally {
+        textarea.remove();
+      }
     }
   }
-}
-
 </script>
 
 <svelte:head>
   <title>Request Section</title>
 </svelte:head>
 
-<Modal bind:open="{createState}">
+<Modal bind:open="{open}">
   <div id="edit" class="p-4">
-    <h1 class="mb-4 block text-center text-2xl font-bold">Edit Section</h1>
-    {#await formOptions()}
-      Loading...
-    {:then options}
-      <NewForm
-        groupOptions="{options.group}"
-        roomOptions="{options.room}"
-        subjectOptions="{options.subject}"
-        instructorOptions="{options.instructor}"
-        instructorId="{createInstructorId}"
-        subjectId="{createSubjectId}"
-        callback="{() => {
-          createState = false;
-          deleteRequestSection();
-        }}"
-      />
-    {/await}
+    <h1 class="mb-4 block text-center text-2xl font-bold">
+      {currentData?.subject.code}
+      {currentData?.subject.name}
+    </h1>
+    <SectionNewForm
+      subjectId="{currentData?.subject.id}"
+      defaultInstructor="{currentData?.requester.id}"
+      callback="{() => {
+        open = false;
+        deleteRequestSection();
+      }}"
+      lockSubject
+    />
   </div>
 </Modal>
 
@@ -206,10 +163,8 @@
               <button
                 class="action-button text-blue-600"
                 on:click="{() => {
-                  createState = true;
-                  createInstructorId = reqSec.requester.id;
-                  createSubjectId = reqSec.subject.id;
-                  requestId = reqSec.id;
+                  open = true;
+                  currentData = reqSec;
                 }}"
               >
                 Create Section

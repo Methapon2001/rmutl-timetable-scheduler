@@ -2,41 +2,41 @@
   "name": "timetable-scheduler",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
   "main": "index.ts",
   "license": "MIT",
   "scripts": {
-    "start": "tsx ./index.ts",
     "dev": "tsx watch ./index.ts",
-    "build": "esbuild ./index.ts --bundle --platform=node --outfile=./dist/esbuild/app.js",
-    "compile": "pkg ./dist/esbuild/app.js --targets=node18-linux-x64 --output=./dist/app",
+    "start": "node ./dist/index.js",
+    "check": "tsc --noEmit",
     "test": "vitest",
     "test:ui": "vitest --silent --ui",
+    "format": "prettier --write .",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "build": "prisma generate && tsc"
   },
   "dependencies": {
     "@fastify/cors": "^8.3.0",
     "@fastify/static": "^6.10.2",
-    "@fastify/websocket": "^8.1.0",
-    "@prisma/client": "^4.16.1",
+    "@fastify/websocket": "^8.2.0",
+    "@prisma/client": "^5.1.1",
     "ajv": "^8.12.0",
-    "esbuild": "^0.18.17",
     "excel4node": "^1.8.2",
-    "fast-jwt": "^3.1.1",
-    "fastify": "^4.18.0",
-    "pkg": "^5.8.1"
+    "fast-jwt": "^3.2.0",
+    "fastify": "^4.21.0",
+    "vite": "^5.0.12"
   },
   "devDependencies": {
-    "@types/node": "^20.3.1",
+    "@types/node": "^20.5.1",
     "@types/ws": "^8.5.5",
-    "@vitest/ui": "^0.32.2",
+    "@vitest/ui": "^0.34.2",
     "dotenv": "^16.3.1",
-    "prisma": "^4.16.1",
+    "prettier": "^3.0.3",
+    "prisma": "^5.8.1",
     "tsx": "^3.12.7",
-    "typescript": "^5.1.3",
-    "vitest": "^0.32.2"
+    "typescript": "^5.1.6",
+    "vitest": "^0.34.2"
   }
 }

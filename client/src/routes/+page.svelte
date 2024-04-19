@@ -7,100 +7,69 @@
 
   export let data: PageData;
 
-  let state: ComponentProps<Table>['state'] = {
+  const dummy = {
     selected: false,
-    section: null,
     weekday: 'mon',
     period: 0,
     size: 0,
-  };
+  } as const;
 
-  let stateExam: ComponentProps<TableExam>['state'] = {
-    selected: false,
-    exam: null,
-    weekday: 'mon',
-    period: 0,
-    size: 0,
-  };
+  let state: ComponentProps<Table>['state'] = { section: null, ...dummy };
+  let stateExam: ComponentProps<TableExam>['state'] = { exam: null, ...dummy };
 
   let viewState: string;
   let groupState: string;
   let instructorState: string;
 
   const instructorStudyMap = data.scheduler.data.reduce<
-    Record<string, Omit<API.Instructor, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>> // eslint-disable-line no-undef
+    Record<string, (typeof data.scheduler.data)[number]['section']['instructor'][number]>
   >((acc, curr) => {
     curr.section.instructor.forEach((inst) => {
       if (!acc[inst.id]) acc[inst.id] = inst;
     });
-
     return acc;
   }, {});
 
   const instructorExamMap = data.schedulerExam.data.reduce<
-    Record<string, Omit<API.Instructor, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>> // eslint-disable-line no-undef
+    Record<string, (typeof data.schedulerExam.data)[number]['exam']['instructor'][number]>
   >((acc, curr) => {
-    curr.exam.instructor.forEach((inst) => {
-      if (!acc[inst.id] && !instructorStudyMap[inst.id]) acc[inst.id] = inst;
+    curr.exam.instructor.forEach((v) => {
+      if (!acc[v.id] && !instructorStudyMap[v.id]) acc[v.id] = v;
     });
-
     return acc;
   }, {});
 
   const groupStudyMap = data.scheduler.data.reduce<
-    Record<string, Omit<API.Group, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>> // eslint-disable-line no-undef
+    Record<string, NonNullable<(typeof data.scheduler.data)[number]['section']['group']>>
   >((acc, curr) => {
     if (curr.section.group && !acc[curr.section.group.id]) {
       acc[curr.section.group.id] = curr.section.group;
     }
-
     return acc;
   }, {});
 
   const groupExamMap = data.schedulerExam.data.reduce<
-    Record<string, Omit<API.Group, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>> // eslint-disable-line no-undef
+    Record<
+      string,
+      NonNullable<(typeof data.schedulerExam.data)[number]['exam']['section'][number]['group']>
+    >
   >((acc, curr) => {
-    curr.exam.section.forEach((sec) => {
-      if (sec.group && !acc[sec.group.id] && !acc[sec.group.id]) acc[sec.group.id] = sec.group;
+    curr.exam.section.forEach((v) => {
+      if (v.group && !groupStudyMap[v.group.id] && !acc[v.group.id]) acc[v.group.id] = v.group;
     });
-
     return acc;
   }, {});
 
-  const scheduler = data.scheduler.data.map((obj) => ({
-    id: obj.id,
-    weekday: obj.weekday,
-    period: obj.start,
-    size: obj.end - obj.start + 1,
-    section: obj.section,
+  const instructorMap = { ...instructorStudyMap, ...instructorExamMap };
+  const groupMap = { ...groupStudyMap, ...groupExamMap };
+
+  const instructorOptions = Object.values(instructorMap).map((v) => ({
+    label: v.name,
+    value: v.id,
   }));
-
-  const schedulerExam = data.schedulerExam.data.map((obj) => ({
-    id: obj.id,
-    weekday: obj.weekday,
-    period: obj.start,
-    size: obj.end - obj.start + 1,
-    exam: obj.exam,
-  }));
-
-  const instructorMap = {
-    ...instructorStudyMap,
-    ...instructorExamMap,
-  };
-
-  const groupMap = {
-    ...groupStudyMap,
-    ...groupExamMap,
-  };
-
-  const instructorOptions = Object.values(instructorMap).map((inst) => ({
-    label: inst.name,
-    value: inst.id,
-  }));
-
-  const groupOptions = Object.values(groupMap).map((grp) => ({
-    label: grp.name,
-    value: grp.id,
+  const groupOptions = Object.values(groupMap).map((v) => ({
+    label: v.name,
+    value: v.id,
   }));
 </script>
 
@@ -136,7 +105,7 @@
     <div class="rounded border p-4">
       {#if groupStudyMap[groupState]}
         <Table
-          data="{scheduler}"
+          data="{data.scheduler.data}"
           state="{state}"
           small="{false}"
           selectable="{false}"
@@ -151,7 +120,7 @@
     <div class="rounded border p-4">
       {#if groupExamMap[groupState]}
         <TableExam
-          data="{schedulerExam}"
+          data="{data.schedulerExam.data}"
           state="{stateExam}"
           small="{false}"
           selectable="{false}"
@@ -170,7 +139,7 @@
     <div class="rounded border p-4">
       {#if instructorMap[instructorState]}
         <Table
-          data="{scheduler}"
+          data="{data.scheduler.data}"
           state="{state}"
           small="{false}"
           selectable="{false}"
@@ -185,7 +154,7 @@
     <div class="rounded border p-4">
       {#if instructorExamMap[instructorState]}
         <TableExam
-          data="{schedulerExam}"
+          data="{data.schedulerExam.data}"
           state="{stateExam}"
           small="{false}"
           selectable="{false}"

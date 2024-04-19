@@ -2,7 +2,7 @@
   import { goto, invalidateAll } from '$app/navigation';
   import { page } from '$app/stores';
   import { login } from '$lib/api/auth';
-  import { blurOnEscape } from '$lib/utils/directives';
+  import { blurOnEscape } from '$lib/element';
   import { getZodErrorMessage } from '$lib/utils/zod';
   import { ZodError, z } from 'zod';
 
@@ -11,27 +11,25 @@
     password: z.string().nonempty(),
   });
 
-  let form: {
-    data: z.infer<typeof schema>;
-    error: ZodError | undefined;
-  } = {
-    data: {
-      username: '',
-      password: '',
-    },
-    error: undefined,
+  let validateError: ZodError | null = null;
+
+  $: err = {
+    username: getZodErrorMessage(validateError, ['username']),
+    password: getZodErrorMessage(validateError, ['password']),
+    loginError: '',
   };
 
-  let loginError = '';
+  let username = '';
+  let password = '';
 
   async function handleSubmit() {
-    form.error = undefined;
-    loginError = '';
+    validateError = null;
+    err.loginError = '';
 
-    const result = schema.safeParse(form.data);
+    const result = schema.safeParse({ username, password });
 
     if (!result.success) {
-      form.error = result.error;
+      validateError = result.error;
       return;
     }
 
@@ -39,19 +37,11 @@
 
     if (ret) {
       await invalidateAll();
-
-      const redir = $page.url.searchParams.get('redirect');
-
-      if (redir) {
-        goto(redir);
-      } else {
-        goto('/');
-      }
-
+      await goto($page.url.searchParams.get('redirect') ?? '/');
       return;
     }
 
-    loginError = 'Incorrect username or password.';
+    err.loginError = 'Incorrect username or password.';
   }
 </script>
 
@@ -64,17 +54,15 @@
       <div class="col-span-4">
         <input
           type="text"
-          class="input text-center
-        {form.error && getZodErrorMessage(form.error, ['username']).length > 0
-            ? 'border border-red-600'
-            : ''}"
-          bind:value="{form.data.username}"
+          class="input"
+          class:border-red-600="{err.username}"
+          bind:value="{username}"
           use:blurOnEscape
         />
       </div>
-      <div class="col-span-4 col-start-3 text-red-600">
-        {form.error ? getZodErrorMessage(form.error, ['username']) : ''}
-      </div>
+      {#if err.username}
+        <div class="col-span-4 col-start-3 text-red-600">{err.username.join()}</div>
+      {/if}
     </section>
 
     <section id="input-name" class="grid grid-cols-6">
@@ -84,22 +72,23 @@
       <div class="col-span-4">
         <input
           type="password"
-          class="input text-center
-        {form.error && getZodErrorMessage(form.error, ['password']).length > 0
-            ? 'border border-red-600'
-            : ''}"
-          bind:value="{form.data.password}"
+          class="input"
+          class:border-red-600="{err.password}"
+          bind:value="{password}"
           use:blurOnEscape
         />
       </div>
-      <div class="col-span-4 col-start-3 text-red-600">
-        {form.error ? getZodErrorMessage(form.error, ['password']) : ''}
-      </div>
+      {#if err.password}
+        <div class="col-span-4 col-start-3 text-red-600">{err.password.join()}</div>
+      {/if}
     </section>
 
     <button type="submit" class="button w-full">Submit</button>
-    <span class="text-red-600">
-      {loginError}
-    </span>
+
+    {#if err.password}
+      <span class="text-red-600">
+        {err.loginError}
+      </span>
+    {/if}
   </form>
 </article>

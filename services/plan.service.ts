@@ -1,57 +1,32 @@
 import { Plan, PlanDetail, Prisma, PrismaClient } from "@prisma/client";
 import { FastifyReply, FastifyRequest } from "fastify";
+import {
+  courseSelect,
+  logInfoSelect,
+  planDetailSelect,
+  planSelect,
+  subjectSelect,
+} from "./model";
 
 const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
 
-const userSelect: Prisma.UserSelect = {
-  id: true,
-  username: true,
-  role: true,
-};
-
-const subjectSelect: Prisma.SubjectSelect = {
-  id: true,
-  code: true,
-  name: true,
-  credit: true,
-  lecture: true,
-  lab: true,
-};
-
-const courseSelect: Prisma.CourseSelect = {
-  id: true,
-  name: true,
-};
-
-const detailSelect: Prisma.PlanDetailSelect = {
-  id: true,
-  semester: true,
-  year: true,
-  subject: {
-    select: subjectSelect,
+const select = {
+  ...planSelect,
+  ...logInfoSelect,
+  detail: {
+    select: {
+      ...planDetailSelect,
+      subject: {
+        select: subjectSelect,
+      },
+    },
   },
-};
-
-const planSelect: Prisma.PlanSelect = {
-  id: true,
-  name: true,
   course: {
     select: courseSelect,
   },
-  detail: {
-    select: detailSelect,
-  },
-  createdAt: true,
-  createdBy: {
-    select: userSelect,
-  },
-  updatedAt: true,
-  updatedBy: {
-    select: userSelect,
-  },
-};
+} satisfies Prisma.PlanSelect;
 
 export async function createPlan(
   request: FastifyRequest<{
@@ -59,7 +34,7 @@ export async function createPlan(
       detail: Pick<PlanDetail, "semester" | "year" | "subjectId">[];
     };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { detail: planDetail, ...planData } = request.body;
 
@@ -78,8 +53,8 @@ export async function createPlan(
     !planDetail.every(
       (detail) =>
         courseSubjectList.findIndex(
-          ({ subject: courseSubject }) => courseSubject.id === detail.subjectId
-        ) !== -1
+          ({ subject: courseSubject }) => courseSubject.id === detail.subjectId,
+        ) !== -1,
     )
   ) {
     return reply.code(403).send({
@@ -96,7 +71,7 @@ export async function createPlan(
       createdByUserId: request.user.id,
       updatedByUserId: request.user.id,
     },
-    select: planSelect,
+    select: select,
   });
 
   return reply.status(200).send({
@@ -112,7 +87,7 @@ export async function requestPlan(
       offset: number;
     } & Pick<Plan, "name" | "createdByUserId" | "updatedByUserId">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
   const { limit, offset, ...where } = request.query;
@@ -121,13 +96,13 @@ export async function requestPlan(
 
   const plan = id
     ? await prisma.plan.findUnique({
-        select: planSelect,
+        select: select,
         where: {
           id: id,
         },
       })
     : await prisma.plan.findMany({
-        select: planSelect,
+        select: select,
         where: planWhere,
         orderBy: {
           createdAt: "asc",
@@ -157,7 +132,7 @@ export async function updatePlan(
       detail: Pick<PlanDetail, "semester" | "year" | "subjectId">[];
     };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
   const { detail: planDetail, ...planData } = request.body;
@@ -177,8 +152,8 @@ export async function updatePlan(
     !planDetail.every(
       (detail) =>
         courseSubjectList.findIndex(
-          ({ subject: courseSubject }) => courseSubject.id === detail.subjectId
-        ) !== -1
+          ({ subject: courseSubject }) => courseSubject.id === detail.subjectId,
+        ) !== -1,
     )
   ) {
     return reply.code(403).send({
@@ -187,7 +162,7 @@ export async function updatePlan(
   }
 
   const plan = await prisma.plan.update({
-    select: planSelect,
+    select: select,
     where: {
       id: id,
     },
@@ -214,12 +189,12 @@ export async function deletePlan(
   request: FastifyRequest<{
     Params: Pick<Plan, "id">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 
   const plan = await prisma.plan.delete({
-    select: planSelect,
+    select: select,
     where: {
       id: id,
     },

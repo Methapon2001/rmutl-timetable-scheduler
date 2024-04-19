@@ -1,28 +1,21 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import { FastifyReply, FastifyRequest } from "fastify";
+import { userSelect } from "./model";
 
 const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
 
-const userSelect: Prisma.UserSelect = {
-  id: true,
-  username: true,
-  role: true,
-};
-
-const openedRequestSectionSelect: Prisma.OpenedRequestSectionSelect = {
+const openedRequestSectionSelect = {
   id: true,
   key: true,
-  opener: {
-    select: userSelect,
-  },
+  opener: { select: userSelect },
   createdAt: true,
-};
+} satisfies Prisma.OpenedRequestSectionSelect;
 
 export async function requestSectionStatus(
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const data = await prisma.openedRequestSection.findFirst({
     select: openedRequestSectionSelect,
@@ -36,7 +29,7 @@ export async function requestSectionStatus(
 
 export async function checkRequestSection(
   request: FastifyRequest<{ Querystring: { key: string } }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const data = await prisma.openedRequestSection.findFirst({
     select: openedRequestSectionSelect,
@@ -50,7 +43,7 @@ export async function checkRequestSection(
 
 export async function openRequestSection(
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const record = await prisma.openedRequestSection.findFirst({
     where: {
@@ -78,7 +71,7 @@ export async function openRequestSection(
 
 export async function closeRequestSection(
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const data = await prisma.openedRequestSection.delete({
     where: {
@@ -120,7 +113,7 @@ const requestSectionSelect: Prisma.RequestSectionSelect = {
 
 export async function listRequestSection(
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const data = await prisma.requestSection.findMany({
     select: requestSectionSelect,
@@ -145,7 +138,7 @@ export async function createRequestSection(
       instructorId: string;
     };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const record = await prisma.openedRequestSection.findFirst({
     where: {
@@ -175,7 +168,7 @@ export async function createRequestSection(
 
 export async function deleteRequestSection(
   request: FastifyRequest<{ Params: { id: string } }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const record = await prisma.requestSection.findFirst({
     include: {

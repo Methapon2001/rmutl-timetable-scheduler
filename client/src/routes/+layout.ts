@@ -1,13 +1,14 @@
 import type { LayoutLoad } from './$types';
+import type { Info, LogInfo, ResponseDataInfo, Session } from '$lib/types';
 import { check, refresh } from '$lib/api/auth';
-import { PUBLIC_API_HOST } from '$env/static/public';
+import apiRequest from '$lib/api';
 
 export const ssr = false;
 export const prerender = true;
 export const trailingSlash = 'always';
 
-export const load = (async ({ fetch, depends }) => {
-  let userSession: API.Session | null = null;
+export const load = (async ({ fetch }) => {
+  let userSession: Session | null = null;
 
   try {
     userSession = (await check(fetch)) ?? (await refresh(fetch));
@@ -18,17 +19,11 @@ export const load = (async ({ fetch, depends }) => {
       console.error(err);
     }
   }
-  const infoData = async () => {
-    return await fetch(`${PUBLIC_API_HOST}/api/info`).then((res) => res.json());
-  };
+
+  const info = apiRequest('/api/info', fetch);
 
   return {
     session: userSession,
-    info: infoData() as Promise<{
-      data: API.Info[];
-      limit: number;
-      offset: number;
-      total: number;
-    }>,
+    info: info.get<ResponseDataInfo<LogInfo<Info>>>({ limit: '9999' }),
   };
 }) satisfies LayoutLoad;

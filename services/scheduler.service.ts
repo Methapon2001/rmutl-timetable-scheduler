@@ -1,123 +1,48 @@
 import { Prisma, PrismaClient, Scheduler } from "@prisma/client";
 import { FastifyReply, FastifyRequest } from "fastify";
+import {
+  buildingSelect,
+  groupSelect,
+  instructorSelect,
+  logInfoSelect,
+  roomSelect,
+  scheduleSelect,
+  sectionSelect,
+  subjectSelect,
+} from "./model";
 
 const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
 
-const userSelect: Prisma.UserSelect = {
-  id: true,
-  username: true,
-  role: true,
-};
-
-const subjectSelect: Prisma.SubjectSelect = {
-  id: true,
-  code: true,
-  name: true,
-  credit: true,
-  lecture: true,
-  lab: true,
-  learn: true,
-};
-
-// const courseDetailSelect: Prisma.CourseDetailSelect = {
-//   id: true,
-//   type: true,
-//   subject: {
-//     select: subjectSelect,
-//   },
-// };
-
-const courseSelect: Prisma.CourseSelect = {
-  id: true,
-  name: true,
-  // detail: {
-  //   select: courseDetailSelect,
-  // },
-};
-
-const groupSelect: Prisma.GroupSelect = {
-  id: true,
-  name: true,
-  course: {
-    select: courseSelect,
-  },
-};
-
-const buildingSelect: Prisma.BuildingSelect = {
-  id: true,
-  code: true,
-  name: true,
-};
-
-const roomSelect: Prisma.RoomSelect = {
-  id: true,
-  name: true,
-  type: true,
-  building: {
-    select: buildingSelect,
-  },
-};
-
-const instructorSelect: Prisma.InstructorSelect = {
-  id: true,
-  name: true,
-};
-
-const childSectionSelect: Prisma.SectionSelect = {
-  id: true,
-  no: true,
-  alt: true,
-  lab: true,
-  type: true,
-  capacity: true,
-  group: {
-    select: groupSelect,
-  },
-  room: {
-    select: roomSelect,
-  },
-  subject: {
-    select: subjectSelect,
-  },
-  instructor: {
-    select: instructorSelect,
-  },
-};
-
-const sectionSelect: Prisma.SectionSelect = {
-  ...childSectionSelect,
-  parent: {
-    select: childSectionSelect,
-  },
-  child: {
-    select: childSectionSelect,
-  },
-};
-
-const schedulerSelect: Prisma.SchedulerSelect = {
-  id: true,
-  weekday: true,
-  start: true,
-  end: true,
-  publish: true,
+const select = {
+  ...scheduleSelect,
+  ...logInfoSelect,
   section: {
-    select: sectionSelect,
+    select: {
+      ...sectionSelect,
+      room: {
+        select: {
+          ...roomSelect,
+          building: { select: buildingSelect },
+        },
+      },
+      group: {
+        select: groupSelect,
+      },
+      instructor: { select: instructorSelect },
+      subject: { select: subjectSelect },
+      parent: { select: sectionSelect },
+    },
   },
-  createdAt: true,
-  createdBy: {
-    select: userSelect,
-  },
-  updatedAt: true,
-  updatedBy: {
-    select: userSelect,
-  },
-};
+} satisfies Prisma.SchedulerSelect;
 
 export async function createScheduler(
-  request: FastifyRequest<{ Body: Scheduler }>,
-  reply: FastifyReply
+  request: FastifyRequest<{
+    Querystring: { noUpdateSignal: boolean }; // this is to type request which will be used later on response
+    Body: Scheduler;
+  }>,
+  reply: FastifyReply,
 ) {
   if (
     request.body.weekday === "wed" &&
@@ -154,7 +79,7 @@ export async function createScheduler(
       createdByUserId: request.user.id,
       updatedByUserId: request.user.id,
     },
-    select: schedulerSelect,
+    select: select,
   });
 
   return reply.status(200).send({
@@ -173,7 +98,7 @@ export async function requestScheduler(
       semester: number;
     } & Pick<Scheduler, "publish" | "createdByUserId" | "updatedByUserId">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
   const { limit, offset, year, semester, groupId, ...where } = request.query;
@@ -182,13 +107,13 @@ export async function requestScheduler(
 
   const scheduler = id
     ? await prisma.scheduler.findUnique({
-        select: schedulerSelect,
+        select: select,
         where: {
           id: id,
         },
       })
     : await prisma.scheduler.findMany({
-        select: schedulerSelect,
+        select: select,
         where: {
           ...schedulerWhere,
           info: {
@@ -234,12 +159,12 @@ export async function updateScheduler(
     Params: Pick<Scheduler, "id">;
     Body: Omit<Scheduler, "id">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 
   const scheduler = await prisma.scheduler.update({
-    select: schedulerSelect,
+    select: select,
     where: {
       id: id,
     },
@@ -258,12 +183,12 @@ export async function deleteScheduler(
   request: FastifyRequest<{
     Params: Pick<Scheduler, "id">;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id } = request.params;
 
   const scheduler = await prisma.scheduler.delete({
-    select: schedulerSelect,
+    select: select,
     where: {
       id: id,
     },
@@ -281,7 +206,7 @@ export async function resetScheduler(
       semester: number;
     };
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { id: userId } = request.user;
 

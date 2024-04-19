@@ -1,116 +1,49 @@
-import { FastifyReply, FastifyRequest } from "fastify";
 import xl from "excel4node";
-import { PrismaClient } from "@prisma/client";
+import { FastifyReply, FastifyRequest } from "fastify";
+import { Prisma, PrismaClient } from "@prisma/client";
+import {
+  buildingSelect,
+  groupSelect,
+  instructorSelect,
+  logInfoSelect,
+  roomSelect,
+  scheduleSelect,
+  sectionSelect,
+  subjectSelect,
+} from "./model";
 
 const prisma = new PrismaClient({
   errorFormat: "minimal",
 });
 
-const userSelect = {
-  id: true,
-  username: true,
-  role: true,
-};
-
-const subjectSelect = {
-  id: true,
-  code: true,
-  name: true,
-  credit: true,
-  lecture: true,
-  lab: true,
-  learn: true,
-};
-
-const courseSelect = {
-  id: true,
-  name: true,
-};
-
-const groupSelect = {
-  id: true,
-  name: true,
-  course: {
-    select: courseSelect,
-  },
-};
-
-const buildingSelect = {
-  id: true,
-  code: true,
-  name: true,
-};
-
-const roomSelect = {
-  id: true,
-  name: true,
-  type: true,
-  building: {
-    select: buildingSelect,
-  },
-};
-
-const instructorSelect = {
-  id: true,
-  name: true,
-};
-
-const childSectionSelect = {
-  id: true,
-  no: true,
-  alt: true,
-  lab: true,
-  type: true,
-  capacity: true,
-  group: {
-    select: groupSelect,
-  },
-  room: {
-    select: roomSelect,
-  },
-  subject: {
-    select: subjectSelect,
-  },
-  instructor: {
-    select: instructorSelect,
-  },
-};
-
-const sectionSelect = {
-  ...childSectionSelect,
-  parent: {
-    select: childSectionSelect,
-  },
-  child: {
-    select: childSectionSelect,
-  },
-};
-
-const schedulerSelect = {
-  id: true,
-  weekday: true,
-  start: true,
-  end: true,
-  publish: true,
+const select = {
+  ...scheduleSelect,
+  ...logInfoSelect,
   section: {
-    select: sectionSelect,
+    select: {
+      ...sectionSelect,
+      room: {
+        select: {
+          ...roomSelect,
+          building: { select: buildingSelect },
+        },
+      },
+      group: {
+        select: groupSelect,
+      },
+      instructor: { select: instructorSelect },
+      subject: { select: subjectSelect },
+      parent: { select: sectionSelect },
+    },
   },
-  createdAt: true,
-  createdBy: {
-    select: userSelect,
-  },
-  updatedAt: true,
-  updatedBy: {
-    select: userSelect,
-  },
-};
+} satisfies Prisma.SchedulerSelect;
 
 export async function exportRoomSchedule(
   req: FastifyRequest,
-  res: FastifyReply
+  res: FastifyReply,
 ) {
   const data = await prisma.scheduler.findMany({
-    select: schedulerSelect,
+    select: select,
     where: {
       info: {
         current: true,
@@ -128,7 +61,7 @@ export async function exportRoomSchedule(
             item.id !== current.id &&
             item.weekday == current.weekday &&
             item.end >= current.start &&
-            item.start <= current.end
+            item.start <= current.end,
         ),
         _offset: -1,
       };
@@ -145,7 +78,7 @@ export async function exportRoomSchedule(
           processed[i].id !== item.id &&
           item.weekday === processed[i].weekday &&
           processed[i].start <= item.end &&
-          processed[i].end >= item.start
+          processed[i].end >= item.start,
       );
 
       mutualOverlap.forEach((item) => {
@@ -294,8 +227,8 @@ export async function exportRoomSchedule(
           String(
             `${8 + Math.floor((period - 1) / 2)}:${
               (period - 1) % 2 === 0 ? "0" : "3"
-            }0-${8 + Math.floor(period / 2)}:${period % 2 === 0 ? "0" : "3"}0`
-          )
+            }0-${8 + Math.floor(period / 2)}:${period % 2 === 0 ? "0" : "3"}0`,
+          ),
         )
         .style({
           alignment: { horizontal: "center" },
@@ -315,11 +248,11 @@ export async function exportRoomSchedule(
     } = vRoom!;
 
     const { ws, styleCenter, styleBorder } = createWorksheetLayout(
-      `${buildingCode}-${roomName}`
+      `${buildingCode}-${roomName}`,
     );
 
     const p = processOverlaps(
-      data.filter((vSchedule) => vSchedule.section.room?.id === roomId)
+      data.filter((vSchedule) => vSchedule.section.room?.id === roomId),
     );
 
     const maxOverlap = Math.max(...p.map((obj) => obj._offset), 2) + 1;
@@ -338,7 +271,7 @@ export async function exportRoomSchedule(
       4 + (15 - 1) * 2,
       18 + maxOverlap * weekdayMap["wed"] + maxOverlap - 1,
       3 + 18 * 2,
-      true
+      true,
     )
       .string("Activity")
       .style({
@@ -355,19 +288,19 @@ export async function exportRoomSchedule(
         1,
         18 + maxOverlap * vWeekday + maxOverlap - 1,
         3,
-        true
+        true,
       )
         .string(
           ["จันทร์", "อังคาร", "พุธ", "พฤ", "ศุกร์", "เสาร์", "อาทิตย์"][
             vWeekday
-          ]
+          ],
         )
         .style({ ...styleCenter, ...styleBorder });
       ws.cell(
         18 + maxOverlap * vWeekday + maxOverlap - 1,
         1,
         18 + maxOverlap * vWeekday + maxOverlap - 1,
-        53
+        53,
       ).style({
         border: {
           bottom: {
@@ -411,11 +344,11 @@ export async function exportRoomSchedule(
       ws.cell(3 + idx, 34)
         .number(
           vProcessed.section.subject.lecture +
-            vProcessed.section.subject.lab / 3
+            vProcessed.section.subject.lab / 3,
         )
         .style(styleCenter);
       ws.cell(3 + idx, 35).string(
-        vProcessed.section.subject.code + "_SEC_" + vProcessed.section.no
+        vProcessed.section.subject.code + "_SEC_" + vProcessed.section.no,
       );
       ws.cell(3 + idx, 48)
         .number(vProcessed.section.subject.lecture)
@@ -425,7 +358,7 @@ export async function exportRoomSchedule(
         .style(styleCenter);
       ws.cell(3 + idx, 50)
         .number(
-          vProcessed.section.subject.lecture + vProcessed.section.subject.lab
+          vProcessed.section.subject.lecture + vProcessed.section.subject.lab,
         )
         .style(styleCenter);
 
@@ -438,18 +371,16 @@ export async function exportRoomSchedule(
           4 + (vProcessed.start - 1) * 2,
           18 + maxOverlap * weekdayMap[vProcessed.weekday] + maxOverlap - 1,
           3 + vProcessed.end * 2,
-          true
+          true,
         )
           .string(
             vProcessed.section.subject.code +
               "_SEC_" +
               vProcessed.section.no +
-              (vProcessed.section.room
-                ? "\n" +
-                  vProcessed.section.room.building.code +
-                  "-" +
-                  vProcessed.section.room.name
-                : "")
+              (vProcessed.section.lab ? `L${vProcessed.section.lab}` : "") +
+              (vProcessed.section.group
+                ? "\n" + vProcessed.section.group.name
+                : ""),
           )
           .style({
             ...styleBorder,
@@ -465,7 +396,7 @@ export async function exportRoomSchedule(
           4 + (vProcessed.start - 1) * 2,
           18 + maxOverlap * weekdayMap[vProcessed.weekday] + vProcessed._offset,
           3 + vProcessed.end * 2,
-          true
+          true,
         )
           .string(vProcessed.section.subject.name)
           .style({ ...styleBorder, ...styleCenter });

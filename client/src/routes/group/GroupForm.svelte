@@ -1,195 +1,186 @@
 <script lang="ts">
-  import { type ZodError, z } from 'zod';
-  import { invalidate } from '$app/navigation';
-  import { blurOnEscape } from '$lib/utils/directives';
-  import { getZodErrorMessage } from '$lib/utils/zod';
-  import { createGroup, editGroup } from '$lib/api/group';
-  import { onMount } from 'svelte';
-  import Select from '$lib/components/Select.svelte';
+  import type { ZodError } from 'zod';
+  import type {
+    Course,
+    Plan,
+    ResponseDataInfo,
+    LogInfo,
+    Subject,
+    CourseDetail,
+    PlanDetail,
+  } from '$lib/types';
   import toast from 'svelte-french-toast';
 
-  const schema = z.object({
-    id: z.string().nonempty(),
-    name: z.string().min(3),
-    courseId: z.string().nonempty({ message: 'Must select one of the options.' }),
-    planId: z.string().nonempty({ message: 'Must select one of the options.' }),
-  });
+  import { groupSchema } from '$lib/types';
+  import { invalidate } from '$app/navigation';
+  import { blurOnEscape } from '$lib/element';
+  import { getZodErrorMessage } from '$lib/utils/zod';
+  import apiRequest from '$lib/api';
+  import Select from '$lib/components/Select.svelte';
+  import { tick } from 'svelte';
 
-  const newSchema = schema.omit({
-    id: true,
-  });
+  let firstInput: HTMLInputElement | null = null;
+  let validateError: ZodError | null = null;
 
-  export let courseOptions: {
-    label: string;
-    value: string;
-    disabled?: boolean;
-  }[];
+  $: err = {
+    id: getZodErrorMessage(validateError, ['id']),
+    name: getZodErrorMessage(validateError, ['name']),
+    courseId: getZodErrorMessage(validateError, ['courseId']),
+    planId: getZodErrorMessage(validateError, ['planId']),
+  };
 
-  export let planOptions: {
-    label: string;
-    value: string;
-    disabled?: boolean;
-  }[];
+  const params = { limit: '9999' };
+  const course =
+    apiRequest('/api/course').get<
+      ResponseDataInfo<LogInfo<Course & { detail: (CourseDetail & { subject: Subject })[] }>>
+    >(params);
+  const plan =
+    apiRequest('/api/plan').get<
+      ResponseDataInfo<
+        LogInfo<Plan & { detail: (PlanDetail & { subject: Subject })[]; course: Course }>
+      >
+    >(params);
+
+  const courseOptions = async () =>
+    (await course).data
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((v) => ({ label: v.name, value: v.id }));
+
+  const planOptions = async () =>
+    (await plan).data
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((v) => ({ label: v.name, value: v.id, data: v }));
 
   export let edit = false;
-  export let editData: typeof form.data = {
-    id: '',
-    name: '',
-    courseId: '',
-    planId: '',
-  };
 
-  export let callback: () => void = function () {
-    // do nothing.
-  };
+  export let id = '';
+  export let name = '';
+  export let courseId = '';
+  export let planId = '';
 
-  let form: {
-    data: z.infer<typeof schema>;
-    error: ZodError | undefined;
-  } = {
-    data: {
-      id: '',
-      name: '',
-      courseId: '',
-      planId: '',
-    },
-    error: undefined,
-  };
+  let currentCourse: Awaited<typeof course>['data'][number] | undefined;
 
-  let firstInput: HTMLInputElement;
-
-  async function handleSubmit() {
-    return edit ? await handleEdit() : await handleCreate();
+  function resetState() {
+    id = name = courseId = planId = '';
   }
 
-  async function handleCreate() {
-    form.error = undefined;
-
-    const result = newSchema.safeParse(form.data);
-
-    if (!result.success) {
-      form.error = result.error;
-      return;
-    }
-
-    const ret = await createGroup(result.data).catch((r: Response) => console.error(r));
-
-    if (ret) {
-      form.data = {
-        id: '',
-        name: '',
-        courseId: '',
-        planId: '',
-      };
-
-      await invalidate('data:group');
-
-      callback();
-
-      firstInput.focus();
-
-      toast.success('Group Created!');
-    } else {
-      toast.error('Fail to create Group!');
-    }
-  }
+  export let callback: (data: unknown) => void = () => {
+    // do nothing
+  };
 
   async function handleEdit() {
-    form.error = undefined;
+    validateError = null;
 
-    const result = schema.safeParse(form.data);
+    const parsed = groupSchema.safeParse({ id, name, planId, courseId });
 
-    if (!result.success) {
-      form.error = result.error;
-      return;
-    }
+    if (!parsed.success) return handleError(parsed.error);
 
-    const ret = await editGroup(result.data).catch((r: Response) => console.error(r));
+    const ret = await apiRequest('/api/group')
+      .put(parsed.data)
+      .catch((e) => console.error(e));
 
-    if (ret) {
-      form.data = {
-        id: '',
-        name: '',
-        courseId: '',
-        planId: '',
-      };
-
-      await invalidate('data:group');
-
-      callback();
-
-      toast.success('Edit Complete!');
-    } else {
-      toast.error('Fail to Edit group!');
-    }
+    if (ret) await postSubmit(ret);
   }
 
-  onMount(() => {
-    if (edit && editData) {
-      form.data = editData;
-    }
-  });
+  async function handleNew() {
+    validateError = null;
+
+    const parsed = groupSchema.omit({ id: true }).safeParse({ name, planId, courseId });
+
+    if (!parsed.success) return handleError(parsed.error);
+
+    const ret = await apiRequest('/api/group')
+      .post(parsed.data)
+      .catch((e) => console.error(e));
+
+    if (ret) await postSubmit(ret);
+  }
+
+  function handleError(error: ZodError) {
+    validateError = error;
+  }
+
+  async function postSubmit(data: unknown) {
+    firstInput?.focus();
+    toast.success('Success');
+    await invalidate('data:group');
+    resetState();
+    callback(data);
+  }
+
+  async function handleCourse() {
+    await tick();
+    currentCourse = (await course).data.find((v) => v.id === courseId);
+  }
 </script>
 
-<form on:submit|preventDefault="{() => handleSubmit()}" class="space-y-4">
+<form on:submit|preventDefault="{() => (edit ? handleEdit() : handleNew())}" class="space-y-4">
   <section id="input-name" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
-      <label for="" class="font-semibold">
+      <label for="form-input-name" class="font-semibold">
         Name <span class="text-red-600">*</span>
       </label>
     </div>
     <div class="col-span-4">
       <input
+        id="form-input-name"
         type="text"
         placeholder="Group Name"
-        class="input
-              {form.error && getZodErrorMessage(form.error, ['name']).length > 0
-          ? 'border border-red-600'
-          : ''}"
-        bind:value="{form.data.name}"
-        bind:this="{firstInput}"
+        class="input"
+        class:border-red-600="{err.name}"
+        bind:value="{name}"
         use:blurOnEscape
       />
     </div>
-    <div class="col-span-4 col-start-3 text-red-600">
-      {form.error ? getZodErrorMessage(form.error, ['name']) : ''}
-    </div>
+    {#if err.name}
+      <div class="col-span-4 col-start-3 text-red-600">{err.name.join()}</div>
+    {/if}
   </section>
   <section id="input-course" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
-      <label for="" class="font-semibold">
+      <label for="form-group-course" class="font-semibold">
         Course <span class="text-red-600">*</span>
       </label>
     </div>
-    <div
-      class="col-span-4"
-      class:invalid="{form.error && getZodErrorMessage(form.error, ['courseId']).length > 0}"
-    >
-      <Select
-        options="{courseOptions}"
-        bind:value="{form.data.courseId}"
-        placeholder="Select Course"
-      />
+    <div class="col-span-4" class:invalid="{err.courseId}">
+      {#await courseOptions()}
+        <Select options="{[]}" placeholder="Loading..." />
+      {:then options}
+        <Select
+          id="form-group-course"
+          options="{options}"
+          bind:value="{courseId}"
+          on:change="{handleCourse}"
+          placeholder="Select Course"
+        />
+      {/await}
     </div>
-    <div class="col-span-4 col-start-3 text-red-600">
-      {form.error ? getZodErrorMessage(form.error, ['courseId']) : ''}
-    </div>
+    {#if err.courseId}
+      <div class="col-span-4 col-start-3 text-red-600">{err.courseId.join()}</div>
+    {/if}
   </section>
   <section id="input-plan" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
-      <label for="" class="font-semibold">
+      <label for="form-group-plan" class="font-semibold">
         Plan <span class="text-red-600">*</span>
       </label>
     </div>
-    <div
-      class="col-span-4"
-      class:invalid="{form.error && getZodErrorMessage(form.error, ['planId']).length > 0}"
-    >
-      <Select options="{planOptions}" bind:value="{form.data.planId}" placeholder="Select Plan" />
+    <div class="col-span-4" class:invalid="{err.planId}">
+      {#await planOptions()}
+        <Select options="{[]}" placeholder="Loading..." />
+      {:then options}
+        <Select
+          id="form-group-plan"
+          options="{options.filter((v) => v.data.course.id === currentCourse?.id)}"
+          bind:value="{planId}"
+          placeholder="Select Plan"
+        />
+      {/await}
     </div>
-    <div class="col-span-4 col-start-3 text-red-600">
-      {form.error ? getZodErrorMessage(form.error, ['planId']) : ''}
-    </div>
+    {#if err.planId}
+      <div class="col-span-4 col-start-3 text-red-600">{err.planId.join()}</div>
+    {/if}
   </section>
+
   <button type="submit" class="button w-full">Save</button>
 </form>

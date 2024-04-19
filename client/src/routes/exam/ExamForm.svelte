@@ -1,242 +1,265 @@
 <script lang="ts">
-  import { type ZodError, z } from 'zod';
-  import { invalidate } from '$app/navigation';
-  import { getZodErrorMessage } from '$lib/utils/zod';
-  import { createExam, editExam } from '$lib/api/exam';
-  import { onMount } from 'svelte';
-  import Select from '$lib/components/Select.svelte';
+  import type { ZodError } from 'zod';
+  import type {
+    Section,
+    Course,
+    Group,
+    LogInfo,
+    Plan,
+    PlanDetail,
+    ResponseDataInfo,
+    Building,
+    Room,
+    Instructor,
+    Subject,
+    CourseDetail,
+  } from '$lib/types';
+  import { onMount, tick } from 'svelte';
   import toast from 'svelte-french-toast';
 
-  const schema = z.object({
-    id: z.string().nonempty(),
-    roomId: z.string(),
-    section: z.string().array(),
-    instructor: z.string().array(),
-  });
+  import { examSchema } from '$lib/types';
+  import { invalidate } from '$app/navigation';
+  import { getZodErrorMessage as getErrMsg } from '$lib/utils/zod';
+  import { info } from '$lib/stores';
+  import apiRequest from '$lib/api';
 
-  const newSchema = schema.omit({
-    id: true,
-  });
+  import Select from '$lib/components/Select.svelte';
 
-  export let sectionOptions: {
-    label: string;
-    value: string;
-    disabled?: boolean;
-    detail: API.Section; // eslint-disable-line no-undef
-  }[];
+  let firstInput: HTMLInputElement | null = null;
+  let validateError: ZodError | null = null;
 
-  export let sectionExamFilteredOptions: {
-    label: string;
-    value: string;
-    disabled?: boolean;
-    detail: API.Section; // eslint-disable-line no-undef
-  }[];
+  $: err = {
+    roomId: getErrMsg(validateError, ['roomId']),
+    section: getErrMsg(validateError, ['section']),
+    instructor: getErrMsg(validateError, ['instructor']),
+  };
 
-  export let instructorOptions: {
-    label: string;
-    value: string;
-    disabled?: boolean;
-  }[];
+  type SectionResponse = ResponseDataInfo<
+    LogInfo<
+      Section & {
+        parent: Section | null;
+        child: (Section & {
+          room: (Room & { building: Building }) | null;
+          instructor: Instructor[];
+          subject: Subject;
+          group: Group | null;
+        })[];
+        group:
+          | (Group & {
+              plan: Plan & { detail: (PlanDetail & { subject: Subject })[] };
+              course: Course & { detail: (CourseDetail & { subject: Subject })[] };
+            })
+          | null;
+        room: (Room & { building: Building }) | null;
+        instructor: Instructor[];
+        subject: Subject;
+      }
+    >
+  >;
 
-  export let roomOptions: {
-    label: string;
-    value: string;
-    disabled?: boolean;
-  }[];
+  const _params = { limit: '9999' };
+  const _instructor =
+    apiRequest('/api/instructor').get<ResponseDataInfo<LogInfo<Instructor>>>(_params);
+  const _room =
+    apiRequest('/api/room').get<ResponseDataInfo<LogInfo<Room & { building: Building }>>>(_params);
+  const _section = apiRequest('/api/section').get<SectionResponse>(
+    $info ? { ..._params, semester: `${$info.semester}`, year: `${$info.year}` } : _params,
+  );
+  const _noExamSection = apiRequest('/api/section').get<SectionResponse>(
+    $info
+      ? { ..._params, semester: `${$info.semester}`, year: `${$info.year}`, exam_filtered: '1' }
+      : _params,
+  );
+
+  const instructorOptions = _instructor.then((s) =>
+    s.data
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((v) => ({ label: v.name, value: v.id })),
+  );
+  const roomOptions = _room.then((s) =>
+    s.data
+      .sort(
+        (a, b) => a.building.code.localeCompare(b.building.code) || a.name.localeCompare(b.name),
+      )
+      .map((v) => ({
+        label: `${v.building.code}-${v.name} (${
+          v.type.charAt(0).toLocaleUpperCase() + v.type.slice(1)
+        })`,
+        value: v.id,
+        data: v,
+      })),
+  );
+  const sectionOptions = async () =>
+    (await _section).data
+      .sort(
+        (a, b) =>
+          a.subject.name.localeCompare(b.subject.name) ||
+          a.subject.code.localeCompare(b.subject.code),
+      )
+      .map((v) => ({
+        label: `${v.subject.code} ${v.subject.name} SEC ${v.no}`,
+        value: v.id,
+        data: v,
+      }));
+  const noExamSectionOptions = async () =>
+    (await _noExamSection).data
+      .sort(
+        (a, b) =>
+          a.subject.name.localeCompare(b.subject.name) ||
+          a.subject.code.localeCompare(b.subject.code),
+      )
+      .map((v) => ({
+        label: `${v.subject.code} ${v.subject.name} SEC ${v.no}`,
+        value: v.id,
+        data: v,
+      }));
+
+  const realSectionOptions = async () => {
+    const [a, b] = [await sectionOptions(), await noExamSectionOptions()];
+
+    return [...b, ...a.filter((v) => (edit ? section.some((x) => x === v.value) : false))];
+  };
+
+  export let callback: (data: unknown) => void = () => {
+    // do nothing
+  };
 
   export let edit = false;
-  export let editData: typeof form.data = {
-    id: '',
-    section: [],
-    instructor: [],
-    roomId: '',
-  };
 
-  export let callback: () => void = function () {
-    // do nothing.
-  };
+  export let id = '';
+  export let roomId = '';
+  export let section: string[] = [];
+  export let instructor: string[] = [];
 
-  const selectExamSection = edit
-    ? sectionOptions.filter(
-        (opt) =>
-          editData.section.some((secId) => secId === opt.value) ||
-          sectionExamFilteredOptions.some((sec) => sec.value === opt.value),
-      )
-    : [
-        ...sectionOptions.filter((opt) => editData.section.some((secId) => secId === opt.value)),
-        ...sectionExamFilteredOptions,
-      ];
+  let currentSubject: Awaited<typeof _section>['data'][number]['subject'] | undefined;
 
-  let form: {
-    data: z.infer<typeof schema>;
-    error: ZodError | undefined;
-  } = {
-    data: {
-      id: '',
-      section: [],
-      instructor: [],
-      roomId: '',
-    },
-    error: undefined,
-  };
+  async function handleSection() {
+    await tick();
+    currentSubject = edit
+      ? (await _section).data.find((v) => v.id === section[0])?.subject
+      : (await _noExamSection).data.find((v) => v.id === section[0])?.subject;
 
-  let firstInput: HTMLInputElement;
-
-  async function handleSubmit() {
-    return edit ? await handleEdit() : await handleCreate();
-  }
-
-  async function handleCreate() {
-    form.error = undefined;
-
-    const result = newSchema
-      .transform((val) => ({
-        ...val,
-        roomId: val.roomId.trim() || null,
-        section: val.section.map((sec) => ({ id: sec })),
-        instructor: val.instructor.map((inst) => ({ id: inst })),
-      }))
-      .safeParse(form.data);
-
-    if (!result.success) {
-      form.error = result.error;
-      return;
-    }
-
-    result.data;
-
-    const ret = await createExam(result.data).catch((r: Response) => console.error(r));
-
-    if (ret) {
-      form.data = {
-        id: '',
-        section: [],
-        instructor: [],
-        roomId: '',
-      };
-
-      await invalidate('data:exam');
-
-      callback();
-
-      firstInput.focus();
-
-      toast.success('Exam Created!');
-    } else {
-      toast.error('Fail to create Exam!');
-    }
+    console.log(currentSubject);
   }
 
   async function handleEdit() {
-    form.error = undefined;
+    validateError = null;
 
-    const result = schema
-      .transform((val) => ({
-        ...val,
-        roomId: val.roomId.trim() || null,
-        section: val.section.map((sec) => ({ id: sec })),
-        instructor: val.instructor.map((inst) => ({ id: inst })),
-      }))
-      .safeParse(form.data);
+    const parsed = examSchema.safeParse({ id, roomId, section, instructor });
 
-    if (!result.success) {
-      form.error = result.error;
-      return;
-    }
+    if (!parsed.success) return handleError(parsed.error);
 
-    const ret = await editExam(result.data).catch((r: Response) => console.error(r));
+    const ret = await apiRequest('/api/exam')
+      .put(parsed.data)
+      .catch((e) => console.error(e));
 
-    if (ret) {
-      form.data = {
-        id: '',
-        section: [],
-        instructor: [],
-        roomId: '',
-      };
-
-      await invalidate('data:exam');
-
-      callback();
-
-      toast.success('Edit Complete!');
-    } else {
-      toast.error('Fail to Edit exam!');
-    }
+    if (ret) await postSubmit(ret);
   }
 
-  onMount(() => {
-    if (edit && editData) {
-      form.data = editData;
-    }
-    console.log(instructorOptions);
-    console.log(form.data.instructor);
-  });
+  async function handleNew() {
+    validateError = null;
+
+    const parsed = examSchema.omit({ id: true }).safeParse({ id, roomId, section, instructor });
+
+    if (!parsed.success) return handleError(parsed.error);
+
+    const ret = await apiRequest('/api/exam')
+      .post(parsed.data)
+      .catch((e) => console.error(e));
+
+    if (ret) await postSubmit(ret);
+  }
+
+  function handleError(error: ZodError) {
+    validateError = error;
+  }
+
+  function resetState() {
+    id = roomId = '';
+    section = instructor = [];
+    currentSubject = undefined;
+  }
+
+  async function postSubmit(data: unknown) {
+    firstInput?.focus();
+    await invalidate('data:exam');
+    toast.success('Success');
+    resetState();
+    callback(data);
+  }
+
+  onMount(handleSection);
 </script>
 
-<form on:submit|preventDefault="{() => handleSubmit()}" class="space-y-4">
-  <section id="input-section" class="grid grid-cols-6">
+<form on:submit|preventDefault="{() => (edit ? handleEdit() : handleNew())}" class="space-y-4">
+  <section id="form-input-section" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
-      <label for="" class="font-semibold">
+      <label for="input-section" class="font-semibold">
         Section <span class="text-red-600">*</span>
       </label>
     </div>
-    <div
-      class="col-span-4"
-      class:invalid="{form.error && getZodErrorMessage(form.error, ['section']).length > 0}"
-    >
-      <Select
-        options="{selectExamSection.filter((option) => {
-          if (form.data.section.length !== 0) {
-            return (
-              selectExamSection.find((opt) => form.data.section[0] == opt.detail.id)?.detail.subject
-                .name == option.detail.subject.name
-            );
-          }
-          return true;
-        })}"
-        bind:value="{form.data.section}"
-        multiple
-        placeholder="Select Section"
-      />
+    <div class="col-span-4" class:invalid="{err.section}">
+      {#await realSectionOptions()}
+        <Select options="{[]}" placeholder="Loading..." />
+      {:then options}
+        <Select
+          id="input-section"
+          options="{options.filter((v) =>
+            !currentSubject ? true : v.data.subject.id === currentSubject.id,
+          )}"
+          placeholder="Select Section"
+          bind:value="{section}"
+          on:change="{handleSection}"
+          multiple
+        />
+      {/await}
     </div>
-    <div class="col-span-4 col-start-3 text-red-600">
-      {form.error ? getZodErrorMessage(form.error, ['section']) : ''}
-    </div>
+    {#if err.section}
+      <div class="col-span-4 col-start-3 text-red-600">{err.section.join()}</div>
+    {/if}
   </section>
 
-  <section id="input-instructor" class="grid grid-cols-6">
+  <section id="form-room" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
-      <label for="" class="font-semibold"> Instructor </label>
+      <label for="input-room" class="font-semibold">Room</label>
     </div>
-    <div
-      class="col-span-4"
-      class:invalid="{form.error && getZodErrorMessage(form.error, ['instructor']).length > 0}"
-    >
-      <Select
-        options="{instructorOptions}"
-        bind:value="{form.data.instructor}"
-        multiple
-        placeholder="Not Specifed (Optional)"
-      />
+    <div class="col-span-4" class:invalid="{err.roomId}">
+      {#await roomOptions}
+        <Select options="{[]}" placeholder="Loading..." />
+      {:then options}
+        <Select
+          id="input-room"
+          placeholder="Not Specified (Optional)"
+          options="{options}"
+          bind:value="{roomId}"
+        />
+      {/await}
     </div>
-    <div class="col-span-4 col-start-3 text-red-600">
-      {form.error ? getZodErrorMessage(form.error, ['instructor']) : ''}
-    </div>
+    {#if err.roomId}
+      <div class="col-span-4 col-start-3 text-red-600">{err.roomId.join()}</div>
+    {/if}
   </section>
 
-  <section id="input-room" class="grid grid-cols-6">
+  <section id="form-instructor" class="grid grid-cols-6">
     <div class="col-span-2 flex items-center">
-      <label for="" class="font-semibold"> Room </label>
+      <label for="input-instructor" class="font-semibold">Instructor</label>
     </div>
-    <div
-      class="col-span-4"
-      class:invalid="{form.error && getZodErrorMessage(form.error, ['roomId']).length > 0}"
-    >
-      <Select options="{roomOptions}" bind:value="{form.data.roomId}" placeholder="Not Specifed (Optional)" />
+    <div class="col-span-4" class:invalid="{err.instructor}">
+      {#await instructorOptions}
+        <Select options="{[]}" placeholder="Loading..." />
+      {:then options}
+        <Select
+          id="input-instructor"
+          placeholder="Not Specified (Optional)"
+          options="{options}"
+          bind:value="{instructor}"
+          multiple
+        />
+      {/await}
     </div>
-    <div class="col-span-4 col-start-3 text-red-600">
-      {form.error ? getZodErrorMessage(form.error, ['roomId']) : ''}
-    </div>
+    {#if err.instructor}
+      <div class="col-span-4 col-start-3 text-red-600">{err.instructor.join()}</div>
+    {/if}
   </section>
 
   <button type="submit" class="button w-full">Save</button>
