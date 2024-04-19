@@ -6,7 +6,7 @@ declare module "excel4node" {
   /**
    * An instance of the Worksheet class contains all information specific to that worksheet
    */
-  class Worksheet {
+  export class Worksheet {
     /**
      * Accepts a validation options object with these available options. All options are optional with exception of sqref.
      */
