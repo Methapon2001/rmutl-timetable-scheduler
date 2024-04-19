@@ -11,6 +11,7 @@ import {
   sectionSelect,
   subjectSelect,
 } from "./model";
+import { createWorksheetLayout } from "../utils/excel";
 
 const prisma = new PrismaClient({
   errorFormat: "minimal",
@@ -28,9 +29,7 @@ const select = {
           building: { select: buildingSelect },
         },
       },
-      group: {
-        select: groupSelect,
-      },
+      group: { select: groupSelect },
       instructor: { select: instructorSelect },
       subject: { select: subjectSelect },
       parent: { select: sectionSelect },
@@ -49,34 +48,29 @@ export async function exportGroupSchedule(
       createdByUserId: req.user.id,
     },
     orderBy: [
-      {
-        section: {
-          subject: { code: "asc" },
-        },
-      },
+      { section: { subject: { code: "asc" } } },
       { section: { no: "asc" } },
       { section: { lab: "asc" } },
     ],
   });
 
   const processOverlaps = (arg: typeof data) => {
-    const processed = arg.map((current) => {
-      return {
-        ...current,
-        _overlap: arg.some(
-          (item) =>
-            item.id !== current.id &&
-            item.weekday == current.weekday &&
-            item.end >= current.start &&
-            item.start <= current.end,
-        ),
-        _offset: -1,
-      };
-    });
+    const processed = arg.map((current) => ({
+      ...current,
+      _overlap: arg.some(
+        (item) =>
+          item.id !== current.id &&
+          item.weekday == current.weekday &&
+          item.end >= current.start &&
+          item.start <= current.end,
+      ),
+      _offset: -1,
+    }));
 
     for (let i = 0; i < processed.length; i++) {
-      if (processed[i]._overlap === false || processed[i]._offset !== -1)
+      if (processed[i]._overlap === false || processed[i]._offset !== -1) {
         continue;
+      }
 
       const offsetList: number[] = [];
       const mutualOverlap = processed.filter(
@@ -96,10 +90,9 @@ export async function exportGroupSchedule(
       processed[i]._offset = j;
 
       for (let k = 0; k < processed.length; k++) {
-        if (processed[i].weekday !== processed[k].weekday || i == k) continue;
-
+        if (processed[i].weekday !== processed[k].weekday || i === k) continue;
         if (
-          processed[i].section.subject.id == processed[k].section.subject.id
+          processed[i].section.subject.id === processed[k].section.subject.id
         ) {
           processed[k]._overlap = true;
           processed[k]._offset = j;
@@ -125,136 +118,15 @@ export async function exportGroupSchedule(
     },
   });
 
-  const createWorksheetLayout = (title: string) => {
-    let ws = wb.addWorksheet(title, {
-      pageSetup: {
-        paperSize: "A4_PAPER",
-        orientation: "landscape",
-      },
-      margins: {
-        top: 0.1,
-        bottom: 0.1,
-        left: 0.1,
-        right: 0.1,
-      },
-      printOptions: {
-        centerHorizontal: true,
-      },
-    });
-
-    for (let i = 1; i <= 53; i++) {
-      ws.column(i).setWidth(4);
-    }
-
-    const styleCenter = wb.createStyle({
-      alignment: {
-        horizontal: "center",
-        vertical: "center",
-      },
-    });
-
-    const styleBorder = wb.createStyle({
-      border: {
-        top: { style: "thin" },
-        left: { style: "thin" },
-        right: { style: "thin" },
-        bottom: { style: "thin" },
-      },
-    });
-
-    ws.cell(1, 1, 17, 53, false).style({
-      alignment: { vertical: "center" },
-      ...styleBorder,
-    });
-
-    ws.cell(1, 1, 15, 14, true)
-      .string([
-        { bold: true, size: Math.min(Math.round((48 * 13) / title.length)) },
-        title,
-      ])
-      .style(styleCenter);
-
-    ws.cell(1, 15, 2, 15, true).string("ที่").style(styleCenter);
-    ws.cell(1, 16, 2, 19, true).string("รหัสวิชา").style(styleCenter);
-    ws.cell(1, 20, 2, 31, true).string("ชื่อวิชา").style(styleCenter);
-    ws.cell(1, 32, 1, 34, true).string("หน่วยกิต").style(styleCenter);
-    ws.cell(2, 32).string("ท").style(styleCenter);
-    ws.cell(2, 33).string("ป").style(styleCenter);
-    ws.cell(2, 34).string("ร").style(styleCenter);
-    ws.cell(1, 35, 2, 43, true).string("กลุ่มเรียน").style(styleCenter);
-    ws.cell(1, 44, 2, 45, true).string("ระดับ").style(styleCenter);
-    ws.cell(1, 46, 2, 47, true).string("ภาค").style(styleCenter);
-    ws.cell(1, 48, 1, 50, true).string("จำนวนชม.").style(styleCenter);
-    ws.cell(2, 48).string("ท").style(styleCenter);
-    ws.cell(2, 49).string("ป").style(styleCenter);
-    ws.cell(2, 50).string("ร").style(styleCenter);
-    ws.cell(1, 51, 2, 53, true).string("หมายเหตุ").style(styleCenter);
-    for (let i = 3; i <= 14; i++) {
-      ws.cell(i, 15)
-        .style(styleCenter)
-        .number(i - 2);
-      ws.cell(i, 16, i, 19, true);
-      ws.cell(i, 20, i, 31, true);
-      ws.cell(i, 35, i, 43, true);
-      ws.cell(i, 44, i, 45, true);
-      ws.cell(i, 46, i, 47, true);
-      ws.cell(i, 51, i, 53, true);
-    }
-    ws.cell(15, 15, 15, 31, true).string("รวม").style(styleCenter);
-    ws.cell(15, 35, 15, 47, true).string("รวม").style(styleCenter);
-    ws.cell(15, 51, 15, 53, true);
-
-    ws.cell(16, 1, 16, 3, true)
-      .string("เวลา")
-      .style({
-        alignment: {
-          horizontal: "right",
-        },
-      });
-    ws.cell(17, 1, 17, 3, true)
-      .string("คาบ")
-      .style({
-        alignment: {
-          horizontal: "left",
-        },
-      });
-
-    let period = 1;
-
-    for (let i = 4; i <= 53; i = i + 2) {
-      ws.cell(16, i, 16, i + 1, true)
-        .number(period)
-        .style({
-          alignment: { horizontal: "center" },
-        });
-      ws.cell(17, i, 17, i + 1, true)
-        .string(
-          String(
-            `${8 + Math.floor((period - 1) / 2)}:${
-              (period - 1) % 2 === 0 ? "0" : "3"
-            }0-${8 + Math.floor(period / 2)}:${period % 2 === 0 ? "0" : "3"}0`,
-          ),
-        )
-        .style({
-          alignment: { horizontal: "center" },
-          font: { size: 9 },
-        });
-      period++;
-    }
-
-    return { ws, styleCenter, styleBorder };
-  };
-
-  Object.values(group).forEach((vGroup) => {
-    const { id: groupId, name: groupName } = vGroup!;
-
-    const { ws, styleCenter, styleBorder } = createWorksheetLayout(groupName);
+  Object.values(group).forEach((grp) => {
+    const { id: groupId, name: groupName } = grp!;
+    const { ws, alignCenter, border } = createWorksheetLayout(wb, groupName);
 
     const p = processOverlaps(
-      data.filter((vSchedule) => vSchedule.section.group?.id === groupId),
+      data.filter((x) => x.section.group?.id === groupId),
     );
 
-    const maxOverlap = Math.max(...p.map((obj) => obj._offset), 2) + 1;
+    const maxOverlap = Math.max(...p.map((x) => x._offset), 2) + 1;
     const weekdayMap = {
       mon: 0,
       tue: 1,
@@ -274,11 +146,8 @@ export async function exportGroupSchedule(
     )
       .string("Activity")
       .style({
-        ...styleBorder,
-        alignment: {
-          wrapText: true,
-          ...styleCenter.alignment,
-        },
+        ...border,
+        alignment: { wrapText: true, ...alignCenter.alignment },
       });
 
     Object.values(weekdayMap).forEach((vWeekday) => {
@@ -294,137 +163,111 @@ export async function exportGroupSchedule(
             vWeekday
           ],
         )
-        .style({ ...styleCenter, ...styleBorder });
+        .style({ ...alignCenter, ...border });
       ws.cell(
         18 + maxOverlap * vWeekday + maxOverlap - 1,
         1,
         18 + maxOverlap * vWeekday + maxOverlap - 1,
         53,
       ).style({
-        border: {
-          bottom: {
-            style: "thin",
-          },
-        },
+        border: { bottom: { style: "thin" } },
       });
     });
 
     for (let i = 1; i <= 25; i++) {
       ws.cell(18, 3 + i * 2, 18 + 7 * maxOverlap - 1, 3 + i * 2, false).style({
-        border: {
-          right: {
-            style: "thin",
-          },
-        },
+        border: { right: { style: "thin" } },
       });
     }
 
-    const total: {
-      lecture: number;
-      lab: number;
-      learn: number;
-    } = {
-      lecture: 0,
-      lab: 0,
-      learn: 0,
-    };
+    const total = { lecture: 0, lab: 0, learn: 0 };
     let detailCount = 0;
 
-    p.forEach((vProcessed) => {
-      if (vProcessed.section.parent === null) {
+    p.forEach((v) => {
+      if (v.section.parent === null) {
         ws.cell(3 + detailCount, 16)
-          .string(vProcessed.section.subject.code)
-          .style(styleCenter);
-        ws.cell(3 + detailCount, 20).string(vProcessed.section.subject.name);
+          .string(v.section.subject.code)
+          .style(alignCenter);
+        ws.cell(3 + detailCount, 20).string(v.section.subject.name);
         ws.cell(3 + detailCount, 32)
-          .number(vProcessed.section.subject.lecture)
-          .style(styleCenter);
+          .number(v.section.subject.lecture)
+          .style(alignCenter);
         ws.cell(3 + detailCount, 33)
-          .number(vProcessed.section.subject.lab / 3)
-          .style(styleCenter);
+          .number(v.section.subject.lab / 3)
+          .style(alignCenter);
         ws.cell(3 + detailCount, 34)
-          .number(
-            vProcessed.section.subject.lecture +
-              vProcessed.section.subject.lab / 3,
-          )
-          .style(styleCenter);
+          .number(v.section.subject.lecture + v.section.subject.lab / 3)
+          .style(alignCenter);
         ws.cell(3 + detailCount, 35).string(
-          vProcessed.section.subject.code +
+          v.section.subject.code +
             "_SEC_" +
-            vProcessed.section.no +
-            (vProcessed.section.alt ? `, ${vProcessed.section.alt}` : ""),
+            v.section.no +
+            (v.section.alt ? `, ${v.section.alt}` : ""),
         );
         ws.cell(3 + detailCount, 48)
-          .number(vProcessed.section.subject.lecture)
-          .style(styleCenter);
+          .number(v.section.subject.lecture)
+          .style(alignCenter);
         ws.cell(3 + detailCount, 49)
-          .number(vProcessed.section.subject.lab)
-          .style(styleCenter);
+          .number(v.section.subject.lab)
+          .style(alignCenter);
         ws.cell(3 + detailCount, 50)
-          .number(
-            vProcessed.section.subject.lecture + vProcessed.section.subject.lab,
-          )
-          .style(styleCenter);
-
-        total.lecture += vProcessed.section.subject.lecture;
-        total.lab += vProcessed.section.subject.lab;
+          .number(v.section.subject.lecture + v.section.subject.lab)
+          .style(alignCenter);
+        total.lecture += v.section.subject.lecture;
+        total.lab += v.section.subject.lab;
         detailCount++;
       }
 
-      if (!vProcessed._overlap) {
+      if (!v._overlap) {
         ws.cell(
-          18 + maxOverlap * weekdayMap[vProcessed.weekday],
-          4 + (vProcessed.start - 1) * 2,
-          18 + maxOverlap * weekdayMap[vProcessed.weekday] + maxOverlap - 1,
-          3 + vProcessed.end * 2,
+          18 + maxOverlap * weekdayMap[v.weekday],
+          4 + (v.start - 1) * 2,
+          18 + maxOverlap * weekdayMap[v.weekday] + maxOverlap - 1,
+          3 + v.end * 2,
           true,
         )
           .string(
-            vProcessed.section.subject.code +
+            v.section.subject.code +
               "_SEC_" +
-              vProcessed.section.no +
-              (vProcessed.section.alt ? `, ${vProcessed.section.alt}` : "") +
-              (vProcessed.section.lab ? `-L${vProcessed.section.lab}` : "") +
-              (vProcessed.section.room
+              v.section.no +
+              (v.section.alt ? `, ${v.section.alt}` : "") +
+              (v.section.lab ? `-L${v.section.lab}` : "") +
+              (v.section.room
                 ? "\n" +
-                  vProcessed.section.room.building.code +
+                  v.section.room.building.code +
                   "-" +
-                  vProcessed.section.room.name
+                  v.section.room.name
                 : ""),
           )
           .style({
-            ...styleBorder,
-            alignment: {
-              wrapText: true,
-              ...styleCenter.alignment,
-            },
+            ...border,
+            alignment: { wrapText: true, ...alignCenter.alignment },
           });
       } else {
         ws.cell(
-          18 + maxOverlap * weekdayMap[vProcessed.weekday] + vProcessed._offset,
-
-          4 + (vProcessed.start - 1) * 2,
-          18 + maxOverlap * weekdayMap[vProcessed.weekday] + vProcessed._offset,
-          3 + vProcessed.end * 2,
+          18 + maxOverlap * weekdayMap[v.weekday] + v._offset,
+          4 + (v.start - 1) * 2,
+          18 + maxOverlap * weekdayMap[v.weekday] + v._offset,
+          3 + v.end * 2,
           true,
         )
-          .string(vProcessed.section.subject.name)
-          .style({ ...styleBorder, ...styleCenter });
+          .string(v.section.subject.name)
+          .style({ ...border, ...alignCenter });
       }
     });
 
-    ws.cell(15, 32).number(total.lecture).style(styleCenter);
+    ws.cell(15, 32).number(total.lecture).style(alignCenter);
     ws.cell(15, 33)
       .number(total.lab / 3)
-      .style(styleCenter);
+      .style(alignCenter);
     ws.cell(15, 34)
       .number(total.lecture + total.lab / 3)
-      .style(styleCenter);
-    ws.cell(15, 48).number(total.lecture).style(styleCenter);
-    ws.cell(15, 49).number(total.lab).style(styleCenter);
+      .style(alignCenter);
+    ws.cell(15, 48).number(total.lecture).style(alignCenter);
+    ws.cell(15, 49).number(total.lab).style(alignCenter);
     ws.cell(15, 50)
       .number(total.lecture + total.lab)
-      .style(styleCenter);
+      .style(alignCenter);
   });
 
   const buffer = await wb.writeToBuffer();
