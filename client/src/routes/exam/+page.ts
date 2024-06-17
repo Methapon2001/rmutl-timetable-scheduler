@@ -28,7 +28,6 @@ export const load = (async ({ fetch, parent, depends, url }) => {
 
   if (!session) throw redirect(302, '/login?redirect=/exam');
 
-  const exam = apiRequest('/api/exam', fetch);
   const param = paginationRequestParams(url);
 
   if (currentInfo !== undefined) {
@@ -37,7 +36,7 @@ export const load = (async ({ fetch, parent, depends, url }) => {
   }
 
   return {
-    exam: exam.get<
+    exam: await apiRequest('/api/exam', fetch).get<
       ResponseDataInfo<
         LogInfo<
           Exam & {

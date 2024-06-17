@@ -31,7 +31,6 @@ export const load = (async ({ fetch, parent, depends, url }) => {
 
   if (!session) throw redirect(302, '/login?redirect=/section');
 
-  const section = apiRequest('/api/section', fetch);
   const param = paginationRequestParams(url);
 
   if (currentInfo !== undefined) {
@@ -40,7 +39,7 @@ export const load = (async ({ fetch, parent, depends, url }) => {
   }
 
   return {
-    section: section.get<
+    section: await apiRequest('/api/section', fetch).get<
       ResponseDataInfo<
         LogInfo<
           Section & {

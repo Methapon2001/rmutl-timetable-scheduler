@@ -60,7 +60,7 @@
       )
       .map((v) => ({
         label: `${v.building.code}-${v.name} (${
-          v.type.charAt(0).toLocaleUpperCase() + v.type.slice(1)
+          v.type === 'both' ? 'Lecture/Lab' : v.type.charAt(0).toLocaleUpperCase() + v.type.slice(1)
         })`,
         value: v.id,
         data: v,

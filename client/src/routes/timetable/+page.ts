@@ -31,8 +31,6 @@ export const load = (async ({ fetch, parent, depends }) => {
 
   if (!session) throw redirect(302, '/login?redirect=/timetable');
 
-  const section = apiRequest('/api/section', fetch);
-  const timetable = apiRequest('/api/scheduler', fetch);
   const room = apiRequest('/api/room', fetch);
   const instructor = apiRequest('/api/instructor', fetch);
   const param = new URLSearchParams({ limit: '9999' });
@@ -41,24 +39,8 @@ export const load = (async ({ fetch, parent, depends }) => {
     param.set('semester', currentInfo.semester.toString());
     param.set('year', currentInfo.year.toString());
   }
-
-  return {
-    scheduler: timetable.get<
-      ResponseDataInfo<
-        LogInfo<
-          Timetable & {
-            section: Section & {
-              group: Group | null;
-              room: (Room & { building: Building }) | null;
-              instructor: Instructor[];
-              subject: Subject;
-              parent: Section | null;
-            };
-          }
-        >
-      >
-    >(param),
-    section: section.get<
+  const [section, scheduler] = await Promise.all([
+    apiRequest('/api/section', fetch).get<
       ResponseDataInfo<
         LogInfo<
           Section & {
@@ -82,6 +64,26 @@ export const load = (async ({ fetch, parent, depends }) => {
         >
       >
     >(param),
+    apiRequest('/api/scheduler', fetch).get<
+      ResponseDataInfo<
+        LogInfo<
+          Timetable & {
+            section: Section & {
+              group: Group | null;
+              room: (Room & { building: Building }) | null;
+              instructor: Instructor[];
+              subject: Subject;
+              parent: Section | null;
+            };
+          }
+        >
+      >
+    >(param),
+  ]);
+
+  return {
+    scheduler,
+    section,
     info: currentInfo,
     lazy: {
       instructor: instructor.get<ResponseDataInfo<LogInfo<Instructor>>>({ limit: '9999' }),

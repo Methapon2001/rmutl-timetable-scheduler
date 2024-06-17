@@ -28,8 +28,6 @@ export const load = (async ({ fetch, parent, depends }) => {
 
   if (!session) throw redirect(302, '/login?redirect=/exam-timetable');
 
-  const exam = apiRequest('/api/exam', fetch);
-  const timetableExam = apiRequest('/api/scheduler-exam', fetch);
   const room = apiRequest('/api/room', fetch);
   const instructor = apiRequest('/api/instructor', fetch);
   const param = new URLSearchParams({ limit: '9999' });
@@ -39,8 +37,8 @@ export const load = (async ({ fetch, parent, depends }) => {
     param.set('year', currentInfo.year.toString());
   }
 
-  return {
-    schedulerExam: timetableExam.get<
+  const [schedulerExam, exam] = await Promise.all([
+    apiRequest('/api/scheduler-exam', fetch).get<
       ResponseDataInfo<
         LogInfo<
           TimetableExam & {
@@ -56,7 +54,7 @@ export const load = (async ({ fetch, parent, depends }) => {
         >
       >
     >(param),
-    exam: exam.get<
+    apiRequest('/api/exam', fetch).get<
       ResponseDataInfo<
         LogInfo<
           Exam & {
@@ -70,6 +68,11 @@ export const load = (async ({ fetch, parent, depends }) => {
         >
       >
     >(param),
+  ]);
+
+  return {
+    schedulerExam,
+    exam,
     info: currentInfo,
     lazy: {
       room: room.get<ResponseDataInfo<LogInfo<Room & { building: Building }>>>({ limit: '9999' }),

@@ -20,10 +20,10 @@ export const load = (async ({ fetch }) => {
     }
   }
 
-  const info = apiRequest('/api/info', fetch);
-
   return {
     session: userSession,
-    info: info.get<ResponseDataInfo<LogInfo<Info>>>({ limit: '9999' }),
+    info: await apiRequest('/api/info', fetch).get<ResponseDataInfo<LogInfo<Info>>>({
+      limit: '9999',
+    }),
   };
 }) satisfies LayoutLoad;

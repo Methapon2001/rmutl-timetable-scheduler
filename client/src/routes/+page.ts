@@ -29,9 +29,8 @@ export const load = (async ({ fetch }) => {
     param.set('semester', currentInfo.semester.toString());
     param.set('year', currentInfo.year.toString());
   }
-
-  return {
-    scheduler: timetable.get<
+  const [scheduler, schedulerExam] = await Promise.all([
+    timetable.get<
       ResponseDataInfo<
         LogInfo<
           Timetable & {
@@ -45,7 +44,7 @@ export const load = (async ({ fetch }) => {
         >
       >
     >(param),
-    schedulerExam: timetableExam.get<
+    timetableExam.get<
       ResponseDataInfo<
         LogInfo<
           TimetableExam & {
@@ -61,5 +60,7 @@ export const load = (async ({ fetch }) => {
         >
       >
     >(param),
-  };
+  ]);
+
+  return { scheduler, schedulerExam };
 }) satisfies PageLoad;

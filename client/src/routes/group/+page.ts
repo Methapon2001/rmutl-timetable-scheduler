@@ -26,7 +26,6 @@ export const load = (async ({ fetch, parent, depends, url }) => {
 
   if (!session) throw redirect(302, '/login?redirect=/group');
 
-  const group = apiRequest('/api/group', fetch);
   const param = paginationRequestParams(url);
 
   if (currentInfo !== undefined) {
@@ -35,7 +34,7 @@ export const load = (async ({ fetch, parent, depends, url }) => {
   }
 
   return {
-    group: group.get<
+    group: await apiRequest('/api/group', fetch).get<
       ResponseDataInfo<
         LogInfo<
           Group & {

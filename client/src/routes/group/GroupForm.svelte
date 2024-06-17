@@ -17,7 +17,7 @@
   import { getZodErrorMessage } from '$lib/utils/zod';
   import apiRequest from '$lib/api';
   import Select from '$lib/components/Select.svelte';
-  import { tick } from 'svelte';
+  import { onMount, tick } from 'svelte';
 
   let firstInput: HTMLInputElement | null = null;
   let validateError: ZodError | null = null;
@@ -112,6 +112,10 @@
     await tick();
     currentCourse = (await course).data.find((v) => v.id === courseId);
   }
+
+  onMount(() => {
+    handleCourse();
+  });
 </script>
 
 <form on:submit|preventDefault="{() => (edit ? handleEdit() : handleNew())}" class="space-y-4">

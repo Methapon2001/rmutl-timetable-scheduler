@@ -18,9 +18,9 @@
         group: group.find((grp) => grp.id === groupId) ?? undefined,
         subjectType: subjectType ? subjectType : undefined,
       },
+    }).then(() => {
+      ws?.send(JSON.stringify({ update: 1 }));
     });
-
-    ws?.send(JSON.stringify({ update: 1 }));
   }
 </script>
 

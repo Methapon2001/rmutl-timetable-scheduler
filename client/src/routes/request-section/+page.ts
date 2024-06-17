@@ -20,11 +20,15 @@ export const load = (async ({ fetch, parent, depends }) => {
 
   if (!session) throw redirect(302, '/login?redirect=/request-section');
 
-  const reqSectionStatus = apiRequest('/api/request-section/status', fetch);
-  const reqSection = apiRequest('/api/request-section', fetch);
+  const [requestSectionStatus, requestSection] = await Promise.all([
+    apiRequest('/api/request-section/status', fetch).get<{
+      data: RequestSectionStatus;
+    }>(),
+    apiRequest('/api/request-section', fetch).get<{ data: RequestSection[] }>(),
+  ]);
 
   return {
-    requestSectionStatus: reqSectionStatus.get<{ data: RequestSectionStatus }>(),
-    requestSection: reqSection.get<{ data: RequestSection[] }>(),
+    requestSectionStatus,
+    requestSection,
   };
 }) satisfies PageLoad;

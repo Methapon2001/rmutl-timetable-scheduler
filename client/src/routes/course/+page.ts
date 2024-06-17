@@ -13,10 +13,8 @@ export const load = (async ({ fetch, parent, depends, url }) => {
 
   if (!session) throw redirect(302, '/login?redirect=/course');
 
-  const course = apiRequest('/api/course', fetch);
-
   return {
-    course: course.get<
+    course: await apiRequest('/api/course', fetch).get<
       ResponseDataInfo<
         LogInfo<
           Course & {

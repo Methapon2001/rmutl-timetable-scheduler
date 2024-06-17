@@ -1,6 +1,6 @@
 import type { Session } from '$lib/types';
 import { env } from '$env/dynamic/public';
-import jwtDecode from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 
 export const login = async (credential: { username: string; password: string }) => {
   const url = env.PUBLIC_API_HOST ? env.PUBLIC_API_HOST : window.location.origin;

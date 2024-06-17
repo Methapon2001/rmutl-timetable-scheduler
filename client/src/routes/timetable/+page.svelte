@@ -4,9 +4,8 @@
   import toast from 'svelte-french-toast';
 
   import { invalidate, invalidateAll } from '$app/navigation';
-  import { createPDF, drawDetailTable, drawSchedule } from '$lib/utils/pdf';
   import { resetData } from '$lib/api/reset';
-  import { checkOverlap, processOverlaps } from './utils';
+  import { checkOverlap } from './utils';
 
   import { exportSchedule } from '$lib/api/export-data';
 
@@ -253,101 +252,6 @@
     }
 
     return true;
-  }
-
-  function exportPDF() {
-    const doc = createPDF();
-
-    const { width: pageWidth, height: pageHeight } = doc.internal.pageSize;
-
-    const pageGap = 3;
-
-    let docSchedule: ReturnType<typeof drawSchedule>;
-    let docScheduleDetail: ReturnType<typeof drawDetailTable>;
-
-    const drawLayout = () => {
-      docSchedule = drawSchedule(
-        doc,
-        pageGap,
-        105,
-        pageWidth - pageGap * 2,
-        pageHeight - 105 - pageGap,
-        {
-          period: 25,
-          fontSize: 12,
-          borderWidth: 0.3,
-          colHeaderWidth: 15,
-          rowHeaderHeight: 12,
-        },
-      );
-
-      docScheduleDetail = drawDetailTable(
-        doc,
-        pageGap,
-        pageGap,
-        pageWidth - pageGap * 2,
-        105 - pageGap,
-        {
-          period: 25,
-          fontSize: 12,
-          borderWidth: 0.3,
-          rowHeaderHeight: 14,
-        },
-        docSchedule,
-      );
-    };
-
-    group.forEach((grp) => {
-      const filtered = scheduler.filter((sched) => sched.section.group?.id === grp.id);
-
-      if (filtered.length === 0) return;
-
-      const processed = processOverlaps(filtered);
-
-      drawLayout();
-
-      docSchedule.assignSchedule(processed);
-      docScheduleDetail.setHeader(grp.name);
-      docScheduleDetail.addDetail(processed, { onlyParent: true });
-
-      doc.addPage();
-    });
-
-    instructor.forEach((inst) => {
-      const filtered = scheduler.filter(
-        (sched) => sched.section.instructor.findIndex((v) => v.id === inst.id) !== -1,
-      );
-
-      if (filtered.length === 0) return;
-
-      const processed = processOverlaps(filtered);
-
-      drawLayout();
-
-      docSchedule.assignSchedule(processed);
-      docScheduleDetail.setHeader(inst.name);
-      docScheduleDetail.addDetail(processed, { showGroup: true });
-
-      doc.addPage();
-    });
-
-    room.forEach((r) => {
-      const filtered = scheduler.filter((v) => v.section.room?.id === r.id);
-
-      if (filtered.length === 0) return;
-
-      const processed = processOverlaps(filtered);
-
-      drawLayout();
-
-      docSchedule.assignSchedule(processed);
-      docScheduleDetail.setHeader(`${r.building.code}-${r.name}`);
-      docScheduleDetail.addDetail(processed);
-
-      doc.addPage();
-    });
-    doc.deletePage(doc.getNumberOfPages());
-    doc.output('dataurlnewwindow');
   }
 
   let showFilter = false;
@@ -832,12 +736,6 @@
       }}"
     >
       Generate
-    </button>
-    <button
-      class="rounded border bg-slate-900 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
-      on:click="{() => exportPDF()}"
-    >
-      Export PDF
     </button>
     <button
       class="rounded border bg-slate-900 px-4 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"

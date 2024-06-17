@@ -4,7 +4,6 @@
   import toast from 'svelte-french-toast';
   import autoTable from 'jspdf-autotable';
 
-  import { createPDF } from '$lib/utils/pdf';
   import { resetData } from '$lib/api/reset';
   import { invalidate, invalidateAll } from '$app/navigation';
   import { checkOverlap } from './utils';
@@ -213,86 +212,6 @@
 
   let midDateExam: string;
   let finalDateExam: string;
-
-  async function exportPDF() {
-    const midDay = new Date(midDateExam).getDay();
-    const finalDay = new Date(finalDateExam).getDay();
-
-    if (midDay !== 1 || finalDay !== 1) {
-      toast.error('Date select must be on monday.');
-      return;
-    }
-
-    const doc = createPDF('portrait');
-    const weekdayMapNum = { mon: 0, tue: 1, wed: 2, thu: 3, fri: 4, sat: 5, sun: 6 };
-    const midTimestamp = new Date(midDateExam).getTime();
-    const finalTimestamp = new Date(finalDateExam).getTime();
-    const dayTimestamp = 86400000;
-    const monthName = [
-      'ม.ค.',
-      'ก.พ.',
-      'มี.ค.',
-      'เม.ย.',
-      'พ.ค.',
-      'มิ.ย.',
-      'ก.ค.',
-      'ส.ค.',
-      'ก.ย.',
-      'ต.ค.',
-      'พ.ย.',
-      'ธ.ค.',
-    ];
-
-    let pdfData = schedulerExam.map((v) => [
-      v.exam.section[0]?.subject.code + ' ' + v.exam.section[0]?.subject.name,
-      'SEC_' + v.exam.section.map((x) => x.no).join(', '),
-      new Date(midTimestamp + dayTimestamp * weekdayMapNum[v.weekday]).getDate() +
-        ' ' +
-        monthName[new Date(midTimestamp + dayTimestamp * weekdayMapNum[v.weekday]).getMonth()] +
-        ' ' +
-        new Date(midTimestamp + dayTimestamp * weekdayMapNum[v.weekday]).getFullYear() +
-        '\n' +
-        (8 +
-          Math.floor((v.start - 1) / 4) +
-          ':' +
-          ['00', '15', '30', '45'][(v.start - 1) % 4] +
-          ' น.') +
-        ' - ' +
-        (8 + Math.floor(v.end / 4) + ':' + ['00', '15', '30', '45'][v.end % 4]) +
-        ' น.',
-      new Date(finalTimestamp + dayTimestamp * weekdayMapNum[v.weekday]).getDate() +
-        ' ' +
-        monthName[new Date(finalTimestamp + dayTimestamp * weekdayMapNum[v.weekday]).getMonth()] +
-        ' ' +
-        new Date(finalTimestamp + dayTimestamp * weekdayMapNum[v.weekday]).getFullYear() +
-        '\n' +
-        (8 +
-          Math.floor((v.start - 1) / 4) +
-          ':' +
-          ['00', '15', '30', '45'][(v.start - 1) % 4] +
-          ' น.') +
-        ' - ' +
-        (8 + Math.floor(v.end / 4) + ':' + ['00', '15', '30', '45'][v.end % 4]) +
-        ' น.',
-      v.exam.room?.building.code ?? '' + '-' + v.exam.room?.name ?? '',
-      v.exam.instructor.map((x) => x.name).join('\n'),
-    ]);
-
-    autoTable(doc, {
-      head: [['Subject', 'Section', 'Midterm', 'Final', 'Room', 'Instructor']],
-      headStyles: {
-        fontStyle: 'bold',
-      },
-      body: pdfData,
-      styles: {
-        font: 'THSarabun',
-        fontSize: 12,
-      },
-    });
-
-    doc.output('dataurlnewwindow');
-    showExportState = false;
-  }
 
   let showFilter = false;
   let filterSelected: string[] = [];
@@ -790,12 +709,6 @@
       </div>
     </section>
     <section class="grid grid-cols-2 gap-4">
-      <button
-        class="rounded border bg-slate-900 px-8 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
-        on:click="{() => exportPDF()}"
-      >
-        Export PDF
-      </button>
       <button
         class="rounded border bg-slate-900 px-8 py-2 font-semibold text-white outline-none transition duration-150 focus:bg-slate-800"
         on:click="{() => {

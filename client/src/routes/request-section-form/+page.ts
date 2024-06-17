@@ -7,25 +7,21 @@ export const load = (async ({ fetch, url }) => {
   const key = url.searchParams.get('key');
 
   if (!key) {
-    throw error(400, {
-      message: 'Key is not provided.',
-    });
+    throw error(400, { message: 'Key is not provided.' });
   }
 
   const ret = await apiRequest('/api/request-section/check').get<Record<string, unknown>>({ key });
 
   if (ret.data === null) {
-    throw error(400, {
-      message: 'No form found.',
-    });
+    throw error(400, { message: 'No form found.' });
   }
 
-  const instructor = apiRequest('/api/instructor', fetch);
-  const subject = apiRequest('/api/subject', fetch);
+  const [instructor, subject] = await Promise.all([
+    apiRequest('/api/instructor', fetch).get<ResponseDataInfo<LogInfo<Instructor>>>({
+      limit: `${9999}`,
+    }),
+    apiRequest('/api/subject', fetch).get<ResponseDataInfo<LogInfo<Subject>>>({ limit: `${9999}` }),
+  ]);
 
-  return {
-    key: key,
-    instructor: instructor.get<ResponseDataInfo<LogInfo<Instructor>>>({ limit: `${9999}` }),
-    subject: subject.get<ResponseDataInfo<LogInfo<Subject>>>({ limit: `${9999}` }),
-  };
+  return { key, instructor, subject };
 }) satisfies PageLoad;

@@ -13,10 +13,8 @@ export const load = (async ({ fetch, parent, depends, url }) => {
 
   if (!session) throw redirect(302, '/login?redirect=/plan');
 
-  const plan = apiRequest('/api/plan', fetch);
-
   return {
-    plan: plan.get<
+    plan: await apiRequest('/api/plan', fetch).get<
       ResponseDataInfo<
         LogInfo<
           Plan & {

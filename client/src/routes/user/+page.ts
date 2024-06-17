@@ -13,9 +13,9 @@ export const load = (async ({ fetch, parent, depends, url }) => {
 
   if (!session) throw redirect(302, '/login?redirect=/user');
 
-  const user = apiRequest('/api/user', fetch);
-
   return {
-    user: user.get<ResponseDataInfo<LogInfo<User>>>(paginationRequestParams(url)),
+    user: await apiRequest('/api/user', fetch).get<ResponseDataInfo<LogInfo<User>>>(
+      paginationRequestParams(url),
+    ),
   };
 }) satisfies PageLoad;

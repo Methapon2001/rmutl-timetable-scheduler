@@ -13,11 +13,9 @@ export const load = (async ({ fetch, parent, depends, url }) => {
 
   if (!session) throw redirect(302, '/login?redirect=/room');
 
-  const room = apiRequest('/api/room', fetch);
-
   return {
-    room: room.get<ResponseDataInfo<LogInfo<Room & { building: Building }>>>(
-      paginationRequestParams(url),
-    ),
+    room: await apiRequest('/api/room', fetch).get<
+      ResponseDataInfo<LogInfo<Room & { building: Building }>>
+    >(paginationRequestParams(url)),
   };
 }) satisfies PageLoad;
