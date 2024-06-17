@@ -1,6 +1,6 @@
 import xl from "excel4node";
 import { FastifyReply, FastifyRequest } from "fastify";
-import { Prisma, PrismaClient, Scheduler } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import {
   buildingSelect,
   groupSelect,
