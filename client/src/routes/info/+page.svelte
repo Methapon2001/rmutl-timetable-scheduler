@@ -67,7 +67,7 @@
   <div class="inline-flex w-full items-center space-x-2 font-medium md:w-fit">
     <a class="text-primary" href="/">Home</a>
     <span>/</span>
-    <span class="text-secondary">Info</span>
+    <span class="text-secondary">Semester</span>
   </div>
 
   <div class="w-full md:w-fit md:flex-grow md:px-16">
@@ -84,13 +84,13 @@
   </div>
 
   <button type="button" class="button w-full md:w-fit" on:click="{() => (newState = !newState)}">
-    New Info
+    New Semester
   </button>
 </div>
 
 {#if newState}
   <div id="new" class="bg-light p-4">
-    <h1 class="mb-4 block text-center text-2xl font-bold">New Info</h1>
+    <h1 class="mb-4 block text-center text-2xl font-bold">New Semester</h1>
     <div class="mx-auto max-w-screen-md rounded bg-white p-4 shadow">
       <Form />
     </div>

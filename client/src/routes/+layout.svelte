@@ -75,7 +75,9 @@
           <a class:active="{route == '/user'}" href="{'/user'}" role="button">User (ผู้ใช้)</a>
         </li>
         <li>
-          <a class:active="{route == '/info'}" href="{'/info'}" role="button">Info (ภาคเรียน)</a>
+          <a class:active="{route == '/info'}" href="{'/info'}" role="button"
+            >Semester Info (ภาคเรียน)</a
+          >
         </li>
       {/if}
       {#each [{ path: '/logout', text: 'Logout' }] as { path, text }}

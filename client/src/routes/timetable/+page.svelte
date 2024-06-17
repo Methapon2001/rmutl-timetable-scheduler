@@ -745,7 +745,7 @@
         exportSchedule('room');
       }}"
     >
-      Export Excel
+      Export to Spreadsheet
     </button>
     <button
       class="rounded border px-4 py-2 font-semibold text-white outline-none transition duration-150"
