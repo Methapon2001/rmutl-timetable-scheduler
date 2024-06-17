@@ -272,5 +272,7 @@ export async function exportGroupSchedule(
 
   const buffer = await wb.writeToBuffer();
 
-  res.type("application/vnd.ms-excel").send(buffer);
+  res
+    .type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    .send(buffer);
 }
