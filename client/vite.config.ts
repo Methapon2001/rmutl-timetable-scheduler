@@ -6,4 +6,15 @@ export default defineConfig({
   test: {
     include: ['src/**/*.{test,spec}.{js,ts}'],
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+      },
+      '/websocket': {
+        target: 'ws://localhost:3000',
+        ws: true,
+      },
+    },
+  },
 });
