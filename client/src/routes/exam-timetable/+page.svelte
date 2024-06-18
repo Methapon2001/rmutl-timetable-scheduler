@@ -29,14 +29,18 @@
 
   function initWebSocket() {
     ws = new WebSocket(getWebsocketURL());
-    ws.onopen = () => console.log('WebSocket Connected.');
-    ws.onmessage = (event) => {
+    ws.addEventListener('open', () => {
+      console.log('WebSocket Connected.');
+    });
+    ws.addEventListener('message', (event) => {
       if (JSON.parse(event.data).update === 2) {
-        console.log('[WS]: Data change detected, syncing data');
-        invalidate('data:scheduler');
+        console.log('[WS] Data change detected, syncing data...');
+        invalidate('data:scheduler-exam');
       }
-    };
-    ws.onclose = () => console.log('WebSocket Closed');
+    });
+    ws.addEventListener('close', () => {
+      console.log('WebSocket Closed');
+    });
   }
 
   onMount(initWebSocket);
