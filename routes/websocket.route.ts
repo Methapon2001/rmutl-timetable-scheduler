@@ -1,9 +1,8 @@
 import { FastifyInstance } from "fastify";
 
 export default async (server: FastifyInstance) => {
-  server.get("/websocket", { websocket: true }, (connection, _) => {
-    connection.setEncoding("utf-8");
-    connection.socket.on("message", (msg) => {
+  server.get("/websocket", { websocket: true }, (socket, _) => {
+    socket.on("message", (msg) => {
       const obj = JSON.parse(msg.toString());
 
       if (typeof obj === "object" && (obj as Object).hasOwnProperty("update"))
