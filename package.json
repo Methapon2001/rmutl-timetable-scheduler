@@ -21,22 +21,22 @@
     "@fastify/cors": "^9.0.1",
     "@fastify/static": "^7.0.4",
     "@fastify/websocket": "^10.0.1",
-    "@prisma/client": "^5.15.1",
-    "ajv": "^8.16.0",
+    "@prisma/client": "^5.17.0",
+    "ajv": "^8.17.1",
     "excel4node": "^1.8.2",
-    "fast-jwt": "^4.0.1",
-    "fastify": "^4.28.0",
-    "vite": "^5.3.1"
+    "fast-jwt": "^4.0.2",
+    "fastify": "^4.28.1",
+    "vite": "^5.3.5"
   },
   "devDependencies": {
-    "@types/node": "^20.14.5",
-    "@types/ws": "^8.5.10",
+    "@types/node": "^20.14.14",
+    "@types/ws": "^8.5.12",
     "@vitest/ui": "^1.6.0",
     "dotenv": "^16.4.5",
-    "prettier": "^3.3.2",
-    "prisma": "^5.15.1",
-    "tsx": "^4.15.6",
-    "typescript": "^5.4.5",
+    "prettier": "^3.3.3",
+    "prisma": "^5.17.0",
+    "tsx": "^4.16.5",
+    "typescript": "^5.5.4",
     "vitest": "^1.6.0"
   }
 }
