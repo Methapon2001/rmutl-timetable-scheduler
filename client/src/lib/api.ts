@@ -83,7 +83,7 @@ function apiRequest<TRoute extends keyof RouteData>(resource: TRoute, fetcher = 
           headers: {
             Authorization: `Bearer ${session?.token.access}`,
           },
-        })
+        }).then(errorInterceptor)
       ).json();
     },
     post: async <R = unknown>(
@@ -102,7 +102,7 @@ function apiRequest<TRoute extends keyof RouteData>(resource: TRoute, fetcher = 
             Authorization: `Bearer ${session?.token.access}`,
           },
           body: JSON.stringify(data),
-        })
+        }).then(errorInterceptor)
       ).json();
     },
     put: async <R = unknown>(
@@ -120,7 +120,7 @@ function apiRequest<TRoute extends keyof RouteData>(resource: TRoute, fetcher = 
             Authorization: `Bearer ${session?.token.access}`,
           },
           body: JSON.stringify({ ...data, id: undefined }),
-        })
+        }).then(errorInterceptor)
       ).json();
     },
     delete: async <R = unknown>(
@@ -136,10 +136,17 @@ function apiRequest<TRoute extends keyof RouteData>(resource: TRoute, fetcher = 
           headers: {
             Authorization: `Bearer ${session?.token.access}`,
           },
-        })
+        }).then(errorInterceptor)
       ).json();
     },
   };
+}
+
+async function errorInterceptor(res: Response) {
+  if (res && res.status >= 400) {
+    throw new Error((await res.json())?.message || 'Unknown error.');
+  }
+  return res;
 }
 
 function getWebsocketURL() {
