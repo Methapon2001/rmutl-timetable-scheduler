@@ -49,8 +49,8 @@
   $: selectedValues = Array.isArray(value)
     ? value.filter((val, idx, arr) => arr.findIndex((v) => v === val) === idx)
     : value !== ''
-    ? [value]
-    : [];
+      ? [value]
+      : [];
 
   $: selectedOptions = selectedValues.map(
     (v) => filteredOptions.find((opt) => opt.value === v) ?? { label: v, value: v },

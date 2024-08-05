@@ -115,8 +115,8 @@
       state.isOverflow
         ? 'bg-red-600/70'
         : state.isOverlap && state.allowOverlap
-        ? 'bg-amber-500/70'
-        : 'bg-green-600/70'}"
+          ? 'bg-amber-500/70'
+          : 'bg-green-600/70'}"
       style:grid-row="{tbGridWeekday[state.weekday]}"
       style:grid-column="{`${state.period + 3}/${state.period + state.size + 3}`}"
     >

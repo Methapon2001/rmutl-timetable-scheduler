@@ -2,7 +2,6 @@
   import type { PageData } from './$types';
   import { onMount, type ComponentProps, onDestroy, tick } from 'svelte';
   import toast from 'svelte-french-toast';
-  import autoTable from 'jspdf-autotable';
 
   import { resetData } from '$lib/api/reset';
   import { invalidate, invalidateAll } from '$app/navigation';

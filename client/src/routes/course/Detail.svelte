@@ -19,7 +19,10 @@
   <div class="grid grid-cols-3">
     {#each sorted as val}
       <p class="col-span-2 text-left">{val.subject.code} {val.subject.name}</p>
-      <p class="text-right capitalize">{val.type} {val.type == 'compulsory' ? `(บังคับ)` : `(เลือก)`}</p>
+      <p class="text-right capitalize">
+        {val.type}
+        {val.type == 'compulsory' ? `(บังคับ)` : `(เลือก)`}
+      </p>
     {/each}
   </div>
 </div>

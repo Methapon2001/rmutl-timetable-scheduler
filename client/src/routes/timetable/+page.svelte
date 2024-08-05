@@ -244,15 +244,13 @@
 
       detectOverlap();
 
-      if (pov === 'group') {
-        document.querySelector(`#group-${state.section?.group?.id}`)?.scrollIntoView({
-          behavior: 'smooth',
-        });
-      } else {
-        document.querySelector(`#inst-${state.section?.instructor[0].id}`)?.scrollIntoView({
-          behavior: 'smooth',
-        });
-      }
+      document
+        .querySelector(
+          pov === 'group'
+            ? `#group-${state.section?.group?.id}`
+            : `#inst-${state.section?.instructor[0].id}`,
+        )
+        ?.scrollIntoView({ behavior: 'smooth' });
     }
 
     return true;
