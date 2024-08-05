@@ -1,5 +1,5 @@
 <script lang="ts">
-  import '../app.postcss';
+  import '../app.css';
   import type { LayoutData } from './$types';
   import { page } from '$app/stores';
   import { clickOutside } from '$lib/element';
