@@ -3,7 +3,11 @@
 ## Prerequisite
 
 - [Node.js LTS](https://nodejs.org/en/download)
-  - Linux can install using nvm `curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash`
+  - Linux can install using [nodesource](https://github.com/nodesource/distributions) or by using package manager of the distro you use.
+    - Arch `pacman -S nodejs`
+    - Debain `apt install nodejs`
+    - Fedora `dnf install nodejs`
+    - Alpine `apk add nodejs`
   - Version used in development is 18.x.x
 - [MariaDB/MySQL](https://mariadb.org/download)
   - For windows, can use [XAMPP](https://www.apachefriends.org/)
